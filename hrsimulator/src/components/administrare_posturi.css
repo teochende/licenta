@@ -1,0 +1,44 @@
+/* Simple styles for AdministrarePosturi table */
+.jobs-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+}
+.jobs-table th,
+.jobs-table td {
+  border: 1px solid #e1e4e8;
+  padding: 8px 10px;
+  text-align: left;
+}
+.jobs-table thead th {
+  background: #f5f7fa;
+  color: #333;
+  font-weight: 600;
+}
+.jobs-table tbody tr:nth-child(even) {
+  background: #fbfcfd;
+}
+.row-disabled {
+  opacity: 0.6;
+  color: #666;
+}
+.toggle-btn {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.toggle-btn.on {
+  background: #e74c3c;
+  color: #fff;
+}
+.toggle-btn.off {
+  background: #2ecc71;
+  color: #fff;
+}
+.toggle-btn:hover {
+  filter: brightness(0.95);
+}
