@@ -1,0 +1,9 @@
+package com.example.hrdatabase.dto.request;
+
+public record AplicatieCreateRequest(
+        Long postId,
+        String numeCandidat,
+        String email,
+        String cvNumeFisier
+) {
+}

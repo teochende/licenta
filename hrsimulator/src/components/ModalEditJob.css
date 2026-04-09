@@ -1,0 +1,130 @@
+.modal-edit-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-edit-job {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  max-width: 420px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.modal-edit-job--wide {
+  max-width: 480px;
+}
+
+.modal-edit-atribuiri {
+  margin-top: 0.75rem;
+}
+
+.modal-edit-label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.modal-edit-checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.modal-edit-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: normal;
+  cursor: pointer;
+}
+
+.modal-edit-checkbox-item input {
+  width: auto;
+  cursor: pointer;
+}
+
+.modal-edit-job h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.modal-edit-camp {
+  margin-bottom: 1rem;
+}
+
+.modal-edit-camp label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.modal-edit-camp input[type="text"],
+.modal-edit-camp input[type="number"],
+.modal-edit-camp textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #e1e4e8;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.modal-edit-camp textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.modal-edit-checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: normal;
+  cursor: pointer;
+}
+
+.modal-edit-checkbox input[type="checkbox"] {
+  width: auto;
+  cursor: pointer;
+}
+
+.modal-edit-butonuri {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e1e4e8;
+}
+
+.modal-btn {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.modal-btn:hover {
+  filter: brightness(0.95);
+}
+
+.modal-btn-anulare {
+  background: #95a5a6;
+  color: #fff;
+}
+
+.modal-btn-salvare {
+  background: #27ae60;
+  color: #fff;
+}

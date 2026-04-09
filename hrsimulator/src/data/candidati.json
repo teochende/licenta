@@ -1,0 +1,152 @@
+[
+  {
+    "id": 1,
+    "email": "maria.popescu@email.ro",
+    "cv": "Experiență de peste 5 ani în dezvoltare software, cu focus pe Java și ecosistemul Spring. Am lucrat la proiecte enterprise în domeniul bancar și telecom. Cunosc bine SQL, REST API, Git și metodologii Agile. Caut o poziție de senior unde să contribui la arhitectură și mentoring. Am experiență în code review, refactoring și optimizare performanță. Studii: licență în Informatică, Universitatea București. Certificări: Oracle Java Professional. Limbi: română (nativ), engleză (avansat).",
+    "jobIds": [1001, 1003]
+  },
+  {
+    "id": 2,
+    "email": "andrei.ionescu@email.ro",
+    "cv": "Dezvoltator frontend cu 3 ani experiență în React, TypeScript și Node.js. Am construit aplicații SPA și am integrat API-uri REST. Cunosc HTML5, CSS3, Redux și instrumente de build (Vite, Webpack). Colaborez cu echipe UX și backend. Caut o poziție de intermediar în programare JavaScript/TypeScript. Studii: facultate Informatică. Portfolio pe GitHub. Pasionat de UX și accesibilitate.",
+    "jobIds": [1003, 1005, 1007]
+  },
+  {
+    "id": 3,
+    "email": "elena.dumitrescu@email.ro",
+    "cv": "Contabilă cu 7 ani experiență în contabilitate și gestiune. Cunosc legislația fiscală română, raportare financiară și instrumente (SAP, 1C). Am lucrat în producție și comerț. Caut poziție senior în contabilitate sau gestiune. Organizată, atentă la detalii, cu experiență în echipă și raportare către management. Studii: Contabilitate și Informatică de Gestiune.",
+    "jobIds": [1002]
+  },
+  {
+    "id": 4,
+    "email": "mihai.stanciu@email.ro",
+    "cv": "Developer Python și automatizări, 4 ani experiență. Am lucrat la proiecte de data pipeline-uri, scripturi de testare și tooling intern. Cunosc Django, FastAPI, PostgreSQL și Docker. Interes pentru machine learning și analiză date. Caut poziție intermediar sau senior în programare Python. Studii: Matematică-Informatică. Contribuții open source.",
+    "jobIds": [1004, 1008]
+  },
+  {
+    "id": 5,
+    "email": "ioana.constantinescu@email.ro",
+    "cv": "Junior developer cu stagiu de 1 an în JavaScript și React. Am făcut componente UI, formulare și integrare API. Învăț continuu TypeScript și bune practici. Caut primul job full-time în programare, preferabil frontend sau fullstack. Studii în curs: Informatică. Proiecte personale: aplicație de task-uri și site portofoliu.",
+    "jobIds": [1007, 1005]
+  },
+  {
+    "id": 6,
+    "email": "cristian.radu@email.ro",
+    "cv": "Inginer software cu 6 ani în Java și arhitecturi distribuite. Experiență în microservicii, Kafka, Kubernetes. Am condus echipă tehnică și am participat la recrutare. Caut poziție senior sau lead. Studii: Politehnica București. Certificări AWS. Limbi: română, engleză fluent.",
+    "jobIds": [1001, 1006]
+  },
+  {
+    "id": 7,
+    "email": "diana.marin@email.ro",
+    "cv": "Frontend developer React, 2 ani experiență. Am lucrat la aplicații e-commerce și panouri de administrare. Cunosc Tailwind, React Query, testing cu Jest. Caut poziție intermediar. Studii: Informatică economică. Pasionată de design și performanță.",
+    "jobIds": [1005, 1007]
+  },
+  {
+    "id": 8,
+    "email": "alexandru.neagu@email.ro",
+    "cv": "Dezvoltator C# și .NET, 5 ani. Experiență în aplicații enterprise, Entity Framework, Azure. Am lucrat în echipă Scrum și am făcut estimări. Caut poziție senior. Studii: Calculatoare. Certificare Microsoft.",
+    "jobIds": [1006, 1001]
+  },
+  {
+    "id": 9,
+    "email": "georgiana.voicu@email.ro",
+    "cv": "Contabilă junior, 2 ani în birou contabil. Cunosc declarații fiscale, salarii și carte de munca. Învăț SAP. Caut poziție în contabilitate sau gestiune. Studii: Contabilitate. Atentă la termene și reguli.",
+    "jobIds": [1002]
+  },
+  {
+    "id": 10,
+    "email": "radu.barbu@email.ro",
+    "cv": "Backend developer Node.js și TypeScript, 3 ani. Am construit API-uri REST și GraphQL, integrat baze de date și cache. Cunosc Docker, CI/CD. Caut poziție intermediar sau senior. Studii: Informatică. Open source contributor.",
+    "jobIds": [1008, 1003, 1007]
+  },
+  {
+    "id": 11,
+    "email": "simona.dobre@email.ro",
+    "cv": "Programator Python, 4 ani în analiză date și automatizări. Experiență cu pandas, Jupyter, ML basics. Am lucrat în echipă de research. Caut poziție în Python sau data. Studii: Statistică. Limbi: română, engleză.",
+    "jobIds": [1004, 1008]
+  },
+  {
+    "id": 12,
+    "email": "vlad.constantin@email.ro",
+    "cv": "Developer Go, 2 ani. Am lucrat la servicii de backend și instrumente CLI. Cunosc concurență, protocoole, teste. Caut poziție în Go sau backend. Studii: Informatică. Pasionat de sisteme distribuite.",
+    "jobIds": [1009, 1008]
+  },
+  {
+    "id": 13,
+    "email": "andreea.ungureanu@email.ro",
+    "cv": "Frontend developer cu 1 an în React și Vue. Am făcut landing pages și componente reutilizabile. Învăț TypeScript și state management. Caut poziție junior sau intermediar. Studii: Design și Informatică. Portfolio online.",
+    "jobIds": [1005, 1007, 1003]
+  },
+  {
+    "id": 14,
+    "email": "bogdan.preda@email.ro",
+    "cv": "Inginer Java senior, 8 ani. Arhitectură software, design patterns, performanță. Am condus proiecte și echipe. Caut rol de tech lead sau arhitect. Studii: Politehnica. Certificări Java, cloud.",
+    "jobIds": [1001]
+  },
+  {
+    "id": 15,
+    "email": "camelia.rusu@email.ro",
+    "cv": "Contabilă cu 4 ani în audit și raportare. Cunosc IFRS, raportare la BVB. Am lucrat la firme de audit. Caut poziție în contabilitate sau control. Studii: Contabilitate și audit. Atentă la detalii.",
+    "jobIds": [1002]
+  },
+  {
+    "id": 16,
+    "email": "daniel.matei@email.ro",
+    "cv": "Fullstack developer JavaScript, 3 ani. React pe frontend, Node pe backend. Am dezvoltat aplicații complete și am făcut deploy. Caut poziție intermediar fullstack. Studii: Informatică. GitHub activ.",
+    "jobIds": [1003, 1005, 1008]
+  },
+  {
+    "id": 17,
+    "email": "flavia.ionescu@email.ro",
+    "cv": "Junior developer Python, 6 luni stagiu. Am scris scripturi și teste, participat la code review. Învăț Django și baze de date. Caut primul job în programare. Studii: Informatică în curs. Proiecte pe GitHub.",
+    "jobIds": [1004, 1007]
+  },
+  {
+    "id": 18,
+    "email": "gabriel.stoica@email.ro",
+    "cv": "Developer C# cu 5 ani în .NET și SQL Server. Aplicații desktop și web, integrare sisteme. Cunosc WPF, ASP.NET Core. Caut poziție senior. Studii: Calculatoare. Experiență în mentoring.",
+    "jobIds": [1006, 1001]
+  },
+  {
+    "id": 19,
+    "email": "horatia.dinu@email.ro",
+    "cv": "Frontend developer cu 2 ani în React și TypeScript. Am lucrat la aplicații medicale și formulare complexe. Cunosc accesibilitate și SEO. Caut poziție intermediar. Studii: Informatică. Pasionată de UX.",
+    "jobIds": [1005, 1007]
+  },
+  {
+    "id": 20,
+    "email": "ionut.vasilescu@email.ro",
+    "cv": "Backend developer Node.js, 4 ani. API-uri scalabile, baze NoSQL și SQL. Experiență în startup și produs. Caut poziție senior. Studii: Informatică. Limbi: română, engleză. Team player.",
+    "jobIds": [1008, 1003]
+  },
+  {
+    "id": 21,
+    "email": "laura.ciobanu@email.ro",
+    "cv": "Programator Java, 3 ani în proiecte bancare. Cunosc Spring Boot, Oracle, mesagerie. Am lucrat în echipă mare și respect reguli stricte. Caut poziție intermediar sau senior. Studii: Informatică. Atent la securitate.",
+    "jobIds": [1001, 1006]
+  },
+  {
+    "id": 22,
+    "email": "marius.enache@email.ro",
+    "cv": "Developer Go și Python, 2 ani. Tooling, automatizări, servicii backend. Cunosc Docker, Linux, scripturi. Caut poziție în Go sau backend. Studii: Informatică. Pasionat de DevOps.",
+    "jobIds": [1009, 1004, 1008]
+  },
+  {
+    "id": 23,
+    "email": "nadia.badea@email.ro",
+    "cv": "Contabilă cu 3 ani în contabilitate și gestiune. Cunosc facturare, inventar, raportare. Am lucrat în retail. Caut poziție stabilă în contabilitate. Studii: Contabilitate. Organizată și on-time.",
+    "jobIds": [1002]
+  },
+  {
+    "id": 24,
+    "email": "ovidiu.tudor@email.ro",
+    "cv": "Fullstack TypeScript, 4 ani. React, Node, PostgreSQL. Am construit produse de la zero și am întreținut cod legacy. Caut poziție senior. Studii: Informatică. Experiență remote.",
+    "jobIds": [1007, 1008, 1003]
+  },
+  {
+    "id": 25,
+    "email": "paula.mihalache@email.ro",
+    "cv": "Junior frontend, 1 an în HTML, CSS, JavaScript și React. Am făcut layout-uri și integrat design. Învăț TypeScript și teste. Caut primul job în frontend. Studii: Informatică. Dornică să înveț.",
+    "jobIds": [1001, 1007]
+  }
+]

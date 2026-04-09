@@ -1,0 +1,111 @@
+.posturi-departament {
+  max-width: 900px;
+}
+
+.posturi-departament h1 {
+  margin-bottom: 0.5rem;
+}
+
+.posturi-departament-desc {
+  color: #6c757d;
+  margin-bottom: 1.5rem;
+}
+
+.posturi-departament-gol {
+  color: #6c757d;
+}
+
+.posturi-departament .jobs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.posturi-departament .jobs-table th,
+.posturi-departament .jobs-table td {
+  border: 1px solid #e1e4e8;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.posturi-departament .jobs-table thead th {
+  background: #f5f7fa;
+  font-weight: 600;
+}
+
+.posturi-departament-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.posturi-departament-modal {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  max-width: 400px;
+  width: 90%;
+}
+
+.posturi-departament-modal h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.posturi-departament-modal-info {
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin-bottom: 1rem;
+}
+
+.posturi-departament-checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.posturi-departament-checkbox-list .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.posturi-departament-modal-btns {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.posturi-departament-modal .btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.posturi-departament-modal .btn-anulare {
+  background: #95a5a6;
+  color: #fff;
+}
+
+.posturi-departament-modal .btn-salvare {
+  background: #28a745;
+  color: #fff;
+}
+
+.posturi-departament .edit-btn {
+  background: #3498db;
+  color: #fff;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}

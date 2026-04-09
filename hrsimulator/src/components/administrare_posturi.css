@@ -1,3 +1,30 @@
+.toolbar-administrare {
+  margin-bottom: 1rem;
+}
+
+.btn-adaugare-post {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  background: #27ae60;
+  border: none;
+  border-radius: 8px;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.btn-adaugare-post:hover {
+  background: #219a52;
+  filter: brightness(1.05);
+}
+
 /* Simple styles for AdministrarePosturi table */
 .jobs-table {
   width: 100%;
@@ -41,4 +68,15 @@
 }
 .toggle-btn:hover {
   filter: brightness(0.95);
+}
+
+.actiuni-celula {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.toggle-btn.edit-btn {
+  background: #3498db;
+  color: #fff;
 }

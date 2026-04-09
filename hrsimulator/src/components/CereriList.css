@@ -1,0 +1,144 @@
+.cereri-list {
+  max-width: 720px;
+}
+
+.cereri-list h1 {
+  margin-bottom: 0.5rem;
+}
+
+.cereri-descriere {
+  color: #6c757d;
+  margin-bottom: 1.5rem;
+}
+
+.cereri-gol {
+  color: #6c757d;
+}
+
+.cereri-ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.cerere-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  background: #fff;
+}
+
+.cerere-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.cerere-item-content strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.cerere-meta {
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.cerere-descriere-scurta {
+  font-size: 0.9rem;
+  margin: 0.5rem 0 0 0;
+  color: #495057;
+}
+
+.cerere-interv {
+  font-size: 0.85rem;
+  color: #6c757d;
+  display: block;
+  margin-top: 0.25rem;
+}
+
+.btn-deschide {
+  padding: 6px 12px;
+  background: #0d6efd;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.btn-deschide:hover {
+  filter: brightness(0.95);
+}
+
+.cereri-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.cereri-modal {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  max-width: 400px;
+  width: 90%;
+}
+
+.cereri-modal h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.cereri-modal-info {
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin-bottom: 1rem;
+}
+
+.cereri-modal .checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.cereri-modal .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.cereri-modal-btns {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.cereri-modal .btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-anulare {
+  background: #95a5a6;
+  color: #fff;
+}
+
+.btn-confirma {
+  background: #28a745;
+  color: #fff;
+}

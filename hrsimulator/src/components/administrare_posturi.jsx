@@ -1,28 +1,46 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import './administrare_posturi.css'
+import ModalEditJob from './ModalEditJob'
 
-export default function AdministrarePosturi() {
-    const initialPosturi = [
-        { id: 1001, domeniu: 'Programare', subdomeniu: 'Java', nume: 'POST 1001', nivel: 'Senior', descriere: 'Descriere POST 1001', enabled: true },
-        { id: 1002, domeniu: 'Contabilitate', subdomeniu: 'Gestiune', nume: 'POST 1002', nivel: 'Senior', descriere: 'Descriere POST 1002', enabled: true },
-        { id: 1003, domeniu: 'Programare', subdomeniu: 'JavaScript', nume: 'POST 1003', nivel: 'Senior', descriere: 'Descriere POST 1003', enabled: true },
-        { id: 1004, domeniu: 'Programare', subdomeniu: 'Python', nume: 'POST 1004', nivel: 'Intermediar', descriere: 'Descriere POST 1004', enabled: false }
-    ]
+export default function AdministrarePosturi({ posturi, setPosturi, recrutori = [], intervievatori = [] }) {
+    const [editingId, setEditingId] = useState(null)
 
-    const [posturi, setPosturi] = useState(initialPosturi)
-
-    // functie care creeaza un nou array de joburi, unde jobul cu id-ul dat are campul enabled inversat
-    // folosita pentru a activa/dezactiva un job la click pe butonul din tabel
-
-    // daca p.id e egal cu id-ul dat, returneaza o copie a jobului p, dar cu campul enabled inversat
-    // daca p.id nu e egal cu id-ul dat, returneaza jobul p neschimbat
     const toggleEnabled = (id) => {
         setPosturi((prev) => prev.map((p) => (p.id === id ? { ...p, enabled: !p.enabled } : p)))
     }
 
+    const deschideEditare = (post) => {
+        setEditingId(post.id)
+    }
+
+    const inchideModal = () => {
+        setEditingId(null)
+    }
+
+    const salveazaEditare = (jobActualizat) => {
+        const cuAtribuiri = {
+            ...jobActualizat,
+            assignedRecruteri: jobActualizat.assignedRecruteri ?? [],
+            assignedIntervievatori: jobActualizat.assignedIntervievatori ?? []
+        }
+        setPosturi((prev) =>
+            prev.map((p) => (p.id === editingId ? cuAtribuiri : p))
+        )
+        inchideModal()
+    }
+
+    const jobEditat = editingId != null ? posturi.find((p) => p.id === editingId) : null
+
     return (
         <>
             <h1>Administrare posturi</h1>
+            <div className="toolbar-administrare">
+                <Link to="/administrare-posturi/adaugare" className="btn-adaugare-post" title="Adaugă post nou">
+                    +
+                </Link>
+                <span className="toggleDescriere">Adugare post</span>
+            </div>
             <table className="jobs-table">
                 <thead>
                     <tr>
@@ -32,7 +50,9 @@ export default function AdministrarePosturi() {
                         <th>Nume</th>
                         <th>Nivel</th>
                         <th>Descriere</th>
-                        <th>Acțiune</th>
+                        <th>Recruteri</th>
+                        <th>Intervievatori</th>
+                        <th>Acțiuni</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -44,15 +64,37 @@ export default function AdministrarePosturi() {
                             <td>{post.nume}</td>
                             <td>{post.nivel}</td>
                             <td>{post.descriere}</td>
+                            <td>{(post.assignedRecruteri || []).join(', ') || '—'}</td>
+                            <td>{(post.assignedIntervievatori || []).join(', ') || '—'}</td>
                             <td>
-                                <button className={`toggle-btn ${post.enabled ? 'on' : 'off'}`} onClick={() => toggleEnabled(post.id)}>
-                                    {post.enabled ? 'Dezactivează' : 'Activează'}
-                                </button>
+                                <div className="actiuni-celula">
+                                    <button
+                                        type="button"
+                                        className="toggle-btn edit-btn"
+                                        onClick={() => deschideEditare(post)}
+                                    >
+                                        Editare
+                                    </button>
+                                    <button
+                                        className={`toggle-btn ${post.enabled ? 'on' : 'off'}`}
+                                        onClick={() => toggleEnabled(post.id)}
+                                    >
+                                        {post.enabled ? 'Dezactivează' : 'Activează'}
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     ))}
                 </tbody>
             </table>
+
+            <ModalEditJob
+                job={jobEditat}
+                onSave={salveazaEditare}
+                onClose={inchideModal}
+                recrutoriDisponibili={recrutori}
+                intervievatoriDisponibili={intervievatori}
+            />
         </>
     )
 }

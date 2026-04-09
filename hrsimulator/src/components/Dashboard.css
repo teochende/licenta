@@ -1,0 +1,49 @@
+.dashboard {
+  padding: 0 0 2rem 0;
+}
+
+.dashboard h1 {
+  margin-bottom: 1.5rem;
+}
+
+.dashboard-gol {
+  color: #6c757d;
+}
+
+.dashboard-categorie {
+  margin-bottom: 2rem;
+}
+
+.dashboard-categorie-titlu {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #dee2e6;
+  color: #212529;
+}
+
+.dashboard-categorie-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.dashboard-drop-ultima-pozitie {
+  grid-column: 1 / -1;
+  min-height: 3rem;
+  border: 2px dashed #dee2e6;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  color: #6c757d;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.dashboard-drop-ultima-pozitie:hover,
+.dashboard-drop-ultima-pozitie--active {
+  border-color: #0d6efd;
+  background-color: rgba(13, 110, 253, 0.06);
+  color: #0d6efd;
+}

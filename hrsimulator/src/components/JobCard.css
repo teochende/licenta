@@ -1,0 +1,326 @@
+.job-card {
+  position: relative;
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  cursor: grab;
+  transition: box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.job-card:active {
+  cursor: grabbing;
+}
+
+.job-card--dragging {
+  opacity: 0.6;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.job-card--drag-over {
+  box-shadow: 0 0 0 2px #0d6efd;
+  background: #f8f9fa;
+}
+
+.job-card-titlu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.job-card-select-prioritate {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 2px solid #dee2e6;
+  background: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.job-card-select-prioritate--critic {
+  color: #000;
+  border-color: #dc3545;
+}
+
+.job-card-select-prioritate--mare {
+  color: #000;
+  border-color: #fd7e14;
+}
+
+.job-card-select-prioritate--medie {
+  color: #000;
+  border-color: #ffc107;
+}
+
+.job-card-select-prioritate--mica {
+  color: #000;
+  border-color: #28a745;
+}
+
+/* Culori de fundal pentru fiecare opțiune din meniul derulant, text negru */
+.job-card-select-prioritate option[value="critic"] {
+  color: #dc3545;
+}
+
+.job-card-select-prioritate option[value="mare"] {
+  color: #fd7e14;
+}
+
+.job-card-select-prioritate option[value="medie"] {
+  color: #ffc107;
+}
+
+.job-card-select-prioritate option[value="mica"] {
+  color: #28a745;
+}
+
+/* Hover pe meniul derulant (select) */
+.job-card-select-prioritate:hover {
+  filter: brightness(0.97);
+}
+
+/* Hover pe opțiuni (suport limitat în unele browsere) */
+.job-card-select-prioritate option:hover {
+  color: red;
+  filter: brightness(1.1);
+}
+
+.job-card-select-prioritate:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.job-card--critic {
+  border-left: 4px solid #dc3545;
+}
+
+.job-card--mare {
+  border-left: 4px solid #fd7e14;
+}
+
+.job-card--medie {
+  border-left: 4px solid #ffc107;
+}
+
+.job-card--mica {
+  border-left: 4px solid #28a745;
+}
+
+.job-card-titlu {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #212529;
+  flex: 1;
+  min-width: 0;
+}
+
+.job-card-meta {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.job-card-indicatori {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.job-card-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.job-card-indicator-label {
+  color: #495057;
+}
+
+.job-card-indicator strong {
+  color: #212529;
+}
+
+.job-card-candidati-click {
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  color: #0d6efd;
+}
+
+.job-card-candidati-click:hover {
+  color: #0a58ca;
+}
+
+.job-card-modal-lista-candidati {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.25rem;
+  max-width: 520px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: auto;
+}
+
+.job-card-modal-lista-candidati h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+}
+
+.job-card-lista-gol {
+  margin: 0;
+  color: #6c757d;
+}
+
+.job-card-candidati-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.job-card-candidat-item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #eee;
+  align-items: baseline;
+}
+
+.job-card-candidat-item:last-child {
+  border-bottom: none;
+}
+
+.job-card-candidat-item--clickabil {
+  cursor: pointer;
+}
+
+.job-card-candidat-item--clickabil:hover {
+  background: #f8f9fa;
+}
+
+.job-card-candidat-nume {
+  font-weight: 600;
+  color: #212529;
+}
+
+.job-card-candidat-email {
+  font-size: 0.9rem;
+  color: #495057;
+}
+
+.job-card-cv-container {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #dee2e6;
+}
+
+.job-card-cv-titlu {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.95rem;
+}
+
+.job-card-cv-email {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.job-card-cv-text {
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 0.5rem;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  background: #fafafa;
+  white-space: pre-wrap;
+}
+
+.job-card-cv-actiuni {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.75rem;
+}
+
+.job-card-edit-descriere {
+  margin: 0.5rem 0;
+}
+
+.job-card-btn-descriere {
+  font-size: 0.85rem;
+  padding: 4px 10px;
+  background: #f0f0f0;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.job-card-btn-descriere:hover {
+  background: #e0e0e0;
+}
+
+.job-card-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+}
+
+.job-card-modal-descriere {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.25rem;
+  max-width: 480px;
+  width: 90%;
+}
+
+.job-card-modal-descriere h4 {
+  margin: 0 0 0.75rem 0;
+}
+
+.job-card-modal-textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 100px;
+}
+
+.job-card-modal-btns {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.job-card-btn-anulare {
+  padding: 6px 12px;
+  background: #95a5a6;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.job-card-btn-salvare {
+  padding: 6px 12px;
+  background: #28a745;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}

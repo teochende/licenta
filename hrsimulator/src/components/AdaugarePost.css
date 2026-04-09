@@ -1,0 +1,80 @@
+.formular-adaugare-post {
+  max-width: 480px;
+  margin-top: 1rem;
+}
+
+.formular-adaugare-post .form-camp {
+  margin-bottom: 1rem;
+}
+
+.formular-adaugare-post .form-camp label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.formular-adaugare-post .form-camp input[type="text"],
+.formular-adaugare-post .form-camp textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #e1e4e8;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.formular-adaugare-post .form-camp textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: normal;
+  cursor: pointer;
+}
+
+.form-checkbox input[type="checkbox"] {
+  width: auto;
+  cursor: pointer;
+}
+
+.form-id-info {
+  margin: 1rem 0;
+  font-size: 14px;
+  color: #555;
+}
+
+.form-butonuri {
+  display: flex;
+  gap: 10px;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e1e4e8;
+}
+
+.formular-adaugare-post .btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.formular-adaugare-post .btn:hover {
+  filter: brightness(0.95);
+}
+
+.btn-anulare {
+  background: #95a5a6;
+  color: #fff;
+}
+
+.btn-salvare {
+  background: #27ae60;
+  color: #fff;
+}
