@@ -3,6 +3,7 @@ package com.example.hrdatabase.controller;
 import com.example.hrdatabase.dto.request.DepartamentCreateRequest;
 import com.example.hrdatabase.entity.Departament;
 import com.example.hrdatabase.service.DepartamentService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,6 +19,7 @@ public class DepartamentController {
     }
 
     @PostMapping
+    @PreAuthorize("@perm.isAdmin()")
     public Departament create(@RequestBody DepartamentCreateRequest request) {
         return departamentService.save(request);
     }

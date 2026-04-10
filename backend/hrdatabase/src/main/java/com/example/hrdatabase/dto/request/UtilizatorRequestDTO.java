@@ -1,6 +1,7 @@
 package com.example.hrdatabase.dto.request;
 
 import com.example.hrdatabase.entity.Rol;
+import com.example.hrdatabase.validation.HrsimEmailDomain;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -13,6 +14,7 @@ public record UtilizatorRequestDTO(
 
         @NotBlank(message = "Email-ul este obligatoriu")
         @Email(message = "Email invalid")
+        @HrsimEmailDomain
         @Size(max = 255)
         String email,
 

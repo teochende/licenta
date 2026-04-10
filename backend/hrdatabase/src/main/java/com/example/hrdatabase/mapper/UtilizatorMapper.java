@@ -39,6 +39,7 @@ public final class UtilizatorMapper {
 
     private static String rolDenumire(Rol rol) {
         return switch (rol) {
+            case ADMIN -> "Administrator";
             case INTERVIEVATOR_TEHNIC -> "Intervievator tehnic";
             case RECRUTOR -> "Recrutor";
             case MANAGER_RECRUTARE -> "Manager recrutare";

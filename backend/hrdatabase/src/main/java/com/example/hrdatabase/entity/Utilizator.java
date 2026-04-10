@@ -3,6 +3,8 @@ package com.example.hrdatabase.entity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -36,6 +38,7 @@ public class Utilizator implements UserDetails {
     /** Setat pentru roluri precum manager_departament (ex.: „Programare”). */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "departament_id")
+    @NotFound(action = NotFoundAction.IGNORE)
     private Departament departament;
 
     protected Utilizator() {
