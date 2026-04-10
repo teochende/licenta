@@ -10,7 +10,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/posturi")
-@PreAuthorize("@perm.isAdmin()")
+@PreAuthorize("@perm.isAdmin() or hasRole('MANAGER_RECRUTARE')")
 public class AdminPostAssignmentController {
 
     private final PostService postService;

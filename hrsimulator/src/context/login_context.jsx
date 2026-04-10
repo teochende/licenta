@@ -7,6 +7,7 @@ const LoginContext = createContext({
 });
 
 export const ROLURI = {
+    ADMIN: 'admin',
     INTERVIEVATOR_TEHNIC: 'intervievator_tehnic',
     RECRUTOR: 'recrutor',
     MANAGER_RECRUTARE: 'manager_recrutare',

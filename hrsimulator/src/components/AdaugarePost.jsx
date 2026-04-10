@@ -1,48 +1,72 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { getDepartamente } from '../api/departamenteApi'
+import { createPost } from '../api/postsApi'
 import './AdaugarePost.css'
 
-export default function AdaugarePost({ posturi, onAdaugaPost }) {
+export default function AdaugarePost({ token, onCreated }) {
     const navigate = useNavigate()
-    const [domeniu, setDomeniu] = useState('')
+    const [departamente, setDepartamente] = useState([])
+    const [departamentId, setDepartamentId] = useState('')
     const [subdomeniu, setSubdomeniu] = useState('')
     const [nume, setNume] = useState('')
     const [nivel, setNivel] = useState('')
     const [descriere, setDescriere] = useState('')
     const [enabled, setEnabled] = useState(true)
+    const [err, setErr] = useState('')
 
-    const urmatorulId = posturi.length > 0
-        ? Math.max(...posturi.map((p) => p.id)) + 1
-        : 1
+    useEffect(() => {
+        if (!token) return
+        getDepartamente(token)
+            .then((rows) => {
+                setDepartamente(Array.isArray(rows) ? rows : [])
+                if (rows?.length && !departamentId) {
+                    setDepartamentId(String(rows[0].id))
+                }
+            })
+            .catch(() => setDepartamente([]))
+    }, [token])
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault()
-        const postNou = {
-            id: urmatorulId,
-            domeniu: domeniu.trim(),
-            subdomeniu: subdomeniu.trim(),
-            nume: nume.trim(),
-            nivel: nivel.trim(),
-            descriere: descriere.trim(),
-            enabled,
+        setErr('')
+        try {
+            await createPost(token, {
+                departamentId: Number(departamentId),
+                subdomeniu: subdomeniu.trim(),
+                nume: nume.trim(),
+                nivel: nivel.trim(),
+                descriere: descriere.trim(),
+                enabled,
+                recrutoriIds: [],
+                intervievatoriIds: [],
+            })
+            onCreated?.()
+            navigate('/administrare-posturi')
+        } catch (ex) {
+            setErr(ex?.message || 'Nu s-a putut crea postul.')
         }
-        onAdaugaPost(postNou)
-        navigate('/administrare-posturi')
     }
 
     return (
         <>
             <h1>Adăugare post nou</h1>
+            {err && <p style={{ color: 'crimson' }}>{err}</p>}
             <form className="formular-adaugare-post" onSubmit={handleSubmit}>
                 <div className="form-camp">
-                    <label htmlFor="adaugare-domeniu">Domeniu</label>
-                    <input
-                        id="adaugare-domeniu"
-                        type="text"
-                        value={domeniu}
-                        onChange={(e) => setDomeniu(e.target.value)}
+                    <label htmlFor="adaugare-dep">Departament</label>
+                    <select
+                        id="adaugare-dep"
+                        value={departamentId}
+                        onChange={(e) => setDepartamentId(e.target.value)}
                         required
-                    />
+                    >
+                        {departamente.map((d) => (
+                            <option key={d.id} value={d.id}>
+                                {d.nume}
+                            </option>
+                        ))}
+                    </select>
                 </div>
                 <div className="form-camp">
                     <label htmlFor="adaugare-subdomeniu">Subdomeniu</label>
@@ -94,7 +118,6 @@ export default function AdaugarePost({ posturi, onAdaugaPost }) {
                         Post activ (enabled)
                     </label>
                 </div>
-                <p className="form-id-info">ID-ul va fi atribuit automat: <strong>{urmatorulId}</strong></p>
                 <div className="form-butonuri">
                     <button type="button" className="btn btn-anulare" onClick={() => navigate('/administrare-posturi')}>
                         Anulare

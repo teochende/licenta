@@ -1,13 +1,30 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { patchPost, putAdminAssignari } from '../api/postsApi'
 import './administrare_posturi.css'
 import ModalEditJob from './ModalEditJob'
 
-export default function AdministrarePosturi({ posturi, setPosturi, recrutori = [], intervievatori = [] }) {
+export default function AdministrarePosturi({
+    posturi,
+    recrutoriDto = [],
+    intervievatoriDto = [],
+    token,
+    onRefreshPosturi,
+}) {
     const [editingId, setEditingId] = useState(null)
 
-    const toggleEnabled = (id) => {
-        setPosturi((prev) => prev.map((p) => (p.id === id ? { ...p, enabled: !p.enabled } : p)))
+    const recrutoriNume = recrutoriDto.map((r) => r.numeUtilizator)
+    const intervievatoriNume = intervievatoriDto.map((r) => r.numeUtilizator)
+
+    const toggleEnabled = async (id) => {
+        const p = posturi.find((x) => x.id === id)
+        if (!p || !token) return
+        try {
+            await patchPost(token, id, { enabled: !p.enabled })
+            await onRefreshPosturi?.()
+        } catch (e) {
+            alert(e?.message || 'Eroare.')
+        }
     }
 
     const deschideEditare = (post) => {
@@ -18,15 +35,24 @@ export default function AdministrarePosturi({ posturi, setPosturi, recrutori = [
         setEditingId(null)
     }
 
-    const salveazaEditare = (jobActualizat) => {
-        const cuAtribuiri = {
-            ...jobActualizat,
-            assignedRecruteri: jobActualizat.assignedRecruteri ?? [],
-            assignedIntervievatori: jobActualizat.assignedIntervievatori ?? []
+    const salveazaEditare = async (jobActualizat) => {
+        if (!token || editingId == null) return
+        const recIds = (jobActualizat.assignedRecrutori || [])
+            .map((n) => recrutoriDto.find((r) => r.numeUtilizator === n)?.id)
+            .filter((x) => x != null)
+        const intIds = (jobActualizat.assignedIntervievatori || [])
+            .map((n) => intervievatoriDto.find((r) => r.numeUtilizator === n)?.id)
+            .filter((x) => x != null)
+        try {
+            await patchPost(token, editingId, {
+                descriere: jobActualizat.descriere,
+                enabled: jobActualizat.enabled,
+            })
+            await putAdminAssignari(token, editingId, recIds, intIds)
+            await onRefreshPosturi?.()
+        } catch (e) {
+            alert(e?.message || 'Eroare la salvare.')
         }
-        setPosturi((prev) =>
-            prev.map((p) => (p.id === editingId ? cuAtribuiri : p))
-        )
         inchideModal()
     }
 
@@ -92,8 +118,8 @@ export default function AdministrarePosturi({ posturi, setPosturi, recrutori = [
                 job={jobEditat}
                 onSave={salveazaEditare}
                 onClose={inchideModal}
-                recrutoriDisponibili={recrutori}
-                intervievatoriDisponibili={intervievatori}
+                recrutoriDisponibili={recrutoriNume}
+                intervievatoriDisponibili={intervievatoriNume}
             />
         </>
     )

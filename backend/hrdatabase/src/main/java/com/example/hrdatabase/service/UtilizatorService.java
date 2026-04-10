@@ -110,6 +110,13 @@ public class UtilizatorService {
     }
 
     @Transactional(readOnly = true)
+    public UtilizatorResponseDTO getProfile(Long userId) {
+        Utilizator utilizator = utilizatorRepository.findByIdWithDepartament(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Utilizator inexistent: " + userId));
+        return UtilizatorMapper.toResponse(utilizator);
+    }
+
+    @Transactional(readOnly = true)
     public List<UtilizatorResponseDTO> findAll() {
         return utilizatorRepository.findAll().stream()
                 .map(UtilizatorMapper::toResponse)

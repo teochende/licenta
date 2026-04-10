@@ -11,6 +11,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -55,9 +56,32 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex) {
+        String sqlState = findSqlState(ex);
+        String detail = ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage() : ex.getMessage();
+        log.warn("DataIntegrityViolation sqlState={} detail={}", sqlState, detail);
+
+        String userMessage = switch (sqlState != null ? sqlState : "") {
+            case "22021" -> "Textul conține caractere nepermise (ex.: fișier PDF/DOC citit ca text, cu octeți nuli). Reîncarcă pagina sau folosește CV .txt.";
+            case "23505" -> "Înregistrare duplicată (ex.: ați aplicat deja la acest post cu același email).";
+            case "23503" -> "Referință invalidă către altă înregistrare (date inconsistente).";
+            case "23502" -> "Lipsesc câmpuri obligatorii în baza de date.";
+            default -> "Date în conflict cu constrângerile din baza de date (ex.: valoare duplicată).";
+        };
+        HttpStatus status = "22021".equals(sqlState) ? HttpStatus.BAD_REQUEST : HttpStatus.CONFLICT;
         return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(new ApiErrorResponse("Date în conflict cu constrângerile din baza de date (ex.: valoare duplicată)", null));
+                .status(status)
+                .body(new ApiErrorResponse(userMessage, null));
+    }
+
+    private static String findSqlState(Throwable ex) {
+        Throwable t = ex;
+        while (t != null) {
+            if (t instanceof SQLException sql) {
+                return sql.getSQLState();
+            }
+            t = t.getCause();
+        }
+        return null;
     }
 
     @ExceptionHandler(Exception.class)

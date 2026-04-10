@@ -1,28 +1,16 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import JobCard from './JobCard'
-import candidatiData from '../data/candidati.json'
 import { ROLURI } from '../context/login_context'
+import { getAplicatiiDashboard, patchAplicatiePipeline } from '../api/aplicatiiApi'
+import {
+    ETAPE_RECRUTARE,
+    STATUS_ETAPA,
+    parsePipelineStateJson,
+    buildDefaultPipelineState,
+} from '../utils/pipelineDefaults'
 import './Dashboard.css'
 
 const ORDINE_PRIORITATE = { critic: 0, mare: 1, medie: 2, mica: 3 }
-
-const ETAPE_RECRUTARE = [
-    { key: 'depusCv', label: 'Depus CV' },
-    { key: 'reviewCv', label: 'Review CV HR / Review CV AI' },
-    { key: 'reviewEngleza', label: 'Review CV engleză' },
-    { key: 'reviewTehnic', label: 'Review CV tehnic' },
-    { key: 'interviuTehnic', label: 'Interviu tehnic' },
-    { key: 'reviewManagement', label: 'Review CV management' },
-    { key: 'interviuManagement', label: 'Interviu management' },
-    { key: 'oferta', label: 'Ofertă' }
-]
-
-const STATUS_ETAPA = {
-    ACCEPTAT: 'acceptat',
-    RESPINS: 'respins',
-    IN_ASTEPTARE: 'in_asteptare',
-    NEUTRU: 'neutru'
-}
 
 function pipelineLabelFor(etapaKey) {
     switch (etapaKey) {
@@ -78,17 +66,53 @@ function filtreazaPosturiDupaRol(posturi, user) {
     return posturi
 }
 
-export default function Dashboard({ posturi = [], setPosturi, user }) {
+export default function Dashboard({
+    posturi = [],
+    setPosturi,
+    user,
+    authToken,
+    onRemoteSaveDescriere,
+}) {
     const posturiVizibile = useMemo(
         () => filtreazaPosturiDupaRol(posturi, user),
         [posturi, user]
     )
+    const [aplicatiiServer, setAplicatiiServer] = useState([])
+    const pipelineSaveTimers = useRef({})
     const [jobStats, setJobStats] = useState({})
     const [categoryOrder, setCategoryOrder] = useState({})
     const [jobPriorities, setJobPriorities] = useState({})
     const [aplicantiState, setAplicantiState] = useState({})
     const [candidatDetaliiOpen, setCandidatDetaliiOpen] = useState(null)
     const [hoverEtapa, setHoverEtapa] = useState(null)
+
+    useEffect(() => {
+        if (!authToken) {
+            setAplicatiiServer([])
+            return
+        }
+        let cancel = false
+        getAplicatiiDashboard(authToken)
+            .then((rows) => {
+                if (!cancel) setAplicatiiServer(Array.isArray(rows) ? rows : [])
+            })
+            .catch(() => {
+                if (!cancel) setAplicatiiServer([])
+            })
+        return () => {
+            cancel = true
+        }
+    }, [authToken, posturiVizibile])
+
+    const schedulePipelinePersist = (aplicatieId, stateSlice) => {
+        if (!authToken || aplicatieId == null) return
+        const prev = pipelineSaveTimers.current[aplicatieId]
+        if (prev) clearTimeout(prev)
+        pipelineSaveTimers.current[aplicatieId] = setTimeout(() => {
+            patchAplicatiePipeline(authToken, aplicatieId, JSON.stringify(stateSlice)).catch(() => {})
+            delete pipelineSaveTimers.current[aplicatieId]
+        }, 550)
+    }
 
     useEffect(() => {
         setJobStats((prev) => {
@@ -199,21 +223,25 @@ export default function Dashboard({ posturi = [], setPosturi, user }) {
     )
 
     const aplicantiVizibili = useMemo(() => {
-        // returnăm o listă de aplicări (candidat x job) doar pentru joburile vizibile în dashboard
         const aplicari = []
-        candidatiData.forEach((c) => {
-            const jobIds = Array.isArray(c.jobIds) ? c.jobIds : []
-            jobIds.forEach((jobId) => {
-                if (jobIdsVizibile.has(jobId)) {
-                    const job = jobsVizibileMap[jobId]
-                    if (!job) return
-                    aplicari.push({
-                        key: `${c.id}-${jobId}`,
-                        candidat: c,
-                        jobId,
-                        job
-                    })
-                }
+        aplicatiiServer.forEach((a) => {
+            const jobId = a.postId
+            if (!jobIdsVizibile.has(jobId)) return
+            const job = jobsVizibileMap[jobId]
+            if (!job) return
+            aplicari.push({
+                key: `app-${a.id}`,
+                aplicatieId: a.id,
+                candidat: {
+                    id: a.id,
+                    email: a.email,
+                    cv:
+                        a.cvContinut ||
+                        '(Text CV necompletat la aplicare – verificați fișierul atașat în sistem.)',
+                },
+                jobId,
+                job,
+                aplicatieRaw: a,
             })
         })
         aplicari.sort((a, b) => {
@@ -223,80 +251,15 @@ export default function Dashboard({ posturi = [], setPosturi, user }) {
             return String(a.job?.nume || '').localeCompare(String(b.job?.nume || ''))
         })
         return aplicari
-    }, [jobIdsVizibile, jobsVizibileMap])
+    }, [aplicatiiServer, jobIdsVizibile, jobsVizibileMap])
 
     useEffect(() => {
-        // inițializăm starea pentru aplicanți (toggle-uri + statusuri etape) doar pentru cei vizibili
         setAplicantiState((prev) => {
             const next = { ...prev }
-            aplicantiVizibili.forEach(({ key }) => {
+            aplicantiVizibili.forEach(({ key, aplicatieRaw, aplicatieId }) => {
                 if (next[key] != null) return
-                const seed = Number(String(key).replaceAll(/[^0-9]/g, '').slice(-6) || 1)
-                const zileInUrma = (days) => new Date(Date.now() + days * 24 * 60 * 60 * 1000)
-                const formatDataOra = (d) =>
-                    `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-
-                next[key] = {
-                    reviewAi: true,
-                    reviewEnglezaAutomat: true,
-                    unlockedUpTo: 1, // depusCv (0) e completat, începe reviewCv (1)
-                    details: {
-                        depusCv: {
-                            submittedAt: formatDataOra(zileInUrma(-(seed % 12) - 1)),
-                            source: 'Formular aplicare (mock)'
-                        },
-                        reviewCv: {
-                            acceptReasons: [
-                                'Experiență relevantă pentru rol',
-                                'CV bine structurat și clar',
-                                'Proiecte relevante / tehnologii potrivite'
-                            ],
-                            rejectReasons: [
-                                'Lipsă experiență pe tehnologiile cerute',
-                                'Informații insuficiente în CV',
-                                'Neconcordanțe în experiență / gap-uri neexplicate'
-                            ],
-                            notes: 'Scor general CV: bun (mock).'
-                        },
-                        reviewEngleza: {
-                            acceptReasons: ['Nivel B2+ confirmat (mock)', 'Comunicare scrisă bună (mock)'],
-                            rejectReasons: ['Nivel sub minimul cerut (mock)'],
-                            notes: 'Evaluare engleză: automat/manual (în funcție de toggle).'
-                        },
-                        reviewTehnic: {
-                            acceptReasons: ['Stack potrivit pentru post (mock)', 'Experiență hands-on (mock)'],
-                            rejectReasons: ['Lipsă cunoștințe cheie (mock)'],
-                            notes: 'Observații tehnice: (mock) se recomandă interviu tehnic.'
-                        },
-                        interviuTehnic: {
-                            scheduledAt: formatDataOra(zileInUrma((seed % 5) + 1)),
-                            interviewerNotes: 'Notițe intervievator: (mock) întrebări pe proiecte + algoritmi.'
-                        },
-                        reviewManagement: {
-                            acceptReasons: ['Potrivire cu echipa și obiectivele (mock)'],
-                            rejectReasons: ['Așteptări salariale peste buget (mock)'],
-                            notes: 'Management review: (mock).'
-                        },
-                        interviuManagement: {
-                            scheduledAt: formatDataOra(zileInUrma((seed % 6) + 3)),
-                            interviewerNotes: 'Notițe management: (mock) focus pe motivare și autonomie.'
-                        },
-                        oferta: {
-                            offerStatus: 'Nepregătită încă (mock)',
-                            notes: 'Detalii ofertă vor apărea după management.'
-                        }
-                    },
-                    status: {
-                        depusCv: STATUS_ETAPA.ACCEPTAT,
-                        reviewCv: STATUS_ETAPA.IN_ASTEPTARE,
-                        reviewEngleza: STATUS_ETAPA.NEUTRU,
-                        reviewTehnic: STATUS_ETAPA.NEUTRU,
-                        interviuTehnic: STATUS_ETAPA.NEUTRU,
-                        reviewManagement: STATUS_ETAPA.NEUTRU,
-                        interviuManagement: STATUS_ETAPA.NEUTRU,
-                        oferta: STATUS_ETAPA.NEUTRU
-                    }
-                }
+                const fromServer = parsePipelineStateJson(aplicatieRaw?.pipelineStateJson)
+                next[key] = fromServer || buildDefaultPipelineState(aplicatieId)
             })
             return next
         })
@@ -377,11 +340,20 @@ export default function Dashboard({ posturi = [], setPosturi, user }) {
 
     const clearHoverEticheta = () => setHoverEtapa(null)
 
+    const aplicatieIdFromKey = (aplicantKey) => {
+        const m = String(aplicantKey).match(/^app-(\d+)$/)
+        return m ? Number(m[1]) : null
+    }
+
     const toggleAplicant = (aplicantKey, field) => {
-        setAplicantiState((prev) => ({
-            ...prev,
-            [aplicantKey]: { ...prev[aplicantKey], [field]: !prev[aplicantKey]?.[field] }
-        }))
+        setAplicantiState((prev) => {
+            const cur = prev[aplicantKey]
+            if (!cur) return prev
+            const updated = { ...cur, [field]: !cur[field] }
+            const aid = aplicatieIdFromKey(aplicantKey)
+            schedulePipelinePersist(aid, updated)
+            return { ...prev, [aplicantKey]: updated }
+        })
     }
 
     const cycleStatus = (aplicantKey, etapaKey) => {
@@ -393,7 +365,6 @@ export default function Dashboard({ posturi = [], setPosturi, user }) {
             const etapaIndex = ETAPE_RECRUTARE.findIndex((e) => e.key === etapaKey)
             const unlockedUpTo = Number.isFinite(currentState.unlockedUpTo) ? currentState.unlockedUpTo : 0
             if (etapaIndex === -1 || etapaIndex > unlockedUpTo) {
-                // etapă încă blocată -> nu schimbăm nimic
                 return prev
             }
 
@@ -412,9 +383,6 @@ export default function Dashboard({ posturi = [], setPosturi, user }) {
                 }
             }
 
-            // "deblocare" pipeline:
-            // - dacă etapa devine ACCEPTAT, deblocăm următoarea etapă (dacă există)
-            // - dacă etapa devine RESPINS, considerăm procesul oprit și "blocăm" toate etapele următoare (NEUTRU)
             if (nextStatus === STATUS_ETAPA.ACCEPTAT) {
                 const nextIndex = etapaIndex + 1
                 if (nextIndex < ETAPE_RECRUTARE.length) {
@@ -442,6 +410,9 @@ export default function Dashboard({ posturi = [], setPosturi, user }) {
                 }
             }
 
+            const aid = aplicatieIdFromKey(aplicantKey)
+            schedulePipelinePersist(aid, next[aplicantKey])
+
             return next
         })
     }
@@ -453,7 +424,7 @@ export default function Dashboard({ posturi = [], setPosturi, user }) {
                 <p className="dashboard-gol">
                     {user?.rol === ROLURI.RECRUTOR || user?.rol === ROLURI.INTERVIEVATOR_TEHNIC
                         ? 'Nu aveți posturi atribuite.'
-                        : 'Nu există posturi definite.'}
+                        : 'Nu există posturi vizibile pentru contul dvs.'}
                 </p>
             ) : (
                 categorii.map(({ domeniu, jobs }) => (
@@ -461,7 +432,16 @@ export default function Dashboard({ posturi = [], setPosturi, user }) {
                         <h2 className="dashboard-categorie-titlu">{domeniu}</h2>
                         <div className="dashboard-categorie-cards">
                             {jobs.map((job, index) => {
-                                const candidatiPentruJob = candidatiData.filter((c) => c.jobIds.includes(job.id))
+                                const candidatiPentruJob = aplicatiiServer
+                                    .filter((a) => a.postId === job.id)
+                                    .map((a) => ({
+                                        id: a.id,
+                                        email: a.email,
+                                        cv:
+                                            a.cvContinut ||
+                                            '(Text CV necompletat la aplicare.)',
+                                        jobIds: [job.id],
+                                    }))
                                 const nrCandidatiAplicati = candidatiPentruJob.length
                                 const statsCuCandidati = {
                                     ...jobStats[job.id],
@@ -479,7 +459,15 @@ export default function Dashboard({ posturi = [], setPosturi, user }) {
                                     onReorderToEnd={(draggedId) => handleReorderToEnd(draggedId, domeniu)}
                                     isLast={index === jobs.length - 1}
                                     poateEditaDescriere={poateEditaDescriere}
-                                    onSaveDescriere={setPosturi ? (jobId, descriere) => setPosturi((prev) => prev.map((p) => (p.id === jobId ? { ...p, descriere } : p))) : undefined}
+                                    onSaveDescriere={
+                                        onRemoteSaveDescriere ||
+                                        (setPosturi
+                                            ? (jobId, descriere) =>
+                                                  setPosturi((prev) =>
+                                                      prev.map((p) => (p.id === jobId ? { ...p, descriere } : p))
+                                                  )
+                                            : undefined)
+                                    }
                                     candidatiAplicanti={candidatiPentruJob}
                                 />
                                 )

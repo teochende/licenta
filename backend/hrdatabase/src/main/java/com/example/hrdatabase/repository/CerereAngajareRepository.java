@@ -21,6 +21,31 @@ public interface CerereAngajareRepository extends JpaRepository<CerereAngajare, 
 
     @Query("""
             SELECT DISTINCT c FROM CerereAngajare c
+            JOIN FETCH c.departament
+            LEFT JOIN FETCH c.intervievatoriTehnici
+            WHERE c.id = :id
+            """)
+    Optional<CerereAngajare> findByIdForOpen(@Param("id") Long id);
+
+    @Query("""
+            SELECT DISTINCT c FROM CerereAngajare c
+            LEFT JOIN FETCH c.departament
+            LEFT JOIN FETCH c.intervievatoriTehnici
+            WHERE c.status = :status
+            """)
+    List<CerereAngajare> findByStatusWithDetails(@Param("status") String status);
+
+    @Query("""
+            SELECT DISTINCT c FROM CerereAngajare c
+            LEFT JOIN FETCH c.departament
+            LEFT JOIN FETCH c.intervievatoriTehnici
+            WHERE c.creatDe.id = :uid
+            ORDER BY c.id DESC
+            """)
+    List<CerereAngajare> findByCreatDeIdWithDetails(@Param("uid") Long uid);
+
+    @Query("""
+            SELECT DISTINCT c FROM CerereAngajare c
             LEFT JOIN FETCH c.departament
             LEFT JOIN FETCH c.creatDe cr
             LEFT JOIN FETCH cr.departament

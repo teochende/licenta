@@ -26,6 +26,14 @@ public class Aplicatie {
     @Column(name = "cv_nume_fisier", length = 512)
     private String cvNumeFisier;
 
+    /** Text CV (simulare: conținut introdus la aplicare fără stocare fișier). */
+    @Column(name = "cv_continut", columnDefinition = "text")
+    private String cvContinut;
+
+    /** JSON: starea pipeline-ului din dashboard (toggle-uri, status etape, detalii). */
+    @Column(name = "pipeline_state", columnDefinition = "text")
+    private String pipelineState;
+
     protected Aplicatie() {
     }
 
@@ -70,5 +78,21 @@ public class Aplicatie {
 
     public void setCvNumeFisier(String cvNumeFisier) {
         this.cvNumeFisier = cvNumeFisier;
+    }
+
+    public String getCvContinut() {
+        return cvContinut;
+    }
+
+    public void setCvContinut(String cvContinut) {
+        this.cvContinut = cvContinut;
+    }
+
+    public String getPipelineState() {
+        return pipelineState;
+    }
+
+    public void setPipelineState(String pipelineState) {
+        this.pipelineState = pipelineState;
     }
 }

@@ -4,6 +4,7 @@ public record AplicatieCreateRequest(
         Long postId,
         String numeCandidat,
         String email,
-        String cvNumeFisier
+        String cvNumeFisier,
+        String cvContinut
 ) {
 }
