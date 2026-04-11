@@ -13,6 +13,9 @@ public final class PostMapper {
         Long depId = p.getDepartament() != null ? p.getDepartament().getId() : null;
         String pr = p.getPrioritate() != null && !p.getPrioritate().isBlank() ? p.getPrioritate() : "mica";
         int od = p.getOrdineDashboard() != null ? p.getOrdineDashboard() : 0;
+        String dfPath = p.getDescriereFisierPath();
+        boolean dfStocat = dfPath != null && !dfPath.isBlank();
+        String dfNume = p.getDescriereFisierNume() != null ? p.getDescriereFisierNume() : "";
         return new PostViewDto(
                 p.getId(),
                 depId,
@@ -21,6 +24,8 @@ public final class PostMapper {
                 p.getNume(),
                 p.getNivel(),
                 p.getDescriere() != null ? p.getDescriere() : "",
+                dfNume,
+                dfStocat,
                 p.isEnabled(),
                 pr,
                 od,

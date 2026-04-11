@@ -353,6 +353,14 @@ export default function Dashboard({
         return m ? Number(m[1]) : null
     }
 
+    const scrollToAplicantInLista = (aplicatieId) => {
+        if (aplicatieId == null) return
+        window.requestAnimationFrame(() => {
+            const el = document.getElementById(`dashboard-aplicant-${aplicatieId}`)
+            el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        })
+    }
+
     const toggleAplicant = (aplicantKey, field) => {
         setAplicantiState((prev) => {
             const cur = prev[aplicantKey]
@@ -479,6 +487,7 @@ export default function Dashboard({
                                     }
                                     candidatiAplicanti={candidatiPentruJob}
                                     authToken={authToken}
+                                    onScrollToAplicantPipeline={scrollToAplicantInLista}
                                 />
                                 )
                             })}
@@ -522,14 +531,18 @@ export default function Dashboard({
                     <p className="dashboard-aplicanti-gol">Nu există candidați care au aplicat la joburile vizibile pentru rolul tău.</p>
                 ) : (
                     <div className="dashboard-aplicanti-lista">
-                        {aplicantiVizibili.map(({ key, candidat, job }) => {
+                        {aplicantiVizibili.map(({ key, candidat, job, aplicatieId }) => {
                             const state = aplicantiState[key]
                             const reviewAi = state?.reviewAi ?? true
                             const reviewEnglezaAutomat = state?.reviewEnglezaAutomat ?? true
                             const statusEtape = state?.status || {}
                             const unlockedUpTo = Number.isFinite(state?.unlockedUpTo) ? state.unlockedUpTo : 0
                             return (
-                                <div key={key} className="aplicant-card">
+                                <div
+                                    key={key}
+                                    id={aplicatieId != null ? `dashboard-aplicant-${aplicatieId}` : undefined}
+                                    className="aplicant-card"
+                                >
                                     <div className="aplicant-top">
                                         <div className="aplicant-identitate">
                                             <div className="aplicant-nume">{numeDinEmail(candidat.email)}</div>

@@ -1,6 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { deletePost, patchPost, putAdminAssignari } from '../api/postsApi'
+import { getDepartamente } from '../api/departamenteApi'
+import {
+    deletePost,
+    patchPost,
+    putPost,
+    uploadPostDescriereFisier,
+    deletePostDescriereFisier,
+} from '../api/postsApi'
 import './administrare_posturi.css'
 import ModalEditJob from './ModalEditJob'
 
@@ -14,6 +21,17 @@ export default function AdministrarePosturi({
     embeddedInAdmin = false,
 }) {
     const [editingId, setEditingId] = useState(null)
+    const [departamente, setDepartamente] = useState([])
+
+    useEffect(() => {
+        if (!token) {
+            setDepartamente([])
+            return
+        }
+        getDepartamente(token)
+            .then((rows) => setDepartamente(Array.isArray(rows) ? rows : []))
+            .catch(() => setDepartamente([]))
+    }, [token])
 
     const recrutoriNume = recrutoriDto.map((r) => r.numeUtilizator)
     const intervievatoriNume = intervievatoriDto.map((r) => r.numeUtilizator)
@@ -51,6 +69,7 @@ export default function AdministrarePosturi({
 
     const salveazaEditare = async (jobActualizat) => {
         if (!token || editingId == null) return
+        const idPost = editingId
         const recIds = (jobActualizat.assignedRecrutori || [])
             .map((n) => recrutoriDto.find((r) => r.numeUtilizator === n)?.id)
             .filter((x) => x != null)
@@ -58,16 +77,26 @@ export default function AdministrarePosturi({
             .map((n) => intervievatoriDto.find((r) => r.numeUtilizator === n)?.id)
             .filter((x) => x != null)
         try {
-            await patchPost(token, editingId, {
-                descriere: jobActualizat.descriere,
-                enabled: jobActualizat.enabled,
+            await putPost(token, idPost, {
+                departamentId: Number(jobActualizat.departamentId),
+                subdomeniu: (jobActualizat.subdomeniu || '').trim(),
+                nume: (jobActualizat.nume || '').trim(),
+                nivel: (jobActualizat.nivel || '').trim(),
+                descriere: jobActualizat.descriere != null ? String(jobActualizat.descriere) : '',
+                enabled: !!jobActualizat.enabled,
+                recrutoriIds: recIds,
+                intervievatoriIds: intIds,
             })
-            await putAdminAssignari(token, editingId, recIds, intIds)
+            if (jobActualizat.stergeDescriereFisier) {
+                await deletePostDescriereFisier(token, idPost)
+            } else if (jobActualizat.descriereFisierFile) {
+                await uploadPostDescriereFisier(token, idPost, jobActualizat.descriereFisierFile)
+            }
             await onRefreshPosturi?.()
+            inchideModal()
         } catch (e) {
             alert(e?.message || 'Eroare la salvare.')
         }
-        inchideModal()
     }
 
     const jobEditat = editingId != null ? posturi.find((p) => p.id === editingId) : null
@@ -123,7 +152,18 @@ export default function AdministrarePosturi({
                                 <td>{post.subdomeniu}</td>
                                 <td>{post.nume}</td>
                                 <td>{post.nivel}</td>
-                                <td>{post.descriere}</td>
+                                <td className="jobs-table-descriere">
+                                    <span className="jobs-table-descriere-text">
+                                        {(post.descriere || '').length > 80
+                                            ? `${(post.descriere || '').slice(0, 80)}…`
+                                            : post.descriere || '—'}
+                                    </span>
+                                    {post.descriereFisierStocat && (
+                                        <span className="jobs-table-badge-fisier" title={post.descriereFisierNume || 'Fișier'}>
+                                            PDF/DOCX
+                                        </span>
+                                    )}
+                                </td>
                                 <td>{(post.assignedRecrutori || []).join(', ') || '—'}</td>
                                 <td>{(post.assignedIntervievatori || []).join(', ') || '—'}</td>
                                 <td>
@@ -163,8 +203,10 @@ export default function AdministrarePosturi({
 
             <ModalEditJob
                 job={jobEditat}
+                token={token}
                 onSave={salveazaEditare}
                 onClose={inchideModal}
+                departamente={departamente}
                 recrutoriDisponibili={recrutoriNume}
                 intervievatoriDisponibili={intervievatoriNume}
             />

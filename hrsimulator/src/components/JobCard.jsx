@@ -20,7 +20,20 @@ function numeDinEmail(email) {
         .join(' ')
 }
 
-export default function JobCard({ job, stats = {}, prioritate = 'mica', onPrioritateChange, onReorder, onReorderToEnd, isLast, poateEditaDescriere, onSaveDescriere, candidatiAplicanti = [], authToken }) {
+export default function JobCard({
+    job,
+    stats = {},
+    prioritate = 'mica',
+    onPrioritateChange,
+    onReorder,
+    onReorderToEnd,
+    isLast,
+    poateEditaDescriere,
+    onSaveDescriere,
+    candidatiAplicanti = [],
+    authToken,
+    onScrollToAplicantPipeline,
+}) {
     const {
         pozitiiLibere = 0,
         totalCVuri = 0,
@@ -29,7 +42,6 @@ export default function JobCard({ job, stats = {}, prioritate = 'mica', onPriori
     } = stats
 
     const [listaCandidatiOpen, setListaCandidatiOpen] = useState(false)
-    const [candidatSelectat, setCandidatSelectat] = useState(null)
 
     const handleDragStart = (e) => {
         if (e.target.closest('select') || e.target.closest('.job-card-candidati-click')) return
@@ -162,9 +174,27 @@ export default function JobCard({ job, stats = {}, prioritate = 'mica', onPriori
                                         <li
                                             key={c.id}
                                             className="job-card-candidat-item job-card-candidat-item--clickabil"
-                                            onClick={() => setCandidatSelectat(c)}
+                                            onClick={() => onScrollToAplicantPipeline?.(c.id)}
                                         >
-                                            <span className="job-card-candidat-nume">{numeDinEmail(c.email)}</span>
+                                            <div className="job-card-candidat-linie-principala">
+                                                <span className="job-card-candidat-nume">{numeDinEmail(c.email)}</span>
+                                                {c.cvNumeFisier ? (
+                                                    c.cvFisierStocat ? (
+                                                        <span className="job-card-cv-link-inline">
+                                                            <CvFisierLink
+                                                                authToken={authToken}
+                                                                aplicatieId={c.id}
+                                                                cvNumeFisier={c.cvNumeFisier}
+                                                                cvFisierStocat={c.cvFisierStocat}
+                                                            />
+                                                        </span>
+                                                    ) : (
+                                                        <span className="job-card-cv-nume-fisier" title="Fișier indisponibil pentru descărcare">
+                                                            {c.cvNumeFisier}
+                                                        </span>
+                                                    )
+                                                ) : null}
+                                            </div>
                                             <span className="job-card-candidat-email">{c.email}</span>
                                             <span className="job-card-candidat-data">
                                                 Aplicat: {formatDataAplicare(c.dataAplicare)}
@@ -172,37 +202,6 @@ export default function JobCard({ job, stats = {}, prioritate = 'mica', onPriori
                                         </li>
                                     ))}
                                 </ul>
-                                {candidatSelectat && (
-                                    <div className="job-card-cv-container">
-                                        <h5 className="job-card-cv-titlu">
-                                            CV – {numeDinEmail(candidatSelectat.email)}
-                                        </h5>
-                                        <p className="job-card-cv-email">{candidatSelectat.email}</p>
-                                        <p className="job-card-cv-data">
-                                            Data aplicării: {formatDataAplicare(candidatSelectat.dataAplicare)}
-                                        </p>
-                                        <CvFisierLink
-                                            authToken={authToken}
-                                            aplicatieId={candidatSelectat.id}
-                                            cvNumeFisier={candidatSelectat.cvNumeFisier}
-                                            cvFisierStocat={candidatSelectat.cvFisierStocat}
-                                        />
-                                        {candidatSelectat.cv?.trim() ? (
-                                            <div className="job-card-cv-text">
-                                                {candidatSelectat.cv}
-                                            </div>
-                                        ) : null}
-                                        <div className="job-card-cv-actiuni">
-                                            <button
-                                                type="button"
-                                                className="job-card-btn-anulare"
-                                                onClick={() => setCandidatSelectat(null)}
-                                            >
-                                                Închide CV-ul
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
                             </>
                         )}
                         <div className="job-card-modal-btns">

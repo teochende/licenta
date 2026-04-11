@@ -1,16 +1,33 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './ModalEditJob.css'
 
-export default function ModalEditJob({ job, onSave, onClose, recrutoriDisponibili = [], intervievatoriDisponibili = [] }) {
+export default function ModalEditJob({
+    job,
+    token,
+    onSave,
+    onClose,
+    departamente = [],
+    recrutoriDisponibili = [],
+    intervievatoriDisponibili = [],
+}) {
     const [formData, setFormData] = useState(null)
+    const [descriereFisierFile, setDescriereFisierFile] = useState(null)
+    const [stergeDescriereFisier, setStergeDescriereFisier] = useState(false)
+    const fisierInputRef = useRef(null)
 
     useEffect(() => {
         if (job) {
             setFormData({
                 ...job,
-                assignedRecruteri: Array.isArray(job.assignedRecruteri) ? [...job.assignedRecruteri] : [],
-                assignedIntervievatori: Array.isArray(job.assignedIntervievatori) ? [...job.assignedIntervievatori] : []
+                departamentId: job.departamentId ?? '',
+                assignedRecruteri: Array.isArray(job.assignedRecrutori) ? [...job.assignedRecrutori] : [],
+                assignedIntervievatori: Array.isArray(job.assignedIntervievatori)
+                    ? [...job.assignedIntervievatori]
+                    : [],
             })
+            setDescriereFisierFile(null)
+            setStergeDescriereFisier(false)
+            if (fisierInputRef.current) fisierInputRef.current.value = ''
         }
     }, [job])
 
@@ -21,9 +38,9 @@ export default function ModalEditJob({ job, onSave, onClose, recrutoriDisponibil
     const toggleRecrutor = (username) => {
         setFormData((prev) => {
             if (!prev) return prev
-            const list = prev.assignedRecruteri || []
+            const list = prev.assignedRecrutori || []
             const next = list.includes(username) ? list.filter((u) => u !== username) : [...list, username]
-            return { ...prev, assignedRecruteri: next }
+            return { ...prev, assignedRecrutori: next }
         })
     }
 
@@ -36,19 +53,69 @@ export default function ModalEditJob({ job, onSave, onClose, recrutoriDisponibil
         })
     }
 
+    const handleOpenFisierCurent = async () => {
+        if (!token || !job?.id || !job?.descriereFisierStocat) return
+        try {
+            const res = await fetch(`/api/posturi/${job.id}/descriere-fisier`, {
+                headers: { Authorization: `Bearer ${token}` },
+            })
+            if (!res.ok) {
+                const t = await res.text()
+                throw new Error(t || res.statusText)
+            }
+            const blob = await res.blob()
+            const url = URL.createObjectURL(blob)
+            window.open(url, '_blank', 'noopener,noreferrer')
+            setTimeout(() => URL.revokeObjectURL(url), 120000)
+        } catch (e) {
+            window.alert(e?.message || 'Nu s-a putut deschide fișierul.')
+        }
+    }
+
     const handleSubmit = (e) => {
         e.preventDefault()
         if (!formData) return
         onSave({
             ...formData,
             id: Number(formData.id),
-            assignedRecruteri: formData.assignedRecruteri || [],
-            assignedIntervievatori: formData.assignedIntervievatori || []
+            departamentId: Number(formData.departamentId),
+            assignedRecruteri: formData.assignedRecrutori || [],
+            assignedIntervievatori: formData.assignedIntervievatori || [],
+            descriereFisierFile: stergeDescriereFisier ? null : descriereFisierFile,
+            stergeDescriereFisier,
         })
-        onClose()
+    }
+
+    const onFisierChange = (e) => {
+        const f = e.target.files?.[0]
+        setDescriereFisierFile(f || null)
+        if (f) setStergeDescriereFisier(false)
+    }
+
+    const eliminaFisier = () => {
+        setStergeDescriereFisier(true)
+        setDescriereFisierFile(null)
+        if (fisierInputRef.current) fisierInputRef.current.value = ''
     }
 
     if (!job || !formData) return null
+
+    if (departamente.length === 0) {
+        return (
+            <div className="modal-edit-overlay" onClick={onClose} role="presentation">
+                <div className="modal-edit-job modal-edit-job--wide" onClick={(e) => e.stopPropagation()}>
+                    <p>Se încarcă departamentele…</p>
+                    <div className="modal-edit-butonuri">
+                        <button type="button" className="modal-btn modal-btn-anulare" onClick={onClose}>
+                            Închide
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    const areFisierPeServer = job.descriereFisierStocat && !stergeDescriereFisier
 
     return (
         <div className="modal-edit-overlay" onClick={onClose} role="presentation">
@@ -57,21 +124,22 @@ export default function ModalEditJob({ job, onSave, onClose, recrutoriDisponibil
                 <form onSubmit={handleSubmit}>
                     <div className="modal-edit-camp">
                         <label htmlFor="edit-id">ID</label>
-                        <input
-                            id="edit-id"
-                            type="number"
-                            value={formData.id}
-                            onChange={(e) => handleChange('id', e.target.value)}
-                        />
+                        <input id="edit-id" type="number" value={formData.id} readOnly disabled />
                     </div>
                     <div className="modal-edit-camp">
-                        <label htmlFor="edit-domeniu">Domeniu</label>
-                        <input
-                            id="edit-domeniu"
-                            type="text"
-                            value={formData.domeniu}
-                            onChange={(e) => handleChange('domeniu', e.target.value)}
-                        />
+                        <label htmlFor="edit-departament">Departament</label>
+                        <select
+                            id="edit-departament"
+                            value={formData.departamentId === '' ? '' : String(formData.departamentId)}
+                            onChange={(e) => handleChange('departamentId', e.target.value ? Number(e.target.value) : '')}
+                            required
+                        >
+                            {departamente.map((d) => (
+                                <option key={d.id} value={d.id}>
+                                    {d.nume}
+                                </option>
+                            ))}
+                        </select>
                     </div>
                     <div className="modal-edit-camp">
                         <label htmlFor="edit-subdomeniu">Subdomeniu</label>
@@ -80,6 +148,7 @@ export default function ModalEditJob({ job, onSave, onClose, recrutoriDisponibil
                             type="text"
                             value={formData.subdomeniu}
                             onChange={(e) => handleChange('subdomeniu', e.target.value)}
+                            required
                         />
                     </div>
                     <div className="modal-edit-camp">
@@ -89,6 +158,7 @@ export default function ModalEditJob({ job, onSave, onClose, recrutoriDisponibil
                             type="text"
                             value={formData.nume}
                             onChange={(e) => handleChange('nume', e.target.value)}
+                            required
                         />
                     </div>
                     <div className="modal-edit-camp">
@@ -98,16 +168,44 @@ export default function ModalEditJob({ job, onSave, onClose, recrutoriDisponibil
                             type="text"
                             value={formData.nivel}
                             onChange={(e) => handleChange('nivel', e.target.value)}
+                            required
                         />
                     </div>
                     <div className="modal-edit-camp">
-                        <label htmlFor="edit-descriere">Descriere</label>
+                        <label htmlFor="edit-descriere">Descriere (text)</label>
                         <textarea
                             id="edit-descriere"
-                            rows={3}
-                            value={formData.descriere}
+                            rows={4}
+                            value={formData.descriere ?? ''}
                             onChange={(e) => handleChange('descriere', e.target.value)}
+                            placeholder="Opțional — puteți completa text și/sau un fișier pdf/docx mai jos."
                         />
+                    </div>
+                    <div className="modal-edit-camp modal-edit-fisier-descriere">
+                        <label htmlFor="edit-descriere-fisier">Descriere ca fișier (PDF sau DOCX)</label>
+                        <input
+                            ref={fisierInputRef}
+                            id="edit-descriere-fisier"
+                            type="file"
+                            accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                            onChange={onFisierChange}
+                        />
+                        {areFisierPeServer && (
+                            <div className="modal-edit-fisier-actiuni">
+                                <span className="modal-edit-fisier-nume">
+                                    Fișier curent: {job.descriereFisierNume || '—'}
+                                </span>
+                                <button type="button" className="modal-btn modal-btn-link" onClick={handleOpenFisierCurent}>
+                                    Deschide fișierul
+                                </button>
+                                <button type="button" className="modal-btn modal-btn-link modal-btn-danger" onClick={eliminaFisier}>
+                                    Elimină fișierul salvat
+                                </button>
+                            </div>
+                        )}
+                        {descriereFisierFile && (
+                            <p className="modal-edit-fisier-preview">Se va încărca: {descriereFisierFile.name}</p>
+                        )}
                     </div>
                     <div className="modal-edit-camp modal-edit-checkbox">
                         <label>

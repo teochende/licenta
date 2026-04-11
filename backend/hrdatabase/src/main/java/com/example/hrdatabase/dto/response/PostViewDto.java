@@ -10,6 +10,9 @@ public record PostViewDto(
         String nume,
         String nivel,
         String descriere,
+        /** Numele fișierului încărcat (pdf/docx), dacă există. */
+        String descriereFisierNume,
+        boolean descriereFisierStocat,
         boolean enabled,
         /** critic | mare | medie | mica */
         String prioritate,

@@ -20,7 +20,52 @@
 }
 
 .modal-edit-job--wide {
-  max-width: 480px;
+  max-width: 520px;
+}
+
+.modal-edit-camp select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #e1e4e8;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.modal-edit-fisier-descriere input[type="file"] {
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.modal-edit-fisier-actiuni {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-top: 0.5rem;
+  font-size: 13px;
+}
+
+.modal-edit-fisier-nume {
+  color: #495057;
+  flex: 1 1 100%;
+}
+
+.modal-edit-fisier-preview {
+  margin: 0.35rem 0 0;
+  font-size: 13px;
+  color: #198754;
+}
+
+.modal-btn-link {
+  background: transparent;
+  color: #0d6efd;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.modal-btn-danger {
+  color: #c0392b;
 }
 
 .modal-edit-atribuiri {

@@ -9,10 +9,11 @@ import com.example.hrdatabase.entity.Post;
 import com.example.hrdatabase.entity.Utilizator;
 import com.example.hrdatabase.service.PostService;
 import jakarta.validation.Valid;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController
@@ -60,6 +61,13 @@ public class PostController {
             @Valid @RequestBody PostPatchRequest request,
             @AuthenticationPrincipal Utilizator utilizator) {
         return postService.patchPost(id, request, utilizator);
+    }
+
+    /** Descărcare / vizualizare fișier descriere — orice utilizator cu drept de a vedea postul. */
+    @GetMapping("/{id}/descriere-fisier")
+    public ResponseEntity<Resource> getDescriereFisier(
+            @PathVariable Long id, @AuthenticationPrincipal Utilizator utilizator) {
+        return postService.getDescriereFisierResponse(id, utilizator);
     }
 
     /**

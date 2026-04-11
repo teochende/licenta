@@ -143,3 +143,27 @@
 .row-enabled td {
   vertical-align: middle;
 }
+
+.jobs-table-descriere {
+  max-width: 14rem;
+  vertical-align: top;
+}
+
+.jobs-table-descriere-text {
+  display: block;
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.jobs-table-badge-fisier {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #1e40af;
+  background: #dbeafe;
+  border-radius: 4px;
+}

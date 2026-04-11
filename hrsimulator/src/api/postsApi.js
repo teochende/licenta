@@ -44,6 +44,16 @@ export function putPost(token, id, body) {
   return apiFetch(`/api/posturi/${id}`, { method: 'PUT', token, body })
 }
 
+export function uploadPostDescriereFisier(token, postId, file) {
+  const fd = new FormData()
+  fd.append('file', file)
+  return apiFetch(`/api/admin/posturi/${postId}/descriere-fisier`, { method: 'POST', token, body: fd })
+}
+
+export function deletePostDescriereFisier(token, postId) {
+  return apiFetch(`/api/admin/posturi/${postId}/descriere-fisier`, { method: 'DELETE', token })
+}
+
 export function deletePost(token, id) {
   return apiFetch(`/api/posturi/${id}`, { method: 'DELETE', token })
 }

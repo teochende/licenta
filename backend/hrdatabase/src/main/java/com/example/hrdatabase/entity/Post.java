@@ -31,6 +31,14 @@ public class Post {
     @Column(columnDefinition = "text")
     private String descriere;
 
+    /** Cale relativă la fișierul de descriere (pdf/docx), sub {@code app.upload.dir}. */
+    @Column(name = "descriere_fisier_path", length = 512)
+    private String descriereFisierPath;
+
+    /** Numele original al fișierului de descriere (afișare / descărcare). */
+    @Column(name = "descriere_fisier_nume", length = 512)
+    private String descriereFisierNume;
+
     @Column(nullable = false)
     private boolean enabled = true;
 
@@ -107,6 +115,22 @@ public class Post {
 
     public void setDescriere(String descriere) {
         this.descriere = descriere;
+    }
+
+    public String getDescriereFisierPath() {
+        return descriereFisierPath;
+    }
+
+    public void setDescriereFisierPath(String descriereFisierPath) {
+        this.descriereFisierPath = descriereFisierPath;
+    }
+
+    public String getDescriereFisierNume() {
+        return descriereFisierNume;
+    }
+
+    public void setDescriereFisierNume(String descriereFisierNume) {
+        this.descriereFisierNume = descriereFisierNume;
     }
 
     public boolean isEnabled() {

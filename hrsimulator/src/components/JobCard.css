@@ -205,6 +205,28 @@
   background: #f8f9fa;
 }
 
+.job-card-candidat-linie-principala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  width: 100%;
+}
+
+.job-card-cv-link-inline {
+  display: inline-flex;
+  align-items: center;
+}
+
+.job-card-modal-lista-candidati .job-card-cv-link-inline .cv-fisier-link-wrap {
+  margin-bottom: 0;
+}
+
+.job-card-cv-nume-fisier {
+  font-size: 0.88rem;
+  color: #6c757d;
+}
+
 .job-card-candidat-nume {
   font-weight: 600;
   color: #212529;

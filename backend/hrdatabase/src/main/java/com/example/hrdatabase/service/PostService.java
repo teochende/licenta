@@ -14,13 +14,24 @@ import com.example.hrdatabase.repository.CerereAngajareRepository;
 import com.example.hrdatabase.repository.DepartamentRepository;
 import com.example.hrdatabase.repository.PostRepository;
 import com.example.hrdatabase.repository.UtilizatorRepository;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -34,6 +45,7 @@ public class PostService {
     private final AplicatieRepository aplicatieRepository;
     private final CerereAngajareRepository cerereAngajareRepository;
     private final PostAccessService postAccessService;
+    private final PostDescriereFileStorageService postDescriereFileStorageService;
 
     public PostService(
             PostRepository postRepository,
@@ -41,13 +53,15 @@ public class PostService {
             UtilizatorRepository utilizatorRepository,
             AplicatieRepository aplicatieRepository,
             CerereAngajareRepository cerereAngajareRepository,
-            PostAccessService postAccessService) {
+            PostAccessService postAccessService,
+            PostDescriereFileStorageService postDescriereFileStorageService) {
         this.postRepository = postRepository;
         this.departamentRepository = departamentRepository;
         this.utilizatorRepository = utilizatorRepository;
         this.aplicatieRepository = aplicatieRepository;
         this.cerereAngajareRepository = cerereAngajareRepository;
         this.postAccessService = postAccessService;
+        this.postDescriereFileStorageService = postDescriereFileStorageService;
     }
 
     @Transactional
@@ -98,12 +112,83 @@ public class PostService {
 
     @Transactional
     public void deleteById(Long postId) {
-        if (!postRepository.existsById(postId)) {
-            throw new IllegalArgumentException("Post inexistent: " + postId);
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Post inexistent: " + postId));
+        if (post.getDescriereFisierPath() != null && !post.getDescriereFisierPath().isBlank()) {
+            postDescriereFileStorageService.deleteIfExists(post.getDescriereFisierPath());
         }
         cerereAngajareRepository.clearPostDeschisByPostId(postId);
         aplicatieRepository.deleteByPostId(postId);
         postRepository.deleteById(postId);
+    }
+
+    @Transactional
+    public PostViewDto uploadDescriereFisier(Long postId, MultipartFile file, Utilizator utilizator) throws IOException {
+        assertAdminOrManagerRecrutare(utilizator);
+        Post post = postRepository.findByIdWithAssignments(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Post inexistent: " + postId));
+        String stored = postDescriereFileStorageService.store(file);
+        String old = post.getDescriereFisierPath();
+        if (old != null && !old.isBlank()) {
+            postDescriereFileStorageService.deleteIfExists(old);
+        }
+        post.setDescriereFisierPath(stored);
+        String nume = file.getOriginalFilename();
+        post.setDescriereFisierNume(nume != null && !nume.isBlank() ? nume : "descriere");
+        return PostMapper.toView(postRepository.save(post));
+    }
+
+    @Transactional
+    public PostViewDto clearDescriereFisier(Long postId, Utilizator utilizator) {
+        assertAdminOrManagerRecrutare(utilizator);
+        Post post = postRepository.findByIdWithAssignments(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Post inexistent: " + postId));
+        String old = post.getDescriereFisierPath();
+        if (old != null && !old.isBlank()) {
+            postDescriereFileStorageService.deleteIfExists(old);
+        }
+        post.setDescriereFisierPath(null);
+        post.setDescriereFisierNume(null);
+        return PostMapper.toView(postRepository.save(post));
+    }
+
+    @Transactional(readOnly = true)
+    public ResponseEntity<Resource> getDescriereFisierResponse(Long postId, Utilizator utilizator) {
+        Post post = postRepository.findByIdWithAssignments(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Post inexistent: " + postId));
+        if (!postAccessService.canViewPost(utilizator, post)) {
+            throw new AccessDeniedException("Nu aveți acces la acest post.");
+        }
+        String pathStr = post.getDescriereFisierPath();
+        if (pathStr == null || pathStr.isBlank()) {
+            throw new IllegalArgumentException("Nu există fișier de descriere pentru acest post.");
+        }
+        var path = postDescriereFileStorageService.resolveStoredPath(pathStr);
+        if (!Files.exists(path)) {
+            throw new IllegalArgumentException("Fișierul de descriere lipsește de pe disc.");
+        }
+        Resource resource = new FileSystemResource(path);
+        String displayName = post.getDescriereFisierNume() != null && !post.getDescriereFisierNume().isBlank()
+                ? post.getDescriereFisierNume()
+                : path.getFileName().toString();
+        String lower = displayName.toLowerCase(Locale.ROOT);
+        boolean inline = lower.endsWith(".pdf");
+        MediaType mediaType = lower.endsWith(".pdf")
+                ? MediaType.APPLICATION_PDF
+                : MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        ContentDisposition disposition = ContentDisposition.builder(inline ? "inline" : "attachment")
+                .filename(displayName, StandardCharsets.UTF_8)
+                .build();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(mediaType);
+        headers.setContentDisposition(disposition);
+        return ResponseEntity.ok().headers(headers).body(resource);
+    }
+
+    private static void assertAdminOrManagerRecrutare(Utilizator utilizator) {
+        if (utilizator.getRol() != Rol.ADMIN && utilizator.getRol() != Rol.MANAGER_RECRUTARE) {
+            throw new AccessDeniedException("Doar administratorul sau managerul de recrutare pot modifica fișierul de descriere.");
+        }
     }
 
     @Transactional

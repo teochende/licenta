@@ -8,6 +8,7 @@ export default function CvFisierLink({ authToken, aplicatieId, cvNumeFisier, cvF
 
   const handleClick = async (e) => {
     e.preventDefault()
+    e.stopPropagation()
     try {
       const { blob, filename } = await fetchAplicatieCv(authToken, aplicatieId)
       openCvFromBlob(cvNumeFisier, blob, filename)
