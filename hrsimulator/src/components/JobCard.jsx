@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import CVReview from './CVReview'
+import CvFisierLink from './CvFisierLink'
+import { formatDataAplicare } from '../utils/dateFormat'
 import './JobCard.css'
 
 const OPTIUNI_PRIORITATE = [
@@ -18,7 +20,7 @@ function numeDinEmail(email) {
         .join(' ')
 }
 
-export default function JobCard({ job, stats = {}, prioritate = 'mica', onPrioritateChange, onReorder, onReorderToEnd, isLast, poateEditaDescriere, onSaveDescriere, candidatiAplicanti = [] }) {
+export default function JobCard({ job, stats = {}, prioritate = 'mica', onPrioritateChange, onReorder, onReorderToEnd, isLast, poateEditaDescriere, onSaveDescriere, candidatiAplicanti = [], authToken }) {
     const {
         pozitiiLibere = 0,
         totalCVuri = 0,
@@ -164,6 +166,9 @@ export default function JobCard({ job, stats = {}, prioritate = 'mica', onPriori
                                         >
                                             <span className="job-card-candidat-nume">{numeDinEmail(c.email)}</span>
                                             <span className="job-card-candidat-email">{c.email}</span>
+                                            <span className="job-card-candidat-data">
+                                                Aplicat: {formatDataAplicare(c.dataAplicare)}
+                                            </span>
                                         </li>
                                     ))}
                                 </ul>
@@ -173,9 +178,20 @@ export default function JobCard({ job, stats = {}, prioritate = 'mica', onPriori
                                             CV – {numeDinEmail(candidatSelectat.email)}
                                         </h5>
                                         <p className="job-card-cv-email">{candidatSelectat.email}</p>
-                                        <div className="job-card-cv-text">
-                                            {candidatSelectat.cv}
-                                        </div>
+                                        <p className="job-card-cv-data">
+                                            Data aplicării: {formatDataAplicare(candidatSelectat.dataAplicare)}
+                                        </p>
+                                        <CvFisierLink
+                                            authToken={authToken}
+                                            aplicatieId={candidatSelectat.id}
+                                            cvNumeFisier={candidatSelectat.cvNumeFisier}
+                                            cvFisierStocat={candidatSelectat.cvFisierStocat}
+                                        />
+                                        {candidatSelectat.cv?.trim() ? (
+                                            <div className="job-card-cv-text">
+                                                {candidatSelectat.cv}
+                                            </div>
+                                        ) : null}
                                         <div className="job-card-cv-actiuni">
                                             <button
                                                 type="button"

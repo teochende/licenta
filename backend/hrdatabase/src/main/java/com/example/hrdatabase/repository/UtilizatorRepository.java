@@ -18,6 +18,10 @@ public interface UtilizatorRepository extends JpaRepository<Utilizator, Long> {
 
     List<Utilizator> findByRol(Rol rol);
 
+    List<Utilizator> findByDepartament_IdAndRol(Long departamentId, Rol rol);
+
+    long countByDepartament_Id(Long departamentId);
+
     Optional<Utilizator> findByEmail(String email);
 
     @Query("SELECT DISTINCT u FROM Utilizator u LEFT JOIN FETCH u.departament WHERE u.id = :id")

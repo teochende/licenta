@@ -1,7 +1,6 @@
 package com.example.hrdatabase.controller;
 
 import com.example.hrdatabase.entity.Rol;
-import com.example.hrdatabase.entity.Utilizator;
 import com.example.hrdatabase.repository.UtilizatorRepository;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;

@@ -10,14 +10,20 @@ public final class PostMapper {
 
     public static PostViewDto toView(Post p) {
         String domeniu = p.getDepartament() != null ? p.getDepartament().getNume() : "";
+        Long depId = p.getDepartament() != null ? p.getDepartament().getId() : null;
+        String pr = p.getPrioritate() != null && !p.getPrioritate().isBlank() ? p.getPrioritate() : "mica";
+        int od = p.getOrdineDashboard() != null ? p.getOrdineDashboard() : 0;
         return new PostViewDto(
                 p.getId(),
+                depId,
                 domeniu,
                 p.getSubdomeniu(),
                 p.getNume(),
                 p.getNivel(),
                 p.getDescriere() != null ? p.getDescriere() : "",
                 p.isEnabled(),
+                pr,
+                od,
                 p.getRecrutori().stream().map(u -> u.getNumeUtilizator()).sorted().toList(),
                 p.getIntervievatori().stream().map(u -> u.getNumeUtilizator()).sorted().toList()
         );

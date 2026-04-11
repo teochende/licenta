@@ -42,4 +42,20 @@ public class PostAccessService {
     public boolean canToggleEnabled(Utilizator user) {
         return user != null && (user.getRol() == Rol.ADMIN || user.getRol() == Rol.MANAGER_RECRUTARE);
     }
+
+    /**
+     * Prioritate și ordine carduri în dashboard: HR, admin, manager departament (doar posturile propriului departament).
+     */
+    public boolean canEditPostDashboardFields(Utilizator user, Post post) {
+        if (user == null || post == null) {
+            return false;
+        }
+        if (user.getRol() == Rol.ADMIN || user.getRol() == Rol.MANAGER_RECRUTARE) {
+            return true;
+        }
+        if (user.getRol() == Rol.MANAGER_DEPARTAMENT && user.getDepartament() != null && post.getDepartament() != null) {
+            return Objects.equals(user.getDepartament().getId(), post.getDepartament().getId());
+        }
+        return false;
+    }
 }

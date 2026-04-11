@@ -3,20 +3,6 @@ import { useState, useRef } from 'react'
 import { createAplicatie } from '../api/aplicatiiApi'
 import './aplicare_job.css'
 
-function readFileAsText(file) {
-    return new Promise((resolve, reject) => {
-        const r = new FileReader()
-        r.onload = () => resolve(String(r.result || '').slice(0, 80000))
-        r.onerror = () => reject(new Error('Nu s-a putut citi fișierul'))
-        r.readAsText(file)
-    })
-}
-
-/** PDF/DOC citit ca text conțin octeți nuli; PostgreSQL refuză UTF-8 cu \\0 în coloane text. */
-function isPlainTextCv(file) {
-    return file.type === 'text/plain' || /\.txt$/i.test(file.name)
-}
-
 export default function AplicareJob() {
     const { state } = useLocation()
     const jobSelectat = state ? state.jobSelectat : null
@@ -59,23 +45,12 @@ export default function AplicareJob() {
         }
         setSending(true)
         try {
-            let cvContinut = ''
-            if (isPlainTextCv(cv)) {
-                try {
-                    cvContinut = (await readFileAsText(cv)).replace(/\0/g, '')
-                } catch {
-                    cvContinut = `[Fișier: ${cv.name}]`
-                }
-            } else {
-                cvContinut = `[CV încărcat: ${cv.name} — conținutul PDF/DOC nu este extras în simulator; se salvează numele fișierului.]`
-            }
-            await createAplicatie({
-                postId: jobSelectat.id,
-                numeCandidat: nume.trim(),
-                email: email.trim(),
-                cvNumeFisier: cv.name,
-                cvContinut,
-            })
+            const fd = new FormData()
+            fd.append('postId', String(jobSelectat.id))
+            fd.append('numeCandidat', nume.trim())
+            fd.append('email', email.trim())
+            fd.append('file', cv)
+            await createAplicatie(fd)
             setDoneMsg('Aplicarea a fost trimisă cu succes.')
             setNume('')
             setEmail('')

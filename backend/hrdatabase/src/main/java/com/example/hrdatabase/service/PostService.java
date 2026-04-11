@@ -1,6 +1,7 @@
 package com.example.hrdatabase.service;
 
 import com.example.hrdatabase.dto.request.PostCreateRequest;
+import com.example.hrdatabase.dto.request.PostDashboardOrderRequest;
 import com.example.hrdatabase.dto.request.PostPatchRequest;
 import com.example.hrdatabase.dto.response.PostViewDto;
 import com.example.hrdatabase.entity.Departament;
@@ -8,6 +9,8 @@ import com.example.hrdatabase.entity.Post;
 import com.example.hrdatabase.entity.Rol;
 import com.example.hrdatabase.entity.Utilizator;
 import com.example.hrdatabase.mapper.PostMapper;
+import com.example.hrdatabase.repository.AplicatieRepository;
+import com.example.hrdatabase.repository.CerereAngajareRepository;
 import com.example.hrdatabase.repository.DepartamentRepository;
 import com.example.hrdatabase.repository.PostRepository;
 import com.example.hrdatabase.repository.UtilizatorRepository;
@@ -15,10 +18,12 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class PostService {
@@ -26,16 +31,22 @@ public class PostService {
     private final PostRepository postRepository;
     private final DepartamentRepository departamentRepository;
     private final UtilizatorRepository utilizatorRepository;
+    private final AplicatieRepository aplicatieRepository;
+    private final CerereAngajareRepository cerereAngajareRepository;
     private final PostAccessService postAccessService;
 
     public PostService(
             PostRepository postRepository,
             DepartamentRepository departamentRepository,
             UtilizatorRepository utilizatorRepository,
+            AplicatieRepository aplicatieRepository,
+            CerereAngajareRepository cerereAngajareRepository,
             PostAccessService postAccessService) {
         this.postRepository = postRepository;
         this.departamentRepository = departamentRepository;
         this.utilizatorRepository = utilizatorRepository;
+        this.aplicatieRepository = aplicatieRepository;
+        this.cerereAngajareRepository = cerereAngajareRepository;
         this.postAccessService = postAccessService;
     }
 
@@ -57,8 +68,42 @@ public class PostService {
         Set<Utilizator> intervievatori = loadUtilizatori(request.intervievatoriIds());
         assertRolSet(intervievatori, Rol.INTERVIEVATOR_TEHNIC, "Intervievator tehnic");
         post.setIntervievatori(intervievatori);
+        post.setPrioritate("mica");
+        Integer maxO = postRepository.findMaxOrdineDashboardByDepartamentId(departament.getId());
+        post.setOrdineDashboard(maxO != null && maxO >= 0 ? maxO + 1 : 0);
 
         return postRepository.save(post);
+    }
+
+    @Transactional
+    public Post updateFull(Long postId, PostCreateRequest request) {
+        Post post = postRepository.findByIdWithAssignments(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Post inexistent: " + postId));
+        Departament departament = departamentRepository.findById(request.departamentId())
+                .orElseThrow(() -> new IllegalArgumentException("Departament inexistent: " + request.departamentId()));
+        post.setDepartament(departament);
+        post.setSubdomeniu(request.subdomeniu());
+        post.setNume(request.nume());
+        post.setNivel(request.nivel());
+        post.setDescriere(request.descriere());
+        post.setEnabled(request.enabled());
+        Set<Utilizator> recrutori = loadUtilizatori(request.recrutoriIds());
+        assertRolSet(recrutori, Rol.RECRUTOR, "Recrutor");
+        post.setRecrutori(recrutori);
+        Set<Utilizator> intervievatori = loadUtilizatori(request.intervievatoriIds());
+        assertRolSet(intervievatori, Rol.INTERVIEVATOR_TEHNIC, "Intervievator tehnic");
+        post.setIntervievatori(intervievatori);
+        return postRepository.save(post);
+    }
+
+    @Transactional
+    public void deleteById(Long postId) {
+        if (!postRepository.existsById(postId)) {
+            throw new IllegalArgumentException("Post inexistent: " + postId);
+        }
+        cerereAngajareRepository.clearPostDeschisByPostId(postId);
+        aplicatieRepository.deleteByPostId(postId);
+        postRepository.deleteById(postId);
     }
 
     @Transactional
@@ -174,8 +219,9 @@ public class PostService {
 
     @Transactional
     public PostViewDto patchPost(Long id, PostPatchRequest request, Utilizator utilizator) {
-        if (request.descriere() == null && request.enabled() == null) {
-            throw new IllegalArgumentException("Trimiteți cel puțin descriere sau enabled.");
+        if (request.descriere() == null && request.enabled() == null
+                && request.prioritate() == null && request.ordineDashboard() == null) {
+            throw new IllegalArgumentException("Trimiteți cel puțin un câmp de modificat.");
         }
         Post post = postRepository.findByIdWithAssignments(id)
                 .orElseThrow(() -> new IllegalArgumentException("Post inexistent: " + id));
@@ -194,6 +240,64 @@ public class PostService {
             }
             post.setEnabled(request.enabled());
         }
+        if (request.prioritate() != null) {
+            if (!postAccessService.canEditPostDashboardFields(utilizator, post)) {
+                throw new AccessDeniedException("Nu puteți modifica prioritatea acestui post.");
+            }
+            post.setPrioritate(normalizePrioritate(request.prioritate()));
+        }
+        if (request.ordineDashboard() != null) {
+            if (!postAccessService.canEditPostDashboardFields(utilizator, post)) {
+                throw new AccessDeniedException("Nu puteți modifica ordinea acestui post.");
+            }
+            post.setOrdineDashboard(request.ordineDashboard());
+        }
         return PostMapper.toView(postRepository.save(post));
+    }
+
+    @Transactional
+    public List<PostViewDto> updateDashboardOrder(PostDashboardOrderRequest request, Utilizator utilizator) {
+        if (request.departamentId() == null || request.postIdsOrdered() == null) {
+            throw new IllegalArgumentException("departamentId și postIdsOrdered sunt obligatorii.");
+        }
+        if (utilizator.getRol() == Rol.RECRUTOR || utilizator.getRol() == Rol.INTERVIEVATOR_TEHNIC) {
+            throw new AccessDeniedException("Reordonarea este disponibilă pentru HR, administrator sau manager departament.");
+        }
+        if (utilizator.getRol() == Rol.MANAGER_DEPARTAMENT) {
+            if (utilizator.getDepartament() == null
+                    || !utilizator.getDepartament().getId().equals(request.departamentId())) {
+                throw new AccessDeniedException("Puteți reordona doar posturile din departamentul dvs.");
+            }
+        }
+        List<Long> ids = request.postIdsOrdered();
+        departamentRepository.findById(request.departamentId())
+                .orElseThrow(() -> new IllegalArgumentException("Departament inexistent: " + request.departamentId()));
+        List<Post> toSave = new ArrayList<>();
+        for (int i = 0; i < ids.size(); i++) {
+            Long pid = ids.get(i);
+            Post p = postRepository.findByIdWithAssignments(pid)
+                    .orElseThrow(() -> new IllegalArgumentException("Post inexistent: " + pid));
+            if (p.getDepartament() == null || !p.getDepartament().getId().equals(request.departamentId())) {
+                throw new IllegalArgumentException("Postul " + pid + " nu aparține departamentului indicat.");
+            }
+            if (!postAccessService.canEditPostDashboardFields(utilizator, p)) {
+                throw new AccessDeniedException("Nu aveți dreptul să modificați ordinea postului " + pid + ".");
+            }
+            p.setOrdineDashboard(i);
+            toSave.add(p);
+        }
+        postRepository.saveAll(toSave);
+        return toSave.stream().map(PostMapper::toView).collect(Collectors.toList());
+    }
+
+    private static String normalizePrioritate(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return "mica";
+        }
+        String s = raw.trim().toLowerCase();
+        if (!Set.of("critic", "mare", "medie", "mica").contains(s)) {
+            throw new IllegalArgumentException("prioritate trebuie să fie critic, mare, medie sau mica.");
+        }
+        return s;
     }
 }

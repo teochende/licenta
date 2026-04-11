@@ -10,7 +10,12 @@ export default function Toolbar() {
     const { user } = useContext(LoginContext)
     const [menuDeschis, setMenuDeschis] = useState(false)
 
-    console.log("User din toolbar:", user?.nume, user?.isAuthenticated)
+    const isMd =
+        user.isAuthenticated &&
+        (user.rol === ROLURI.MANAGER_DEPARTAMENT || user.rol === ROLURI.ADMIN)
+    const isMr =
+        user.isAuthenticated &&
+        (user.rol === ROLURI.MANAGER_RECRUTARE || user.rol === ROLURI.ADMIN)
 
     return (
         <nav className="mainToolbar" aria-label="Meniu principal">
@@ -32,7 +37,7 @@ export default function Toolbar() {
                 <div className="grupPrincipal">
                     <MeniuAcasa />
 
-                    {user.isAuthenticated && user.rol === ROLURI.MANAGER_DEPARTAMENT && (
+                    {isMd && (
                         <>
                             <div className="articolMeniu">
                                 <Link to="/cerere-angajare">Cerere angajare</Link>
@@ -40,9 +45,20 @@ export default function Toolbar() {
                             <div className="articolMeniu">
                                 <Link to="/posturi-departament">Posturi departament</Link>
                             </div>
+                            <div className="articolMeniu">
+                                <Link to="/cererile-mele">
+                                    {user.rol === ROLURI.ADMIN ? 'Toate cererile' : 'Cererile mele'}
+                                </Link>
+                            </div>
                         </>
                     )}
-                    {user.isAuthenticated && user.rol === ROLURI.MANAGER_RECRUTARE && (
+                    {user.isAuthenticated && user.rol === ROLURI.ADMIN && (
+                        <div className="articolMeniu">
+                            <Link to="/admin">Administrare sistem</Link>
+                        </div>
+                    )}
+
+                    {isMr && (
                         <>
                             <div className="articolMeniu">
                                 <Link to="/cereri">Cereri</Link>

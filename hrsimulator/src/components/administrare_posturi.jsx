@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { patchPost, putAdminAssignari } from '../api/postsApi'
+import { deletePost, patchPost, putAdminAssignari } from '../api/postsApi'
 import './administrare_posturi.css'
 import ModalEditJob from './ModalEditJob'
 
@@ -10,6 +10,8 @@ export default function AdministrarePosturi({
     intervievatoriDto = [],
     token,
     onRefreshPosturi,
+    allowDeletePost = false,
+    embeddedInAdmin = false,
 }) {
     const [editingId, setEditingId] = useState(null)
 
@@ -35,6 +37,18 @@ export default function AdministrarePosturi({
         setEditingId(null)
     }
 
+    const stergePost = async (id) => {
+        if (!token || !allowDeletePost) return
+        if (!window.confirm('Sigur ștergeți acest post? Se vor șterge și aplicările asociate.')) return
+        try {
+            await deletePost(token, id)
+            await onRefreshPosturi?.()
+            if (editingId === id) setEditingId(null)
+        } catch (e) {
+            alert(e?.message || 'Eroare la ștergere.')
+        }
+    }
+
     const salveazaEditare = async (jobActualizat) => {
         if (!token || editingId == null) return
         const recIds = (jobActualizat.assignedRecrutori || [])
@@ -58,61 +72,94 @@ export default function AdministrarePosturi({
 
     const jobEditat = editingId != null ? posturi.find((p) => p.id === editingId) : null
 
-    return (
+    const toolbar = (
+        <div className={embeddedInAdmin ? 'toolbar-administrare toolbar-administrare--embedded' : 'toolbar-administrare'}>
+            <Link
+                to="/administrare-posturi/adaugare"
+                className={embeddedInAdmin ? 'btn-adaugare-post btn-adaugare-post--text' : 'btn-adaugare-post'}
+                title="Adaugă post nou"
+            >
+                {embeddedInAdmin ? '+ Post nou' : '+'}
+            </Link>
+            {!embeddedInAdmin && <span className="toggleDescriere">Adăugare post</span>}
+        </div>
+    )
+
+    const heading = embeddedInAdmin ? (
+        <div className="administrare-posturi__intro">
+            {toolbar}
+        </div>
+    ) : (
         <>
             <h1>Administrare posturi</h1>
-            <div className="toolbar-administrare">
-                <Link to="/administrare-posturi/adaugare" className="btn-adaugare-post" title="Adaugă post nou">
-                    +
-                </Link>
-                <span className="toggleDescriere">Adugare post</span>
-            </div>
-            <table className="jobs-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Domeniu</th>
-                        <th>Subdomeniu</th>
-                        <th>Nume</th>
-                        <th>Nivel</th>
-                        <th>Descriere</th>
-                        <th>Recruteri</th>
-                        <th>Intervievatori</th>
-                        <th>Acțiuni</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {posturi.map((post) => (
-                        <tr key={post.id} className={post.enabled ? 'row-enabled' : 'row-disabled'}>
-                            <td>{post.id}</td>
-                            <td>{post.domeniu}</td>
-                            <td>{post.subdomeniu}</td>
-                            <td>{post.nume}</td>
-                            <td>{post.nivel}</td>
-                            <td>{post.descriere}</td>
-                            <td>{(post.assignedRecruteri || []).join(', ') || '—'}</td>
-                            <td>{(post.assignedIntervievatori || []).join(', ') || '—'}</td>
-                            <td>
-                                <div className="actiuni-celula">
-                                    <button
-                                        type="button"
-                                        className="toggle-btn edit-btn"
-                                        onClick={() => deschideEditare(post)}
-                                    >
-                                        Editare
-                                    </button>
-                                    <button
-                                        className={`toggle-btn ${post.enabled ? 'on' : 'off'}`}
-                                        onClick={() => toggleEnabled(post.id)}
-                                    >
-                                        {post.enabled ? 'Dezactivează' : 'Activează'}
-                                    </button>
-                                </div>
-                            </td>
+            {toolbar}
+        </>
+    )
+
+    return (
+        <div className={embeddedInAdmin ? 'administrare-posturi administrare-posturi--embedded' : 'administrare-posturi'}>
+            {heading}
+            <div className="jobs-table-wrap">
+                <table className="jobs-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Domeniu</th>
+                            <th>Subdomeniu</th>
+                            <th>Nume</th>
+                            <th>Nivel</th>
+                            <th>Descriere</th>
+                            <th>Recruteri</th>
+                            <th>Intervievatori</th>
+                            <th>Acțiuni</th>
+                            {allowDeletePost && <th>Ștergere</th>}
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {posturi.map((post) => (
+                            <tr key={post.id} className={post.enabled ? 'row-enabled' : 'row-disabled'}>
+                                <td>{post.id}</td>
+                                <td>{post.domeniu}</td>
+                                <td>{post.subdomeniu}</td>
+                                <td>{post.nume}</td>
+                                <td>{post.nivel}</td>
+                                <td>{post.descriere}</td>
+                                <td>{(post.assignedRecrutori || []).join(', ') || '—'}</td>
+                                <td>{(post.assignedIntervievatori || []).join(', ') || '—'}</td>
+                                <td>
+                                    <div className="actiuni-celula">
+                                        <button
+                                            type="button"
+                                            className="toggle-btn edit-btn"
+                                            onClick={() => deschideEditare(post)}
+                                        >
+                                            Editare
+                                        </button>
+                                        <button
+                                            className={`toggle-btn ${post.enabled ? 'on' : 'off'}`}
+                                            onClick={() => toggleEnabled(post.id)}
+                                            title={post.enabled ? 'Dezactivează postul' : 'Activează postul'}
+                                        >
+                                            {post.enabled ? 'Dezactivează' : 'Activează'}
+                                        </button>
+                                    </div>
+                                </td>
+                                {allowDeletePost && (
+                                    <td>
+                                        <button
+                                            type="button"
+                                            className="toggle-btn delete-post-btn"
+                                            onClick={() => stergePost(post.id)}
+                                        >
+                                            Șterge
+                                        </button>
+                                    </td>
+                                )}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
 
             <ModalEditJob
                 job={jobEditat}
@@ -121,6 +168,6 @@ export default function AdministrarePosturi({
                 recrutoriDisponibili={recrutoriNume}
                 intervievatoriDisponibili={intervievatoriNume}
             />
-        </>
+        </div>
     )
 }

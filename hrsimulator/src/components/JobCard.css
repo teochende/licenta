@@ -215,6 +215,12 @@
   color: #495057;
 }
 
+.job-card-candidat-data {
+  width: 100%;
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
 .job-card-cv-container {
   margin-top: 1rem;
   padding-top: 0.75rem;
@@ -230,6 +236,12 @@
   margin: 0 0 0.5rem 0;
   font-size: 0.85rem;
   color: #6c757d;
+}
+
+.job-card-cv-data {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.85rem;
+  color: #495057;
 }
 
 .job-card-cv-text {

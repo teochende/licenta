@@ -34,6 +34,18 @@ public class Post {
     @Column(nullable = false)
     private boolean enabled = true;
 
+    /**
+     * Prioritate afișată pe job card: critic, mare, medie, mica (implicit).
+     */
+    @Column(name = "prioritate", nullable = false, length = 16)
+    private String prioritate = "mica";
+
+    /**
+     * Ordine în cadrul aceluiași departament (dashboard); valori mai mici pot apărea primele după sortarea după prioritate.
+     */
+    @Column(name = "ordine_dashboard")
+    private Integer ordineDashboard = 0;
+
     /** Recrutori atribuiți postului (ca în simulator: assignedRecruteri). */
     @ManyToMany
     @JoinTable(
@@ -103,6 +115,22 @@ public class Post {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public String getPrioritate() {
+        return prioritate;
+    }
+
+    public void setPrioritate(String prioritate) {
+        this.prioritate = prioritate != null && !prioritate.isBlank() ? prioritate : "mica";
+    }
+
+    public Integer getOrdineDashboard() {
+        return ordineDashboard;
+    }
+
+    public void setOrdineDashboard(Integer ordineDashboard) {
+        this.ordineDashboard = ordineDashboard != null ? ordineDashboard : 0;
     }
 
     public Set<Utilizator> getRecrutori() {

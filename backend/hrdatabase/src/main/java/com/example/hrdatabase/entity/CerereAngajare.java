@@ -17,8 +17,24 @@ public class CerereAngajare {
     @Column(name = "nume_post", nullable = false, length = 256)
     private String numePost;
 
+    /** Subdomeniu (ex.: Backend), distinct de numele departamentului (domeniu). */
+    @Column(name = "subdomeniu", length = 128)
+    private String subdomeniu;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "descriere_mod", length = 16)
+    private DescriereCerereMod descriereMod = DescriereCerereMod.MANUAL;
+
     @Column(columnDefinition = "text")
     private String descriere;
+
+    /** Nume original al fișierului încărcat (pentru download). */
+    @Column(name = "descriere_fisier_nume", length = 255)
+    private String descriereFisierNume;
+
+    /** Cale relativă la {@code app.upload.dir} (ex.: cereri/uuid.pdf). */
+    @Column(name = "descriere_fisier_path", length = 512)
+    private String descriereFisierPath;
 
     @Column(name = "nr_pozitii", nullable = false)
     private Integer nrPozitii = 1;
@@ -50,6 +66,14 @@ public class CerereAngajare {
             inverseJoinColumns = @JoinColumn(name = "utilizator_id"))
     private List<Utilizator> intervievatoriTehnici = new ArrayList<>();
 
+    /** Recrutori propuși pentru post (folosiți la deschiderea postului; pot fi modificați de HR). */
+    @ManyToMany
+    @JoinTable(
+            name = "cerere_angajare_recrutori",
+            joinColumns = @JoinColumn(name = "cerere_id"),
+            inverseJoinColumns = @JoinColumn(name = "utilizator_id"))
+    private List<Utilizator> recrutori = new ArrayList<>();
+
     public CerereAngajare() {
     }
 
@@ -65,12 +89,44 @@ public class CerereAngajare {
         this.numePost = numePost;
     }
 
+    public String getSubdomeniu() {
+        return subdomeniu;
+    }
+
+    public void setSubdomeniu(String subdomeniu) {
+        this.subdomeniu = subdomeniu;
+    }
+
+    public DescriereCerereMod getDescriereMod() {
+        return descriereMod;
+    }
+
+    public void setDescriereMod(DescriereCerereMod descriereMod) {
+        this.descriereMod = descriereMod != null ? descriereMod : DescriereCerereMod.MANUAL;
+    }
+
     public String getDescriere() {
         return descriere;
     }
 
     public void setDescriere(String descriere) {
         this.descriere = descriere;
+    }
+
+    public String getDescriereFisierNume() {
+        return descriereFisierNume;
+    }
+
+    public void setDescriereFisierNume(String descriereFisierNume) {
+        this.descriereFisierNume = descriereFisierNume;
+    }
+
+    public String getDescriereFisierPath() {
+        return descriereFisierPath;
+    }
+
+    public void setDescriereFisierPath(String descriereFisierPath) {
+        this.descriereFisierPath = descriereFisierPath;
     }
 
     public Integer getNrPozitii() {
@@ -119,5 +175,13 @@ public class CerereAngajare {
 
     public void setIntervievatoriTehnici(List<Utilizator> intervievatoriTehnici) {
         this.intervievatoriTehnici = intervievatoriTehnici;
+    }
+
+    public List<Utilizator> getRecrutori() {
+        return recrutori;
+    }
+
+    public void setRecrutori(List<Utilizator> recrutori) {
+        this.recrutori = recrutori;
     }
 }

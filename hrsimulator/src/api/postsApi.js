@@ -16,6 +16,11 @@ export function patchPost(token, id, body) {
   return apiFetch(`/api/posturi/${id}`, { method: 'PATCH', token, body })
 }
 
+/** Salvează ordinea cardurilor în dashboard pentru un departament (liste complete de ID-uri). */
+export function putOrdineDashboard(token, body) {
+  return apiFetch('/api/posturi/ordine-dashboard', { method: 'PUT', token, body })
+}
+
 export function putIntervievatoriTehnici(token, postId, intervievatoriIds) {
   return apiFetch(`/api/posturi/${postId}/intervievatori-tehnici`, {
     method: 'PUT',
@@ -34,3 +39,12 @@ export function putAdminAssignari(token, postId, recrutoriIds, intervievatoriIds
     },
   })
 }
+
+export function putPost(token, id, body) {
+  return apiFetch(`/api/posturi/${id}`, { method: 'PUT', token, body })
+}
+
+export function deletePost(token, id) {
+  return apiFetch(`/api/posturi/${id}`, { method: 'DELETE', token })
+}
+

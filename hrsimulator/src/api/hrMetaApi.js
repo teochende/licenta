@@ -7,3 +7,8 @@ export function getRecrutori(token) {
 export function getIntervievatoriTehnici(token) {
   return apiFetch('/api/hr/intervievatori-tehnici', { token })
 }
+
+export function getRoluri(token) {
+  return apiFetch('/api/admin/roluri', { token })
+}
+

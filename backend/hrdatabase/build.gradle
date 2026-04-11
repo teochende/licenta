@@ -42,3 +42,9 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+// Necesar ca Jackson să deserializeze corect JSON → record (nume parametri constructor)
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+	options.compilerArgs.add('-parameters')
+}

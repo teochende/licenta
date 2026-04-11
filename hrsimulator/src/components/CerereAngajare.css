@@ -1,5 +1,5 @@
 .cerere-angajare {
-  max-width: 560px;
+  max-width: 640px;
 }
 
 .cerere-angajare h1 {
@@ -38,6 +38,38 @@
 .formular-cerere .form-camp textarea {
   resize: vertical;
   min-height: 80px;
+}
+
+.input-readonly {
+  background: #f1f3f5;
+  color: #495057;
+  cursor: default;
+}
+
+.descriere-mod-uri {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.radio-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.input-file {
+  margin-top: 4px;
+  font-size: 14px;
+}
+
+.hint-file {
+  font-size: 13px;
+  color: #6c757d;
+  margin: 0.35rem 0 0.75rem;
 }
 
 .checkbox-list {

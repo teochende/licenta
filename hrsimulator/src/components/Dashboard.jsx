@@ -1,16 +1,28 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import JobCard from './JobCard'
+import CvFisierLink from './CvFisierLink'
 import { ROLURI } from '../context/login_context'
 import { getAplicatiiDashboard, patchAplicatiePipeline } from '../api/aplicatiiApi'
+import { patchPost, putOrdineDashboard } from '../api/postsApi'
 import {
     ETAPE_RECRUTARE,
     STATUS_ETAPA,
     parsePipelineStateJson,
     buildDefaultPipelineState,
 } from '../utils/pipelineDefaults'
+import { formatDataAplicare } from '../utils/dateFormat'
 import './Dashboard.css'
 
 const ORDINE_PRIORITATE = { critic: 0, mare: 1, medie: 2, mica: 3 }
+
+function sortJobsDashboard(jobs) {
+    return [...jobs].sort((a, b) => {
+        const pa = ORDINE_PRIORITATE[a.prioritate || 'mica']
+        const pb = ORDINE_PRIORITATE[b.prioritate || 'mica']
+        if (pa !== pb) return pa - pb
+        return (a.ordineDashboard ?? 0) - (b.ordineDashboard ?? 0)
+    })
+}
 
 function pipelineLabelFor(etapaKey) {
     switch (etapaKey) {
@@ -44,6 +56,18 @@ function numeDinEmail(email) {
         .join(' ')
 }
 
+/** Previzualizare text CV: fără placeholder vechi când există fișier; ascunde mesajul „[CV încărcat: …]”. */
+function cvContinutPentruAfisare(a, fallbackLipsaText) {
+    const raw = (a.cvContinut && String(a.cvContinut).trim()) || ''
+    const ePlaceholderIncarcat = raw.startsWith('[CV încărcat:')
+    if (a.cvFisierStocat) {
+        if (!raw || ePlaceholderIncarcat) return ''
+        return raw
+    }
+    if (raw) return raw
+    return fallbackLipsaText
+}
+
 const initialStatsForJob = (id) => ({
     pozitiiLibere: Math.max(1, (id % 3) + 1),
     totalCVuri: id % 5,
@@ -72,6 +96,7 @@ export default function Dashboard({
     user,
     authToken,
     onRemoteSaveDescriere,
+    onRefreshPosturi,
 }) {
     const posturiVizibile = useMemo(
         () => filtreazaPosturiDupaRol(posturi, user),
@@ -80,8 +105,6 @@ export default function Dashboard({
     const [aplicatiiServer, setAplicatiiServer] = useState([])
     const pipelineSaveTimers = useRef({})
     const [jobStats, setJobStats] = useState({})
-    const [categoryOrder, setCategoryOrder] = useState({})
-    const [jobPriorities, setJobPriorities] = useState({})
     const [aplicantiState, setAplicantiState] = useState({})
     const [candidatDetaliiOpen, setCandidatDetaliiOpen] = useState(null)
     const [hoverEtapa, setHoverEtapa] = useState(null)
@@ -126,71 +149,60 @@ export default function Dashboard({
         })
     }, [posturiVizibile])
 
-    useEffect(() => {
-        setCategoryOrder((prev) => {
-            const byDomeniu = {}
-            posturiVizibile.forEach((p) => {
-                if (!byDomeniu[p.domeniu]) byDomeniu[p.domeniu] = []
-                byDomeniu[p.domeniu].push(p.id)
-            })
-            const next = { ...prev }
-            Object.entries(byDomeniu).forEach(([domeniu, ids]) => {
-                const existing = next[domeniu] || []
-                const existingSet = new Set(existing)
-                const newIds = ids.filter((id) => !existingSet.has(id))
-                next[domeniu] = [
-                    ...existing.filter((id) => ids.includes(id)),
-                    ...newIds
-                ]
-            })
-            return next
-        })
-    }, [posturiVizibile])
-
-    useEffect(() => {
-        setJobPriorities((prev) => {
-            const next = { ...prev }
-            posturiVizibile.forEach((p) => {
-                if (next[p.id] == null) {
-                    next[p.id] = 'mica'
-                }
-            })
-            return next
-        })
-    }, [posturiVizibile])
-
-    const setPrioritateJob = (jobId, prioritate) => {
-        setJobPriorities((prev) => ({ ...prev, [jobId]: prioritate }))
+    const setPrioritateJob = async (jobId, prioritate) => {
+        if (!authToken || !onRefreshPosturi) return
+        try {
+            await patchPost(authToken, jobId, { prioritate })
+            await onRefreshPosturi()
+        } catch (e) {
+            alert(e?.message || 'Nu s-a putut salva prioritatea.')
+        }
     }
 
-    const handleReorder = (draggedJobId, dropTargetJobId, domeniu) => {
-        if (draggedJobId === dropTargetJobId) return
-        const targetPrioritate = jobPriorities[dropTargetJobId] || 'mica'
-
-        setCategoryOrder((prev) => {
-            const order = [...(prev[domeniu] || [])]
-            const from = order.indexOf(draggedJobId)
-            const to = order.indexOf(dropTargetJobId)
-            if (from === -1 || to === -1) return prev
-            order.splice(from, 1)
-            const newTo = order.indexOf(dropTargetJobId)
-            order.splice(newTo, 0, draggedJobId)
-            return { ...prev, [domeniu]: order }
-        })
-
-        setJobPriorities((prev) => ({ ...prev, [draggedJobId]: targetPrioritate }))
+    const handleReorder = async (draggedJobId, dropTargetJobId, domeniu) => {
+        if (draggedJobId === dropTargetJobId || !authToken || !onRefreshPosturi) return
+        const jobsInCol = posturiVizibile.filter((p) => p.domeniu === domeniu)
+        const sorted = sortJobsDashboard(jobsInCol)
+        let orderIds = sorted.map((j) => j.id)
+        const from = orderIds.indexOf(draggedJobId)
+        const to = orderIds.indexOf(dropTargetJobId)
+        if (from === -1 || to === -1) return
+        const targetJob = jobsInCol.find((j) => j.id === dropTargetJobId)
+        const newPrior = targetJob?.prioritate || 'mica'
+        const depId = targetJob?.departamentId
+        if (depId == null) return
+        orderIds = [...orderIds]
+        orderIds.splice(from, 1)
+        const newTo = orderIds.indexOf(dropTargetJobId)
+        orderIds.splice(newTo, 0, draggedJobId)
+        try {
+            await patchPost(authToken, draggedJobId, { prioritate: newPrior })
+            await putOrdineDashboard(authToken, { departamentId: depId, postIdsOrdered: orderIds })
+            await onRefreshPosturi()
+        } catch (e) {
+            alert(e?.message || 'Nu s-a putut salva ordinea.')
+        }
     }
 
-    const handleReorderToEnd = (draggedJobId, domeniu) => {
-        setCategoryOrder((prev) => {
-            const order = [...(prev[domeniu] || [])]
-            const from = order.indexOf(draggedJobId)
-            if (from === -1) return prev
-            order.splice(from, 1)
-            order.push(draggedJobId)
-            return { ...prev, [domeniu]: order }
-        })
-        setJobPriorities((prev) => ({ ...prev, [draggedJobId]: 'mica' }))
+    const handleReorderToEnd = async (draggedJobId, domeniu) => {
+        if (!authToken || !onRefreshPosturi) return
+        const jobsInCol = posturiVizibile.filter((p) => p.domeniu === domeniu)
+        const sorted = sortJobsDashboard(jobsInCol)
+        let orderIds = sorted.map((j) => j.id)
+        const from = orderIds.indexOf(draggedJobId)
+        if (from === -1) return
+        const depId = jobsInCol[0]?.departamentId
+        if (depId == null) return
+        orderIds = [...orderIds]
+        orderIds.splice(from, 1)
+        orderIds.push(draggedJobId)
+        try {
+            await patchPost(authToken, draggedJobId, { prioritate: 'mica' })
+            await putOrdineDashboard(authToken, { departamentId: depId, postIdsOrdered: orderIds })
+            await onRefreshPosturi()
+        } catch (e) {
+            alert(e?.message || 'Nu s-a putut salva ordinea.')
+        }
     }
 
     const categorii = useMemo(() => {
@@ -199,19 +211,11 @@ export default function Dashboard({
             if (!byDomeniu[p.domeniu]) byDomeniu[p.domeniu] = []
             byDomeniu[p.domeniu].push(p)
         })
-        return Object.entries(categoryOrder).map(([domeniu, orderedIds]) => {
-            const jobsMap = Object.fromEntries((byDomeniu[domeniu] || []).map((j) => [j.id, j]))
-            const jobs = orderedIds.map((id) => jobsMap[id]).filter(Boolean)
-            const indexInOrder = Object.fromEntries(orderedIds.map((id, i) => [id, i]))
-            jobs.sort((a, b) => {
-                const pa = ORDINE_PRIORITATE[jobPriorities[a.id] || 'mica']
-                const pb = ORDINE_PRIORITATE[jobPriorities[b.id] || 'mica']
-                if (pa !== pb) return pa - pb
-                return (indexInOrder[a.id] ?? 0) - (indexInOrder[b.id] ?? 0)
-            })
-            return { domeniu, jobs }
-        })
-    }, [posturiVizibile, categoryOrder, jobPriorities])
+        return Object.entries(byDomeniu).map(([domeniu, jobs]) => ({
+            domeniu,
+            jobs: sortJobsDashboard(jobs),
+        }))
+    }, [posturiVizibile])
 
     const jobsVizibileMap = useMemo(
         () => Object.fromEntries(posturiVizibile.map((p) => [p.id, p])),
@@ -235,9 +239,13 @@ export default function Dashboard({
                 candidat: {
                     id: a.id,
                     email: a.email,
-                    cv:
-                        a.cvContinut ||
-                        '(Text CV necompletat la aplicare – verificați fișierul atașat în sistem.)',
+                    dataAplicare: a.dataAplicare,
+                    cvNumeFisier: a.cvNumeFisier,
+                    cvFisierStocat: !!a.cvFisierStocat,
+                    cv: cvContinutPentruAfisare(
+                        a,
+                        '(Text CV necompletat la aplicare – verificați fișierul atașat în sistem.)'
+                    ),
                 },
                 jobId,
                 job,
@@ -437,9 +445,10 @@ export default function Dashboard({
                                     .map((a) => ({
                                         id: a.id,
                                         email: a.email,
-                                        cv:
-                                            a.cvContinut ||
-                                            '(Text CV necompletat la aplicare.)',
+                                        dataAplicare: a.dataAplicare,
+                                        cvNumeFisier: a.cvNumeFisier,
+                                        cvFisierStocat: !!a.cvFisierStocat,
+                                        cv: cvContinutPentruAfisare(a, '(Text CV necompletat la aplicare.)'),
                                         jobIds: [job.id],
                                     }))
                                 const nrCandidatiAplicati = candidatiPentruJob.length
@@ -453,7 +462,7 @@ export default function Dashboard({
                                     key={job.id}
                                     job={job}
                                     stats={statsCuCandidati}
-                                    prioritate={jobPriorities[job.id] || 'mica'}
+                                    prioritate={job.prioritate || 'mica'}
                                     onPrioritateChange={(p) => setPrioritateJob(job.id, p)}
                                     onReorder={(draggedId, dropTargetId) => handleReorder(draggedId, dropTargetId, domeniu)}
                                     onReorderToEnd={(draggedId) => handleReorderToEnd(draggedId, domeniu)}
@@ -469,6 +478,7 @@ export default function Dashboard({
                                             : undefined)
                                     }
                                     candidatiAplicanti={candidatiPentruJob}
+                                    authToken={authToken}
                                 />
                                 )
                             })}
@@ -525,6 +535,9 @@ export default function Dashboard({
                                             <div className="aplicant-nume">{numeDinEmail(candidat.email)}</div>
                                             <div className="aplicant-meta">
                                                 <span className="aplicant-email">{candidat.email}</span>
+                                                <span className="aplicant-data-aplicare">
+                                                    Aplicat: {formatDataAplicare(candidat.dataAplicare)}
+                                                </span>
                                                 <span className="aplicant-job">Job: <strong>{job?.nume}</strong></span>
                                             </div>
                                         </div>
@@ -650,12 +663,26 @@ export default function Dashboard({
                                 <span className="aplicant-modal-label">Job</span>
                                 <span className="aplicant-modal-value">{candidatDetaliiOpen.job?.nume}</span>
                             </div>
+                            <div className="aplicant-modal-row">
+                                <span className="aplicant-modal-label">Data aplicării</span>
+                                <span className="aplicant-modal-value">
+                                    {formatDataAplicare(candidatDetaliiOpen.candidat.dataAplicare)}
+                                </span>
+                            </div>
 
                             <div className="aplicant-cv">
                                 <h4>CV</h4>
-                                <div className="aplicant-cv-box">
-                                    {candidatDetaliiOpen.candidat.cv}
-                                </div>
+                                <CvFisierLink
+                                    authToken={authToken}
+                                    aplicatieId={candidatDetaliiOpen.candidat.id}
+                                    cvNumeFisier={candidatDetaliiOpen.candidat.cvNumeFisier}
+                                    cvFisierStocat={candidatDetaliiOpen.candidat.cvFisierStocat}
+                                />
+                                {candidatDetaliiOpen.candidat.cv?.trim() ? (
+                                    <div className="aplicant-cv-box">
+                                        {candidatDetaliiOpen.candidat.cv}
+                                    </div>
+                                ) : null}
                             </div>
                         </div>
                     </div>

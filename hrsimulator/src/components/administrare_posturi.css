@@ -80,3 +80,66 @@
   background: #3498db;
   color: #fff;
 }
+
+.toggle-btn:focus-visible,
+.btn-adaugare-post:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.jobs-table-wrap {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.jobs-table {
+  margin-top: 0;
+}
+
+.jobs-table thead th {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #475569;
+}
+
+.jobs-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+/* Varianta încorporată în panoul Admin */
+.administrare-posturi--embedded .toolbar-administrare--embedded {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.administrare-posturi--embedded .btn-adaugare-post--text {
+  width: auto;
+  min-height: 2.5rem;
+  padding: 0 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+.administrare-posturi--embedded .jobs-table-wrap {
+  border-color: #e2e8f0;
+}
+
+.administrare-posturi--embedded .delete-post-btn {
+  background: #fef2f2 !important;
+  color: #b91c1c !important;
+  border: 1px solid #fecaca !important;
+}
+
+.administrare-posturi--embedded .delete-post-btn:hover {
+  background: #fee2e2 !important;
+}
+
+.row-enabled td {
+  vertical-align: middle;
+}

@@ -18,6 +18,7 @@ import { getCereriPending, deschidePostDinCerere } from './api/cereriApi'
 import Toolbar from './components/toolbar/toolbar'
 import Acasa from './components/acasa'
 import AdministrarePosturi from './components/administrare_posturi'
+import AdminPanel from './components/AdminPanel'
 import AdaugarePost from './components/AdaugarePost'
 import Login from './components/login'
 import PaginaInexistenta from './components/PaginaInexistenta'
@@ -25,6 +26,7 @@ import AplicareJob from './components/aplicare_job'
 import Dashboard from './components/Dashboard'
 import CerereAngajare from './components/CerereAngajare'
 import CereriList from './components/CereriList'
+import CereriMele from './components/CereriMele'
 import PosturiDepartament from './components/PosturiDepartament'
 
 const defaultUser = {
@@ -200,7 +202,31 @@ function App() {
                                         cereri={cereriPending}
                                         onDeschidePost={handleDeschidePostDinCerere}
                                         recrutoriDto={recrutoriDto}
+                                        intervievatoriDto={intervievatoriDto}
+                                        token={user.token}
+                                        onRefreshCereri={refreshCereri}
                                     />
+                                ) : (
+                                    <PaginaInexistenta />
+                                )
+                            }
+                        />
+                        <Route
+                            path="/cererile-mele"
+                            element={
+                                user.isAuthenticated && isMd ? (
+                                    <CereriMele token={user.token} isAdmin={user.rol === ROLURI.ADMIN} />
+                                ) : (
+                                    <PaginaInexistenta />
+                                )
+                            }
+                        />
+
+                        <Route
+                            path="/admin"
+                            element={
+                                user.isAuthenticated && user.rol === ROLURI.ADMIN ? (
+                                    <AdminPanel token={user.token} />
                                 ) : (
                                     <PaginaInexistenta />
                                 )
@@ -244,6 +270,7 @@ function App() {
                                         user={user}
                                         authToken={user.token}
                                         onRemoteSaveDescriere={saveDescriereJob}
+                                        onRefreshPosturi={refreshPosturi}
                                     />
                                 ) : (
                                     <Navigate to="/login" />
@@ -256,6 +283,8 @@ function App() {
                             element={
                                 !user.isAuthenticated ? (
                                     <Login onLogin={onLogin} />
+                                ) : user.rol === ROLURI.ADMIN ? (
+                                    <Navigate to="/admin" />
                                 ) : user.rol === ROLURI.MANAGER_RECRUTARE ? (
                                     <Navigate to="/administrare-posturi" />
                                 ) : (

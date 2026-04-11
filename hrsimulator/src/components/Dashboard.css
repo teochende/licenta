@@ -121,6 +121,11 @@
   color: #6c757d;
 }
 
+.aplicant-data-aplicare {
+  color: #6c757d;
+  font-size: 0.85rem;
+}
+
 .aplicant-job strong {
   color: #212529;
 }

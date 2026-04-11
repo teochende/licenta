@@ -1,0 +1,18 @@
+.cv-fisier-link-wrap {
+  margin-bottom: 0.75rem;
+}
+
+.cv-fisier-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #1a5fb4;
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.cv-fisier-link:hover {
+  color: #0d3d82;
+}

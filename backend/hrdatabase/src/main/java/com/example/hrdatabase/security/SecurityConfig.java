@@ -77,7 +77,7 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(e -> e.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .authorizeHttpRequests(a -> a
-                        .requestMatchers(HttpMethod.POST, "/api/aplicatii").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/aplicatii", "/api/aplicatii/json").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/posturi/disponibile").permitAll()
                         .requestMatchers("/auth/login", "/auth/register").permitAll()
                         .anyRequest().authenticated())

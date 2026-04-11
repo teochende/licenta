@@ -7,10 +7,15 @@ import com.example.hrdatabase.entity.Aplicatie;
 import com.example.hrdatabase.entity.Utilizator;
 import com.example.hrdatabase.service.AplicatieService;
 import jakarta.validation.Valid;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -23,15 +28,36 @@ public class AplicatieController {
         this.aplicatieService = aplicatieService;
     }
 
-    @PostMapping
+    /**
+     * Aplicare publică cu fișier CV (FormData). Singurul POST pe {@code /api/aplicatii} ca să nu existe
+     * ambiguitate cu {@code consumes} între JSON și multipart (Spring poate mapa greșit la @RequestBody).
+     */
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public Aplicatie createPublic(@Valid @RequestBody AplicatieCreateRequest request) {
+    public Aplicatie createPublicMultipart(
+            @RequestParam("postId") Long postId,
+            @RequestParam("numeCandidat") String numeCandidat,
+            @RequestParam("email") String email,
+            @RequestParam("file") MultipartFile file) throws IOException {
+        return aplicatieService.savePublicApplicationMultipart(postId, numeCandidat, email, file);
+    }
+
+    /** Aplicare fără fișier pe disc (JSON) — pentru teste / integrări vechi. */
+    @PostMapping(value = "/json", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    public Aplicatie createPublicJson(@Valid @RequestBody AplicatieCreateRequest request) {
         return aplicatieService.savePublicApplication(request);
     }
 
     @GetMapping("/dashboard")
     public List<AplicatieDashboardDto> listDashboard(@AuthenticationPrincipal Utilizator utilizator) {
         return aplicatieService.findDashboardFor(utilizator);
+    }
+
+    @GetMapping("/{id}/cv-fisier")
+    public ResponseEntity<Resource> getCvFisier(
+            @PathVariable Long id, @AuthenticationPrincipal Utilizator utilizator) {
+        return aplicatieService.getCvFileResponse(id, utilizator);
     }
 
     @PatchMapping("/{id}/pipeline")

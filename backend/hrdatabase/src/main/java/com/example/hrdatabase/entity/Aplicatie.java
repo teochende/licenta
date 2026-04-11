@@ -3,6 +3,8 @@ package com.example.hrdatabase.entity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
+import java.time.Instant;
+
 @Entity
 @Table(name = "aplicatie")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
@@ -26,6 +28,10 @@ public class Aplicatie {
     @Column(name = "cv_nume_fisier", length = 512)
     private String cvNumeFisier;
 
+    /** Cale relativă la fișierul CV pe disc (ex. aplicatii/uuid.pdf), sub {@code app.upload.dir}. */
+    @Column(name = "cv_fisier_path", length = 512)
+    private String cvFisierPath;
+
     /** Text CV (simulare: conținut introdus la aplicare fără stocare fișier). */
     @Column(name = "cv_continut", columnDefinition = "text")
     private String cvContinut;
@@ -33,6 +39,10 @@ public class Aplicatie {
     /** JSON: starea pipeline-ului din dashboard (toggle-uri, status etape, detalii). */
     @Column(name = "pipeline_state", columnDefinition = "text")
     private String pipelineState;
+
+    /** Momentul aplicării (server). */
+    @Column(name = "data_aplicare")
+    private Instant dataAplicare;
 
     protected Aplicatie() {
     }
@@ -80,6 +90,14 @@ public class Aplicatie {
         this.cvNumeFisier = cvNumeFisier;
     }
 
+    public String getCvFisierPath() {
+        return cvFisierPath;
+    }
+
+    public void setCvFisierPath(String cvFisierPath) {
+        this.cvFisierPath = cvFisierPath;
+    }
+
     public String getCvContinut() {
         return cvContinut;
     }
@@ -94,5 +112,13 @@ public class Aplicatie {
 
     public void setPipelineState(String pipelineState) {
         this.pipelineState = pipelineState;
+    }
+
+    public Instant getDataAplicare() {
+        return dataAplicare;
+    }
+
+    public void setDataAplicare(Instant dataAplicare) {
+        this.dataAplicare = dataAplicare;
     }
 }

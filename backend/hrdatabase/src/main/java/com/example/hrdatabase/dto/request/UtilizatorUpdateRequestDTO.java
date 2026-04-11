@@ -22,6 +22,9 @@ public record UtilizatorUpdateRequestDTO(
 
         Long departamentId,
 
+        /** Dacă {@code true}, se șterge legătura la departament (ignoră {@code departamentId}). */
+        Boolean clearDepartament,
+
         @Size(min = 8, max = 255, message = "Parola trebuie să aibă cel puțin 8 caractere")
         String parola
 ) {

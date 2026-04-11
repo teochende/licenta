@@ -24,14 +24,17 @@ public class UtilizatorService {
 
     private final UtilizatorRepository utilizatorRepository;
     private final DepartamentRepository departamentRepository;
+    private final RoleAssignmentCleanupService roleAssignmentCleanupService;
     private final BCryptPasswordEncoder passwordEncoder;
 
     public UtilizatorService(
             UtilizatorRepository utilizatorRepository,
             DepartamentRepository departamentRepository,
+            RoleAssignmentCleanupService roleAssignmentCleanupService,
             BCryptPasswordEncoder passwordEncoder) {
         this.utilizatorRepository = utilizatorRepository;
         this.departamentRepository = departamentRepository;
+        this.roleAssignmentCleanupService = roleAssignmentCleanupService;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -62,12 +65,15 @@ public class UtilizatorService {
     @Transactional
     public UtilizatorResponseDTO update(Long id, UtilizatorUpdateRequestDTO request) {
         if (request.numeUtilizator() == null && request.email() == null && request.rol() == null
-                && request.departamentId() == null && request.parola() == null) {
+                && request.departamentId() == null && request.parola() == null
+                && !Boolean.TRUE.equals(request.clearDepartament())) {
             throw new IllegalArgumentException("Cel puțin un câmp trebuie furnizat pentru actualizare");
         }
 
         Utilizator utilizator = utilizatorRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Utilizator inexistent: " + id));
+
+        Rol rolVechi = utilizator.getRol();
 
         if (request.numeUtilizator() != null) {
             utilizator.setNumeUtilizator(request.numeUtilizator());
@@ -82,13 +88,23 @@ public class UtilizatorService {
             }
             utilizator.setRol(request.rol());
         }
-        if (request.departamentId() != null) {
+        if (Boolean.TRUE.equals(request.clearDepartament())) {
+            utilizator.setDepartament(null);
+        } else if (request.departamentId() != null) {
             Departament departament = departamentRepository.findById(request.departamentId())
                     .orElseThrow(() -> new IllegalArgumentException("Departament inexistent: " + request.departamentId()));
             utilizator.setDepartament(departament);
         }
+        if (utilizator.getRol() != Rol.MANAGER_DEPARTAMENT) {
+            utilizator.setDepartament(null);
+        }
         if (StringUtils.hasText(request.parola())) {
             utilizator.setParola(passwordEncoder.encode(request.parola()));
+        }
+
+        Rol rolNou = utilizator.getRol();
+        if (request.rol() != null && rolVechi != rolNou) {
+            roleAssignmentCleanupService.afterRoleChange(utilizator.getId(), rolVechi, rolNou);
         }
 
         return UtilizatorMapper.toResponse(utilizatorRepository.save(utilizator));
@@ -106,6 +122,7 @@ public class UtilizatorService {
         if (utilizator.getRol() == Rol.ADMIN && utilizatorRepository.countByRol(Rol.ADMIN) <= 1) {
             throw new IllegalArgumentException("Nu puteți șterge singurul administrator din sistem.");
         }
+        roleAssignmentCleanupService.beforeUserDeleted(id);
         utilizatorRepository.delete(utilizator);
     }
 
