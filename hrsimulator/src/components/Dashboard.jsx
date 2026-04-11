@@ -75,20 +75,7 @@ const initialStatsForJob = (id) => ({
     cvRespinse: Math.floor((id % 5) / 3)
 })
 
-function filtreazaPosturiDupaRol(posturi, user) {
-    if (!user?.rol) return posturi
-    if (user.rol === ROLURI.MANAGER_RECRUTARE) return posturi
-    if (user.rol === ROLURI.MANAGER_DEPARTAMENT) {
-        return posturi.filter((p) => p.domeniu === user.departament)
-    }
-    if (user.rol === ROLURI.RECRUTOR) {
-        return posturi.filter((p) => (p.assignedRecruteri || []).includes(user.nume))
-    }
-    if (user.rol === ROLURI.INTERVIEVATOR_TEHNIC) {
-        return posturi.filter((p) => (p.assignedIntervievatori || []).includes(user.nume))
-    }
-    return posturi
-}
+/** Lista de posturi vine din GET /api/posturi (filtrată pe server după rol și atribuiri). Nu o refiltrăm în client. */
 
 export default function Dashboard({
     posturi = [],
@@ -98,10 +85,7 @@ export default function Dashboard({
     onRemoteSaveDescriere,
     onRefreshPosturi,
 }) {
-    const posturiVizibile = useMemo(
-        () => filtreazaPosturiDupaRol(posturi, user),
-        [posturi, user]
-    )
+    const posturiVizibile = useMemo(() => posturi, [posturi])
     const [aplicatiiServer, setAplicatiiServer] = useState([])
     const pipelineSaveTimers = useRef({})
     const [jobStats, setJobStats] = useState({})

@@ -15,8 +15,22 @@ function rolCodToEnum(cod) {
         recrutor: 'RECRUTOR',
         manager_recrutare: 'MANAGER_RECRUTARE',
         manager_departament: 'MANAGER_DEPARTAMENT',
+        guest: 'GUEST',
     }
     return m[cod] || 'RECRUTOR'
+}
+
+/** Utilizatorul cu rol Manager departament alocat la acel departament (un singur manager per departament). */
+function managerDepartamentPentru(depId, utilizatoriList) {
+    if (depId == null || !Array.isArray(utilizatoriList)) return null
+    return (
+        utilizatoriList.find(
+            (u) =>
+                u.rolCod === 'manager_departament' &&
+                u.departamentId != null &&
+                Number(u.departamentId) === Number(depId)
+        ) ?? null
+    )
 }
 
 function emptyUserForm() {
@@ -322,11 +336,13 @@ export default function AdminPanel({ token }) {
                                     value={createForm.rol}
                                     onChange={(ev) => setCreateForm((f) => ({ ...f, rol: ev.target.value }))}
                                 >
-                                    {roluri.map((r) => (
-                                        <option key={r.cod} value={r.cod}>
-                                            {r.denumire}
-                                        </option>
-                                    ))}
+                                    {roluri
+                                        .filter((r) => r.cod !== 'GUEST')
+                                        .map((r) => (
+                                            <option key={r.cod} value={r.cod}>
+                                                {r.denumire}
+                                            </option>
+                                        ))}
                                 </select>
                             </div>
                             {createForm.rol === 'MANAGER_DEPARTAMENT' && (
@@ -364,6 +380,7 @@ export default function AdminPanel({ token }) {
                                     <th scope="col">Nume</th>
                                     <th scope="col">Email</th>
                                     <th scope="col">Rol</th>
+                                    <th scope="col">Rol solicitat</th>
                                     <th scope="col">Departament</th>
                                     <th scope="col">Acțiuni</th>
                                 </tr>
@@ -371,7 +388,7 @@ export default function AdminPanel({ token }) {
                             <tbody>
                                 {utilizatori.length === 0 && !loading ? (
                                     <tr>
-                                        <td colSpan={6} className="admin-table-empty">
+                                        <td colSpan={7} className="admin-table-empty">
                                             Nu există utilizatori afișați. Adăugați primul cont folosind formularul de mai sus.
                                         </td>
                                     </tr>
@@ -385,6 +402,13 @@ export default function AdminPanel({ token }) {
                                             <td>{u.email}</td>
                                             <td>
                                                 <span className="admin-badge">{u.rolDenumire || rolLabel(u.rolCod)}</span>
+                                            </td>
+                                            <td>
+                                                {u.rolDoritDenumire ? (
+                                                    <span className="admin-badge admin-badge--muted">{u.rolDoritDenumire}</span>
+                                                ) : (
+                                                    '—'
+                                                )}
                                             </td>
                                             <td>{u.departamentNume || '—'}</td>
                                             <td className="admin-actions">
@@ -557,60 +581,78 @@ export default function AdminPanel({ token }) {
                                 <tr>
                                     <th scope="col">ID</th>
                                     <th scope="col">Nume</th>
+                                    <th scope="col">Manager departament</th>
                                     <th scope="col">Acțiuni</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {departamente.map((d) => (
-                                    <tr key={d.id}>
-                                        <td>
-                                            <span className="admin-id">{d.id}</span>
-                                        </td>
-                                        <td>
-                                            {editingDep?.id === d.id ? (
-                                                <input
-                                                    className="admin-table-input"
-                                                    value={editingDep.nume}
-                                                    onChange={(ev) => setEditingDep({ ...editingDep, nume: ev.target.value })}
-                                                    aria-label="Editare nume departament"
-                                                />
-                                            ) : (
-                                                d.nume
-                                            )}
-                                        </td>
-                                        <td className="admin-actions">
-                                            {editingDep?.id === d.id ? (
-                                                <div className="admin-btn-group">
-                                                    <button type="button" className="admin-btn-primary" onClick={saveDep}>
-                                                        Salvează
-                                                    </button>
-                                                    <button type="button" className="admin-btn-secondary" onClick={() => setEditingDep(null)}>
-                                                        Anulează
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                <div className="admin-btn-group">
-                                                    <button type="button" className="admin-btn-ghost" onClick={() => setEditingDep({ ...d })}>
-                                                        Editează
-                                                    </button>
-                                                    <button type="button" className="admin-btn-danger" onClick={() => removeDep(d.id)}>
-                                                        Șterge
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="admin-btn-ghost"
-                                                        onClick={() => {
-                                                            setManagerForDepId(d.id)
-                                                            setManagerUserId('')
-                                                        }}
-                                                    >
-                                                        Setează manager
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
+                                {departamente.map((d) => {
+                                    const mgr = managerDepartamentPentru(d.id, utilizatori)
+                                    return (
+                                        <tr key={d.id}>
+                                            <td>
+                                                <span className="admin-id">{d.id}</span>
+                                            </td>
+                                            <td>
+                                                {editingDep?.id === d.id ? (
+                                                    <input
+                                                        className="admin-table-input"
+                                                        value={editingDep.nume}
+                                                        onChange={(ev) => setEditingDep({ ...editingDep, nume: ev.target.value })}
+                                                        aria-label="Editare nume departament"
+                                                    />
+                                                ) : (
+                                                    d.nume
+                                                )}
+                                            </td>
+                                            <td className="admin-dept-manager-cell">
+                                                {mgr ? (
+                                                    <>
+                                                        <div className="admin-dept-manager-name">{mgr.numeUtilizator}</div>
+                                                        <div className="admin-dept-manager-email">{mgr.email}</div>
+                                                    </>
+                                                ) : (
+                                                    <span className="admin-dept-manager-lipsa">—</span>
+                                                )}
+                                            </td>
+                                            <td className="admin-actions">
+                                                {editingDep?.id === d.id ? (
+                                                    <div className="admin-btn-group">
+                                                        <button type="button" className="admin-btn-primary" onClick={saveDep}>
+                                                            Salvează
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className="admin-btn-secondary"
+                                                            onClick={() => setEditingDep(null)}
+                                                        >
+                                                            Anulează
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="admin-btn-group">
+                                                        <button type="button" className="admin-btn-ghost" onClick={() => setEditingDep({ ...d })}>
+                                                            Editează
+                                                        </button>
+                                                        <button type="button" className="admin-btn-danger" onClick={() => removeDep(d.id)}>
+                                                            Șterge
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className="admin-btn-ghost"
+                                                            onClick={() => {
+                                                                setManagerForDepId(d.id)
+                                                                setManagerUserId('')
+                                                            }}
+                                                        >
+                                                            Setează manager
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
                             </tbody>
                         </table>
                     </div>

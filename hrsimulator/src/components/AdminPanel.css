@@ -447,6 +447,11 @@
     color: #475569;
 }
 
+.admin-badge--muted {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
 /* Modal */
 .admin-modal-overlay {
     position: fixed;
@@ -647,6 +652,28 @@
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
+}
+
+.admin-dept-manager-cell {
+    vertical-align: top;
+    min-width: 11rem;
+    font-size: 0.9rem;
+}
+
+.admin-dept-manager-name {
+    font-weight: 600;
+    color: var(--admin-text, #0f172a);
+}
+
+.admin-dept-manager-email {
+    font-size: 0.85rem;
+    color: var(--admin-muted);
+    margin-top: 2px;
+    word-break: break-word;
+}
+
+.admin-dept-manager-lipsa {
+    color: var(--admin-muted);
 }
 
 .admin-table-empty {

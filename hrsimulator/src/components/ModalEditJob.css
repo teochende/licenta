@@ -79,6 +79,13 @@
   font-size: 14px;
 }
 
+.modal-edit-hint {
+  margin: 0.35rem 0 0;
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
 .modal-edit-checkbox-list {
   display: flex;
   flex-direction: column;

@@ -67,9 +67,14 @@ export default function Toolbar() {
                         </>
                     )}
 
-                    {user.isAuthenticated && (
+                    {user.isAuthenticated && user.rol !== ROLURI.GUEST && (
                         <div className="articolMeniu">
                             <Link to="/dashboard">Dashboard</Link>
+                        </div>
+                    )}
+                    {user.isAuthenticated && user.rol === ROLURI.GUEST && (
+                        <div className="articolMeniu">
+                            <Link to="/cont-in-asteptare">Cont în așteptare</Link>
                         </div>
                     )}
                 </div>

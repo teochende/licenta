@@ -1,5 +1,6 @@
 package com.example.hrdatabase.service;
 
+import com.example.hrdatabase.dto.request.RegisterPublicRequestDTO;
 import com.example.hrdatabase.dto.request.UtilizatorRequestDTO;
 import com.example.hrdatabase.dto.response.UtilizatorResponseDTO;
 import com.example.hrdatabase.dto.request.UtilizatorUpdateRequestDTO;
@@ -54,6 +55,30 @@ public class UtilizatorService {
                     .orElseThrow(() -> new IllegalArgumentException("Departament inexistent: " + request.departamentId()));
         }
         Utilizator utilizator = UtilizatorMapper.toEntity(request, departament);
+        utilizator.setRolDorit(null);
+        utilizator.setParola(passwordEncoder.encode(request.parola()));
+        return UtilizatorMapper.toResponse(utilizatorRepository.save(utilizator));
+    }
+
+    /**
+     * Înregistrare publică: întotdeauna {@link Rol#GUEST}, cu {@code rolDorit} salvat pentru administrator.
+     */
+    @Transactional
+    public UtilizatorResponseDTO registerPublic(RegisterPublicRequestDTO request) {
+        Rol dorit = request.rolDorit();
+        if (dorit == Rol.ADMIN || dorit == Rol.GUEST) {
+            throw new IllegalArgumentException("Acest rol nu poate fi solicitat la înregistrare.");
+        }
+        String email = request.email().trim();
+        String nume = request.numeUtilizator().trim();
+        if (utilizatorRepository.existsByEmailIgnoreCase(email)) {
+            throw new IllegalArgumentException("Există deja un cont cu acest email.");
+        }
+        if (utilizatorRepository.existsByNumeUtilizatorIgnoreCase(nume)) {
+            throw new IllegalArgumentException("Numele de utilizator este deja folosit.");
+        }
+        Utilizator utilizator = new Utilizator(nume, email, "", Rol.GUEST, null);
+        utilizator.setRolDorit(dorit);
         utilizator.setParola(passwordEncoder.encode(request.parola()));
         return UtilizatorMapper.toResponse(utilizatorRepository.save(utilizator));
     }
@@ -87,6 +112,9 @@ public class UtilizatorService {
                 throw new IllegalArgumentException("Trebuie să existe cel puțin un administrator în sistem.");
             }
             utilizator.setRol(request.rol());
+            if (request.rol() != Rol.GUEST) {
+                utilizator.setRolDorit(null);
+            }
         }
         if (Boolean.TRUE.equals(request.clearDepartament())) {
             utilizator.setDepartament(null);

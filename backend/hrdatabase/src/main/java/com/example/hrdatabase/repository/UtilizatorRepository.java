@@ -24,6 +24,10 @@ public interface UtilizatorRepository extends JpaRepository<Utilizator, Long> {
 
     Optional<Utilizator> findByEmail(String email);
 
+    boolean existsByEmailIgnoreCase(String email);
+
+    boolean existsByNumeUtilizatorIgnoreCase(String numeUtilizator);
+
     @Query("SELECT DISTINCT u FROM Utilizator u LEFT JOIN FETCH u.departament WHERE u.id = :id")
     Optional<Utilizator> findByIdWithDepartament(@Param("id") Long id);
 

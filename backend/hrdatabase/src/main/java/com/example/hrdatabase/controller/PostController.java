@@ -5,7 +5,6 @@ import com.example.hrdatabase.dto.request.PostCreateRequest;
 import com.example.hrdatabase.dto.request.PostDashboardOrderRequest;
 import com.example.hrdatabase.dto.request.PostPatchRequest;
 import com.example.hrdatabase.dto.response.PostViewDto;
-import com.example.hrdatabase.entity.Post;
 import com.example.hrdatabase.entity.Utilizator;
 import com.example.hrdatabase.service.PostService;
 import jakarta.validation.Valid;
@@ -38,13 +37,13 @@ public class PostController {
 
     @PostMapping
     @PreAuthorize("@perm.isAdmin() or hasRole('MANAGER_RECRUTARE')")
-    public Post create(@RequestBody PostCreateRequest request) {
+    public PostViewDto create(@RequestBody PostCreateRequest request) {
         return postService.save(request);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("@perm.isAdmin() or hasRole('MANAGER_RECRUTARE')")
-    public Post updateFull(@PathVariable Long id, @RequestBody PostCreateRequest request) {
+    public PostViewDto updateFull(@PathVariable Long id, @RequestBody PostCreateRequest request) {
         return postService.updateFull(id, request);
     }
 

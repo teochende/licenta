@@ -20,6 +20,7 @@ public final class UtilizatorMapper {
 
     public static UtilizatorResponseDTO toResponse(Utilizator utilizator) {
         Rol rol = utilizator.getRol();
+        Rol rolDorit = utilizator.getRolDorit();
         Departament departament = utilizator.getDepartament();
         return new UtilizatorResponseDTO(
                 utilizator.getId(),
@@ -27,6 +28,8 @@ public final class UtilizatorMapper {
                 utilizator.getEmail(),
                 rol != null ? rolCodApi(rol) : null,
                 rol != null ? rolDenumire(rol) : null,
+                rolDorit != null ? rolCodApi(rolDorit) : null,
+                rolDorit != null ? rolDenumire(rolDorit) : null,
                 departament != null ? departament.getId() : null,
                 departament != null ? departament.getNume() : null
         );
@@ -44,6 +47,7 @@ public final class UtilizatorMapper {
             case RECRUTOR -> "Recrutor";
             case MANAGER_RECRUTARE -> "Manager recrutare";
             case MANAGER_DEPARTAMENT -> "Manager departament";
+            case GUEST -> "Invitat (în așteptare)";
         };
     }
 }

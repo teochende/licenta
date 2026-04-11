@@ -15,6 +15,7 @@ public class PostAccessService {
             return false;
         }
         return switch (user.getRol()) {
+            case GUEST -> false;
             case ADMIN, MANAGER_RECRUTARE -> true;
             case MANAGER_DEPARTAMENT -> {
                 if (user.getDepartament() == null || post.getDepartament() == null) {

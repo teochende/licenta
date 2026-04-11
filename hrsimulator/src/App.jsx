@@ -21,6 +21,8 @@ import AdministrarePosturi from './components/administrare_posturi'
 import AdminPanel from './components/AdminPanel'
 import AdaugarePost from './components/AdaugarePost'
 import Login from './components/login'
+import Register from './components/Register'
+import ContInAsteptare from './components/ContInAsteptare'
 import PaginaInexistenta from './components/PaginaInexistenta'
 import AplicareJob from './components/aplicare_job'
 import Dashboard from './components/Dashboard'
@@ -39,6 +41,8 @@ const defaultUser = {
     id: null,
     email: '',
     numeUtilizator: '',
+    rolDoritCod: null,
+    rolDoritDenumire: null,
 }
 
 function App() {
@@ -139,6 +143,16 @@ function App() {
         return true
     }
 
+    const onRegister = async ({ numeUtilizator, email, parola, rolDorit }) => {
+        await authApi.registerRequest({
+            numeUtilizator,
+            email,
+            parola,
+            rolDorit,
+        })
+        await onLogin(email, parola)
+    }
+
     const onLogout = () => {
         setUser(defaultUser)
         setPosturi([])
@@ -157,6 +171,7 @@ function App() {
 
     const isMd = user.rol === ROLURI.MANAGER_DEPARTAMENT || user.rol === ROLURI.ADMIN
     const isMr = user.rol === ROLURI.MANAGER_RECRUTARE || user.rol === ROLURI.ADMIN
+    const isGuest = user.isAuthenticated && user.rol === ROLURI.GUEST
 
     return (
         <>
@@ -263,7 +278,11 @@ function App() {
                         <Route
                             path="/dashboard"
                             element={
-                                user.isAuthenticated ? (
+                                !user.isAuthenticated ? (
+                                    <Navigate to="/login" />
+                                ) : isGuest ? (
+                                    <Navigate to="/cont-in-asteptare" />
+                                ) : (
                                     <Dashboard
                                         posturi={posturi}
                                         setPosturi={setPosturi}
@@ -272,10 +291,13 @@ function App() {
                                         onRemoteSaveDescriere={saveDescriereJob}
                                         onRefreshPosturi={refreshPosturi}
                                     />
-                                ) : (
-                                    <Navigate to="/login" />
                                 )
                             }
+                        />
+
+                        <Route
+                            path="/cont-in-asteptare"
+                            element={<ContInAsteptare />}
                         />
 
                         <Route
@@ -283,12 +305,33 @@ function App() {
                             element={
                                 !user.isAuthenticated ? (
                                     <Login onLogin={onLogin} />
+                                ) : user.rol === ROLURI.GUEST ? (
+                                    <Navigate to="/cont-in-asteptare" />
                                 ) : user.rol === ROLURI.ADMIN ? (
                                     <Navigate to="/admin" />
                                 ) : user.rol === ROLURI.MANAGER_RECRUTARE ? (
                                     <Navigate to="/administrare-posturi" />
                                 ) : (
                                     <Navigate to="/dashboard" />
+                                )
+                            }
+                        />
+
+                        <Route
+                            path="/register"
+                            element={
+                                user.isAuthenticated ? (
+                                    user.rol === ROLURI.GUEST ? (
+                                        <Navigate to="/cont-in-asteptare" />
+                                    ) : user.rol === ROLURI.ADMIN ? (
+                                        <Navigate to="/admin" />
+                                    ) : user.rol === ROLURI.MANAGER_RECRUTARE ? (
+                                        <Navigate to="/administrare-posturi" />
+                                    ) : (
+                                        <Navigate to="/dashboard" />
+                                    )
+                                ) : (
+                                    <Register onRegistered={onRegister} />
                                 )
                             }
                         />

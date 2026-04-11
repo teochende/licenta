@@ -6,6 +6,9 @@ public record UtilizatorResponseDTO(
         String email,
         String rolCod,
         String rolDenumire,
+        /** Rol solicitat la înregistrare (doar cât timp {@code rolCod} este guest). */
+        String rolDoritCod,
+        String rolDoritDenumire,
         Long departamentId,
         String departamentNume
 ) {

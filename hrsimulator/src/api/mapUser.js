@@ -6,6 +6,7 @@ const ROL_MAP = {
   recrutor: ROLURI.RECRUTOR,
   manager_recrutare: ROLURI.MANAGER_RECRUTARE,
   manager_departament: ROLURI.MANAGER_DEPARTAMENT,
+  guest: ROLURI.GUEST,
 }
 
 export function mapProfileToUser(me, token) {
@@ -19,5 +20,7 @@ export function mapProfileToUser(me, token) {
     rol: ROL_MAP[me.rolCod] || me.rolCod,
     departament: me.departamentNume || '',
     departamentId: me.departamentId ?? null,
+    rolDoritCod: me.rolDoritCod ?? null,
+    rolDoritDenumire: me.rolDoritDenumire ?? null,
   }
 }

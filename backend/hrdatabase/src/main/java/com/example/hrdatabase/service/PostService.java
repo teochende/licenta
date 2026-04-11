@@ -65,7 +65,7 @@ public class PostService {
     }
 
     @Transactional
-    public Post save(PostCreateRequest request) {
+    public PostViewDto save(PostCreateRequest request) {
         Departament departament = departamentRepository.findById(request.departamentId())
                 .orElseThrow(() -> new IllegalArgumentException("Departament inexistent: " + request.departamentId()));
 
@@ -86,11 +86,11 @@ public class PostService {
         Integer maxO = postRepository.findMaxOrdineDashboardByDepartamentId(departament.getId());
         post.setOrdineDashboard(maxO != null && maxO >= 0 ? maxO + 1 : 0);
 
-        return postRepository.save(post);
+        return PostMapper.toView(postRepository.save(post));
     }
 
     @Transactional
-    public Post updateFull(Long postId, PostCreateRequest request) {
+    public PostViewDto updateFull(Long postId, PostCreateRequest request) {
         Post post = postRepository.findByIdWithAssignments(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Post inexistent: " + postId));
         Departament departament = departamentRepository.findById(request.departamentId())
@@ -107,7 +107,7 @@ public class PostService {
         Set<Utilizator> intervievatori = loadUtilizatori(request.intervievatoriIds());
         assertRolSet(intervievatori, Rol.INTERVIEVATOR_TEHNIC, "Intervievator tehnic");
         post.setIntervievatori(intervievatori);
-        return postRepository.save(post);
+        return PostMapper.toView(postRepository.save(post));
     }
 
     @Transactional

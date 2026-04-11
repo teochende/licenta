@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { getDepartamente } from '../api/departamenteApi'
+import { getRecrutori, getIntervievatoriTehnici } from '../api/hrMetaApi'
 import {
     deletePost,
     patchPost,
@@ -22,19 +23,34 @@ export default function AdministrarePosturi({
 }) {
     const [editingId, setEditingId] = useState(null)
     const [departamente, setDepartamente] = useState([])
+    /** Reîncărcăm local; după încărcare folosim răspunsul API chiar dacă lista e goală. */
+    const [hrMeta, setHrMeta] = useState({ loaded: false, recrutori: [], intervievatori: [] })
 
     useEffect(() => {
         if (!token) {
             setDepartamente([])
+            setHrMeta({ loaded: false, recrutori: [], intervievatori: [] })
             return
         }
         getDepartamente(token)
             .then((rows) => setDepartamente(Array.isArray(rows) ? rows : []))
             .catch(() => setDepartamente([]))
+        Promise.all([
+            getRecrutori(token).catch(() => []),
+            getIntervievatoriTehnici(token).catch(() => []),
+        ]).then(([r, i]) => {
+            setHrMeta({
+                loaded: true,
+                recrutori: Array.isArray(r) ? r : [],
+                intervievatori: Array.isArray(i) ? i : [],
+            })
+        })
     }, [token])
 
-    const recrutoriNume = recrutoriDto.map((r) => r.numeUtilizator)
-    const intervievatoriNume = intervievatoriDto.map((r) => r.numeUtilizator)
+    const recrutoriEfectivi = hrMeta.loaded ? hrMeta.recrutori : recrutoriDto
+    const intervievatoriEfectivi = hrMeta.loaded ? hrMeta.intervievatori : intervievatoriDto
+    const recrutoriNume = recrutoriEfectivi.map((r) => r.numeUtilizator)
+    const intervievatoriNume = intervievatoriEfectivi.map((r) => r.numeUtilizator)
 
     const toggleEnabled = async (id) => {
         const p = posturi.find((x) => x.id === id)
@@ -70,11 +86,15 @@ export default function AdministrarePosturi({
     const salveazaEditare = async (jobActualizat) => {
         if (!token || editingId == null) return
         const idPost = editingId
-        const recIds = (jobActualizat.assignedRecrutori || [])
-            .map((n) => recrutoriDto.find((r) => r.numeUtilizator === n)?.id)
+        const norm = (s) => (s == null ? '' : String(s)).trim().toLowerCase()
+        const numeRecrutoriAlesi =
+            jobActualizat.assignedRecrutori ?? jobActualizat.assignedRecruteri ?? []
+        const numeIntervAlesi = jobActualizat.assignedIntervievatori ?? []
+        const recIds = (Array.isArray(numeRecrutoriAlesi) ? numeRecrutoriAlesi : [])
+            .map((n) => recrutoriEfectivi.find((r) => norm(r.numeUtilizator) === norm(n))?.id)
             .filter((x) => x != null)
-        const intIds = (jobActualizat.assignedIntervievatori || [])
-            .map((n) => intervievatoriDto.find((r) => r.numeUtilizator === n)?.id)
+        const intIds = (Array.isArray(numeIntervAlesi) ? numeIntervAlesi : [])
+            .map((n) => intervievatoriEfectivi.find((r) => norm(r.numeUtilizator) === norm(n))?.id)
             .filter((x) => x != null)
         try {
             await putPost(token, idPost, {

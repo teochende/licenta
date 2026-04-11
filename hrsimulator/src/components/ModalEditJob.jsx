@@ -20,7 +20,7 @@ export default function ModalEditJob({
             setFormData({
                 ...job,
                 departamentId: job.departamentId ?? '',
-                assignedRecruteri: Array.isArray(job.assignedRecrutori) ? [...job.assignedRecrutori] : [],
+                assignedRecrutori: Array.isArray(job.assignedRecrutori) ? [...job.assignedRecrutori] : [],
                 assignedIntervievatori: Array.isArray(job.assignedIntervievatori)
                     ? [...job.assignedIntervievatori]
                     : [],
@@ -79,7 +79,7 @@ export default function ModalEditJob({
             ...formData,
             id: Number(formData.id),
             departamentId: Number(formData.departamentId),
-            assignedRecruteri: formData.assignedRecrutori || [],
+            assignedRecrutori: formData.assignedRecrutori || [],
             assignedIntervievatori: formData.assignedIntervievatori || [],
             descriereFisierFile: stergeDescriereFisier ? null : descriereFisierFile,
             stergeDescriereFisier,
@@ -217,26 +217,35 @@ export default function ModalEditJob({
                             Post activ (enabled)
                         </label>
                     </div>
-                    {recrutoriDisponibili.length > 0 && (
-                        <div className="modal-edit-camp modal-edit-atribuiri">
-                            <span className="modal-edit-label">Recruteri atribuiți</span>
+                    <div className="modal-edit-camp modal-edit-atribuiri">
+                        <span className="modal-edit-label">Recruteri atribuiți</span>
+                        {recrutoriDisponibili.length === 0 ? (
+                            <p className="modal-edit-hint">
+                                Nu există utilizatori cu rol recrutor sau lista nu s-a încărcat. Creați utilizatori recrutori
+                                în administrare.
+                            </p>
+                        ) : (
                             <div className="modal-edit-checkbox-list">
                                 {recrutoriDisponibili.map((u) => (
                                     <label key={u} className="modal-edit-checkbox-item">
                                         <input
                                             type="checkbox"
-                                            checked={(formData.assignedRecruteri || []).includes(u)}
+                                            checked={(formData.assignedRecrutori || []).includes(u)}
                                             onChange={() => toggleRecrutor(u)}
                                         />
                                         {u}
                                     </label>
                                 ))}
                             </div>
-                        </div>
-                    )}
-                    {intervievatoriDisponibili.length > 0 && (
-                        <div className="modal-edit-camp modal-edit-atribuiri">
-                            <span className="modal-edit-label">Intervievatori tehnici atribuiți</span>
+                        )}
+                    </div>
+                    <div className="modal-edit-camp modal-edit-atribuiri">
+                        <span className="modal-edit-label">Intervievatori tehnici atribuiți</span>
+                        {intervievatoriDisponibili.length === 0 ? (
+                            <p className="modal-edit-hint">
+                                Nu există intervievatori tehnici sau lista nu s-a încărcat.
+                            </p>
+                        ) : (
                             <div className="modal-edit-checkbox-list">
                                 {intervievatoriDisponibili.map((u) => (
                                     <label key={u} className="modal-edit-checkbox-item">
@@ -249,8 +258,8 @@ export default function ModalEditJob({
                                     </label>
                                 ))}
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                     <div className="modal-edit-butonuri">
                         <button type="button" className="modal-btn modal-btn-anulare" onClick={onClose}>
                             Anulare

@@ -1,7 +1,7 @@
 package com.example.hrdatabase.controller;
 
 import com.example.hrdatabase.dto.request.LoginRequestDTO;
-import com.example.hrdatabase.dto.request.UtilizatorRequestDTO;
+import com.example.hrdatabase.dto.request.RegisterPublicRequestDTO;
 import com.example.hrdatabase.dto.response.AuthLoginResponse;
 import com.example.hrdatabase.dto.response.UtilizatorResponseDTO;
 import com.example.hrdatabase.entity.Utilizator;
@@ -25,8 +25,8 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public UtilizatorResponseDTO register(@Valid @RequestBody UtilizatorRequestDTO request) {
-        return utilizatorService.save(request);
+    public UtilizatorResponseDTO register(@Valid @RequestBody RegisterPublicRequestDTO request) {
+        return utilizatorService.registerPublic(request);
     }
 
     @PostMapping("/login")

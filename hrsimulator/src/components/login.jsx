@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 
 export default function Login({ onLogin }) {
     const [email, setEmail] = useState('')
@@ -28,7 +29,7 @@ export default function Login({ onLogin }) {
     return (
         <>
             <h3>Login</h3>
-            <p>Folosiți emailul @hrsim.ro și parola din baza de date.</p>
+            <p>Folosiți emailul @hrsim.ro. Nu aveți cont? <Link to="/register">Înregistrare</Link></p>
             <form onSubmit={handleLogin} style={{ display: 'block' }}>
                 <table>
                     <tbody>

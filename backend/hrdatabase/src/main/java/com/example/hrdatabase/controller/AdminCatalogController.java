@@ -47,6 +47,7 @@ public class AdminCatalogController {
             case RECRUTOR -> "Recrutor";
             case MANAGER_RECRUTARE -> "Manager recrutare";
             case MANAGER_DEPARTAMENT -> "Manager departament";
+            case GUEST -> "Invitat (în așteptare)";
         };
     }
 

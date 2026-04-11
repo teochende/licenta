@@ -10,6 +10,7 @@ function rolAfisare(cod) {
         [ROLURI.MANAGER_DEPARTAMENT]: 'Manager departament',
         [ROLURI.RECRUTOR]: 'Recrutor',
         [ROLURI.INTERVIEVATOR_TEHNIC]: 'Intervievator tehnic',
+        [ROLURI.GUEST]: 'Invitat (în așteptare)',
     }
     return m[cod] || cod || '—'
 }
@@ -38,8 +39,10 @@ export default function MeniuLogin() {
                     </div>
                 </>
             ) : (
-                <div className="articolMeniu">
+                <div className="articolMeniu articolMeniu-login-register">
                     <Link to="/login">Login</Link>
+                    <span aria-hidden> · </span>
+                    <Link to="/register">Înregistrare</Link>
                 </div>
             )}
         </div>

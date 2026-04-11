@@ -11,7 +11,8 @@ export const ROLURI = {
     INTERVIEVATOR_TEHNIC: 'intervievator_tehnic',
     RECRUTOR: 'recrutor',
     MANAGER_RECRUTARE: 'manager_recrutare',
-    MANAGER_DEPARTAMENT: 'manager_departament'
+    MANAGER_DEPARTAMENT: 'manager_departament',
+    GUEST: 'guest',
 };
 
 export default LoginContext;

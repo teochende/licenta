@@ -35,6 +35,13 @@ public class Utilizator implements UserDetails {
     @Column(name = "rol", nullable = false, length = 48)
     private Rol rol;
 
+    /**
+     * Rol solicitat la înregistrare publică (utilizatorul efectiv rămâne {@link Rol#GUEST} până la validare).
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "rol_dorit", length = 48)
+    private Rol rolDorit;
+
     /** Setat pentru roluri precum manager_departament (ex.: „Programare”). */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "departament_id")
@@ -91,6 +98,14 @@ public class Utilizator implements UserDetails {
 
     public void setRol(Rol rol) {
         this.rol = rol;
+    }
+
+    public Rol getRolDorit() {
+        return rolDorit;
+    }
+
+    public void setRolDorit(Rol rolDorit) {
+        this.rolDorit = rolDorit;
     }
 
     public Departament getDepartament() {

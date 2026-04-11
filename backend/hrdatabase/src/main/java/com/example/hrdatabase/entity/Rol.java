@@ -9,5 +9,7 @@ public enum Rol {
     INTERVIEVATOR_TEHNIC,
     RECRUTOR,
     MANAGER_RECRUTARE,
-    MANAGER_DEPARTAMENT
+    MANAGER_DEPARTAMENT,
+    /** Cont creat prin auto-înregistrare; așteaptă validare de la administrator. */
+    GUEST
 }
