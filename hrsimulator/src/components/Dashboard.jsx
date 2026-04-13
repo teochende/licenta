@@ -38,6 +38,8 @@ function pipelineLabelFor(etapaKey) {
             return 'Review CV\n(HR / AI)'
         case 'reviewEngleza':
             return 'Review CV\nengleză'
+        case 'interviuHr':
+            return 'Interviu\nHR'
         case 'reviewTehnic':
             return 'Review CV\ntehnic'
         case 'interviuTehnic':
@@ -60,6 +62,19 @@ function numeDinEmail(email) {
         .split(/[._-]/)
         .map((s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase())
         .join(' ')
+}
+
+/** Candidat respins dacă orice etapă din pipeline are status „respins”. */
+function pipelineAreCandidatRespins(state) {
+    if (!state?.status || typeof state.status !== 'object') return false
+    return Object.values(state.status).some((s) => s === STATUS_ETAPA.RESPINS)
+}
+
+function compareAplicantiEntries(a, b) {
+    const an = numeDinEmail(a.candidat.email)
+    const bn = numeDinEmail(b.candidat.email)
+    if (an !== bn) return an.localeCompare(bn)
+    return String(a.job?.nume || '').localeCompare(String(b.job?.nume || ''))
 }
 
 /** Previzualizare text CV: fără placeholder vechi când există fișier; ascunde mesajul „[CV încărcat: …]”. */
@@ -310,14 +325,22 @@ export default function Dashboard({
                 aplicatieRaw: a,
             })
         })
-        aplicari.sort((a, b) => {
-            const an = numeDinEmail(a.candidat.email)
-            const bn = numeDinEmail(b.candidat.email)
-            if (an !== bn) return an.localeCompare(bn)
-            return String(a.job?.nume || '').localeCompare(String(b.job?.nume || ''))
-        })
+        aplicari.sort(compareAplicantiEntries)
         return aplicari
     }, [aplicatiiServer, jobIdsVizibile, jobsVizibileMap])
+
+    const { aplicantiActivi, aplicantiRespinsi } = useMemo(() => {
+        const activi = []
+        const respinsi = []
+        aplicantiVizibili.forEach((entry) => {
+            const st = aplicantiState[entry.key]
+            if (pipelineAreCandidatRespins(st)) respinsi.push(entry)
+            else activi.push(entry)
+        })
+        activi.sort(compareAplicantiEntries)
+        respinsi.sort(compareAplicantiEntries)
+        return { aplicantiActivi: activi, aplicantiRespinsi: respinsi }
+    }, [aplicantiVizibili, aplicantiState])
 
     useEffect(() => {
         setAplicantiState((prev) => {
@@ -373,8 +396,13 @@ export default function Dashboard({
                 ].filter(Boolean)
             }
         }
-        if (etapaKey === 'interviuTehnic' || etapaKey === 'interviuManagement') {
-            const label = etapaKey === 'interviuTehnic' ? 'Interviu tehnic' : 'Interviu management'
+        if (etapaKey === 'interviuHr' || etapaKey === 'interviuTehnic' || etapaKey === 'interviuManagement') {
+            const label =
+                etapaKey === 'interviuHr'
+                    ? 'Interviu HR'
+                    : etapaKey === 'interviuTehnic'
+                        ? 'Interviu tehnic'
+                        : 'Interviu management'
             return {
                 title: label,
                 lines: [
@@ -494,6 +522,160 @@ export default function Dashboard({
 
             return next
         })
+    }
+
+    const renderAplicantCard = (entry, inRespinsZone) => {
+        const { key, candidat, job, aplicatieId, aplicatieRaw } = entry
+        const state = aplicantiState[key]
+        const reviewAi = state?.reviewAi ?? false
+        const reviewEnglezaAutomat = state?.reviewEnglezaAutomat ?? true
+        const statusEtape = state?.status || {}
+        const unlockedUpTo = Number.isFinite(state?.unlockedUpTo) ? state.unlockedUpTo : 0
+        const matchScore =
+            !reviewAi && aplicatieRaw?.cvJobMatchScore != null
+                ? Number(aplicatieRaw.cvJobMatchScore)
+                : null
+        return (
+            <div
+                key={key}
+                id={aplicatieId != null ? `dashboard-aplicant-${aplicatieId}` : undefined}
+                className={inRespinsZone ? 'aplicant-card aplicant-card--respins' : 'aplicant-card'}
+            >
+                <div className="aplicant-top">
+                    <div className="aplicant-identitate">
+                        <div className="aplicant-nume">{numeDinEmail(candidat.email)}</div>
+                        <div className="aplicant-meta">
+                            <span className="aplicant-email">{candidat.email}</span>
+                            <span className="aplicant-data-aplicare">
+                                Aplicat: {formatDataAplicare(candidat.dataAplicare)}
+                            </span>
+                            <span className="aplicant-job">
+                                Job: <strong>{job?.nume}</strong>
+                            </span>
+                        </div>
+                    </div>
+                    <div className="aplicant-actiuni">
+                        {poateRecalcScor && aplicatieId != null ? (
+                            <button
+                                type="button"
+                                className="aplicant-btn-recalc"
+                                onClick={() => handleRecalcOneMatchScore(aplicatieId)}
+                                disabled={recalcOneId === aplicatieId || recalcAllBusy}
+                                aria-busy={recalcOneId === aplicatieId}
+                                title="Recalculează match score (cuvinte cheie) pentru această aplicare"
+                            >
+                                {recalcOneId === aplicatieId ? (
+                                    <>
+                                        <span
+                                            className="dashboard-btn-spinner dashboard-btn-spinner--sm"
+                                            aria-hidden="true"
+                                        />
+                                        Se calculează…
+                                    </>
+                                ) : (
+                                    'Recalculează scor'
+                                )}
+                            </button>
+                        ) : null}
+                        <button
+                            type="button"
+                            className="aplicant-btn-detalii"
+                            onClick={() => setCandidatDetaliiOpen({ key, candidat, job })}
+                        >
+                            Vezi detalii
+                        </button>
+                    </div>
+                </div>
+
+                <div className="aplicant-toggle-row">
+                    <label className="aplicant-toggle">
+                        <input
+                            type="checkbox"
+                            checked={reviewAi}
+                            onChange={() => toggleAplicant(key, 'reviewAi')}
+                        />
+                        Review CV AI
+                    </label>
+                    <label className="aplicant-toggle">
+                        <input
+                            type="checkbox"
+                            checked={reviewEnglezaAutomat}
+                            onChange={() => toggleAplicant(key, 'reviewEnglezaAutomat')}
+                        />
+                        Review engleză automat
+                    </label>
+                    {poateSetaVizibilitateIt && aplicatieId != null ? (
+                        <label
+                            className="aplicant-toggle aplicant-toggle--vizibil-it"
+                            title="Doar candidații bifați apar în dashboardul intervievatorilor tehnici atribuiți acestui post."
+                        >
+                            <input
+                                type="checkbox"
+                                checked={!!aplicatieRaw?.vizibilIntervievatoriTehnic}
+                                disabled={vizibilItSavingId === aplicatieId}
+                                onChange={(ev) => handleToggleVizibilitateIt(aplicatieId, ev.target.checked)}
+                            />
+                            {vizibilItSavingId === aplicatieId ? (
+                                <span className="dashboard-btn-spinner dashboard-btn-spinner--sm" aria-hidden="true" />
+                            ) : null}
+                            Vizibil pentru intervievatori tehnici
+                        </label>
+                    ) : null}
+                </div>
+
+                <div className="aplicant-pipeline">
+                    <div className="pipeline-track" role="list" aria-label="Pipeline recrutare">
+                        {ETAPE_RECRUTARE.map((et, idx) => {
+                            const isLocked = idx > unlockedUpTo
+                            const rawStatus = statusEtape[et.key] ?? STATUS_ETAPA.NEUTRU
+                            const status = isLocked ? STATUS_ETAPA.NEUTRU : rawStatus
+                            const isCurrent = idx === unlockedUpTo && status === STATUS_ETAPA.IN_ASTEPTARE
+                            return (
+                                <div key={et.key} className="pipeline-item" role="listitem">
+                                    <div
+                                        className="pipeline-label-wrap"
+                                        onMouseEnter={(e) => onHoverEticheta(key, et.key, e.currentTarget)}
+                                        onMouseMove={(e) => onHoverEticheta(key, et.key, e.currentTarget)}
+                                        onMouseLeave={clearHoverEticheta}
+                                    >
+                                        <div className={`pipeline-label pipeline-label--${status}`}>
+                                            {et.key === 'reviewCv'
+                                                ? matchScore != null
+                                                    ? `CV Review manual – Match Score: ${matchScore}%`
+                                                    : reviewAi
+                                                      ? 'CV Review AI'
+                                                      : 'CV Review manual'
+                                                : pipelineLabelFor(et.key)}
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        className={`pipeline-dot pipeline-dot--${status}${isCurrent ? ' pipeline-dot--current' : ''}`}
+                                        onClick={() => cycleStatus(key, et.key)}
+                                        disabled={isLocked}
+                                        aria-label={`${et.label} (${status.replaceAll('_', ' ')})`}
+                                        title={
+                                            isLocked
+                                                ? `${et.label} (blocat)`
+                                                : `${et.label} (${status.replaceAll('_', ' ')})`
+                                        }
+                                    />
+                                    {idx < ETAPE_RECRUTARE.length - 1 ? (
+                                        <div className={`pipeline-line pipeline-line--${status}`} aria-hidden="true" />
+                                    ) : (
+                                        <div className="pipeline-line pipeline-line--none" aria-hidden="true" />
+                                    )}
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
+                <div className="aplicant-hint">
+                    Poți da click pe o etapă din pipeline pentru a schimba statusul (în așteptare → acceptat →
+                    respins).
+                </div>
+            </div>
+        )
     }
 
     return (
@@ -620,154 +802,25 @@ export default function Dashboard({
                     <p className="dashboard-aplicanti-gol">Nu există candidați care au aplicat la joburile vizibile pentru rolul tău.</p>
                 ) : (
                     <div className="dashboard-aplicanti-lista">
-                        {aplicantiVizibili.map(({ key, candidat, job, aplicatieId, aplicatieRaw }) => {
-                            const state = aplicantiState[key]
-                            const reviewAi = state?.reviewAi ?? false
-                            const reviewEnglezaAutomat = state?.reviewEnglezaAutomat ?? true
-                            const statusEtape = state?.status || {}
-                            const unlockedUpTo = Number.isFinite(state?.unlockedUpTo) ? state.unlockedUpTo : 0
-                            const matchScore =
-                                !reviewAi && aplicatieRaw?.cvJobMatchScore != null
-                                    ? Number(aplicatieRaw.cvJobMatchScore)
-                                    : null
-                            return (
-                                <div
-                                    key={key}
-                                    id={aplicatieId != null ? `dashboard-aplicant-${aplicatieId}` : undefined}
-                                    className="aplicant-card"
-                                >
-                                    <div className="aplicant-top">
-                                        <div className="aplicant-identitate">
-                                            <div className="aplicant-nume">{numeDinEmail(candidat.email)}</div>
-                                            <div className="aplicant-meta">
-                                                <span className="aplicant-email">{candidat.email}</span>
-                                                <span className="aplicant-data-aplicare">
-                                                    Aplicat: {formatDataAplicare(candidat.dataAplicare)}
-                                                </span>
-                                                <span className="aplicant-job">Job: <strong>{job?.nume}</strong></span>
-                                            </div>
-                                        </div>
-                                        <div className="aplicant-actiuni">
-                                            {poateRecalcScor && aplicatieId != null ? (
-                                                <button
-                                                    type="button"
-                                                    className="aplicant-btn-recalc"
-                                                    onClick={() => handleRecalcOneMatchScore(aplicatieId)}
-                                                    disabled={recalcOneId === aplicatieId || recalcAllBusy}
-                                                    aria-busy={recalcOneId === aplicatieId}
-                                                    title="Recalculează match score (cuvinte cheie) pentru această aplicare"
-                                                >
-                                                    {recalcOneId === aplicatieId ? (
-                                                        <>
-                                                            <span
-                                                                className="dashboard-btn-spinner dashboard-btn-spinner--sm"
-                                                                aria-hidden="true"
-                                                            />
-                                                            Se calculează…
-                                                        </>
-                                                    ) : (
-                                                        'Recalculează scor'
-                                                    )}
-                                                </button>
-                                            ) : null}
-                                            <button
-                                                type="button"
-                                                className="aplicant-btn-detalii"
-                                                onClick={() => setCandidatDetaliiOpen({ key, candidat, job })}
-                                            >
-                                                Vezi detalii
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div className="aplicant-toggle-row">
-                                        <label className="aplicant-toggle">
-                                            <input
-                                                type="checkbox"
-                                                checked={reviewAi}
-                                                onChange={() => toggleAplicant(key, 'reviewAi')}
-                                            />
-                                            Review CV AI
-                                        </label>
-                                        <label className="aplicant-toggle">
-                                            <input
-                                                type="checkbox"
-                                                checked={reviewEnglezaAutomat}
-                                                onChange={() => toggleAplicant(key, 'reviewEnglezaAutomat')}
-                                            />
-                                            Review engleză automat
-                                        </label>
-                                        {poateSetaVizibilitateIt && aplicatieId != null ? (
-                                            <label
-                                                className="aplicant-toggle aplicant-toggle--vizibil-it"
-                                                title="Doar candidații bifați apar în dashboardul intervievatorilor tehnici atribuiți acestui post."
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={!!aplicatieRaw?.vizibilIntervievatoriTehnic}
-                                                    disabled={vizibilItSavingId === aplicatieId}
-                                                    onChange={(ev) =>
-                                                        handleToggleVizibilitateIt(aplicatieId, ev.target.checked)
-                                                    }
-                                                />
-                                                {vizibilItSavingId === aplicatieId ? (
-                                                    <span
-                                                        className="dashboard-btn-spinner dashboard-btn-spinner--sm"
-                                                        aria-hidden="true"
-                                                    />
-                                                ) : null}
-                                                Vizibil pentru intervievatori tehnici
-                                            </label>
-                                        ) : null}
-                                    </div>
-
-                                    <div className="aplicant-pipeline">
-                                        <div className="pipeline-track" role="list" aria-label="Pipeline recrutare">
-                                            {ETAPE_RECRUTARE.map((et, idx) => {
-                                                const isLocked = idx > unlockedUpTo
-                                                const rawStatus = statusEtape[et.key] ?? STATUS_ETAPA.NEUTRU
-                                                const status = isLocked ? STATUS_ETAPA.NEUTRU : rawStatus
-                                                const isCurrent = idx === unlockedUpTo && status === STATUS_ETAPA.IN_ASTEPTARE
-                                                return (
-                                                    <div key={et.key} className="pipeline-item" role="listitem">
-                                                        <div
-                                                            className="pipeline-label-wrap"
-                                                            onMouseEnter={(e) => onHoverEticheta(key, et.key, e.currentTarget)}
-                                                            onMouseMove={(e) => onHoverEticheta(key, et.key, e.currentTarget)}
-                                                            onMouseLeave={clearHoverEticheta}
-                                                        >
-                                                            <div className={`pipeline-label pipeline-label--${status}`}>
-                                                                {et.key === 'reviewCv'
-                                                                    ? matchScore != null
-                                                                        ? `CV Review manual – Match Score: ${matchScore}%`
-                                                                        : (reviewAi ? 'CV Review AI' : 'CV Review manual')
-                                                                    : pipelineLabelFor(et.key)}
-                                                            </div>
-                                                        </div>
-                                                        <button
-                                                            type="button"
-                                                            className={`pipeline-dot pipeline-dot--${status}${isCurrent ? ' pipeline-dot--current' : ''}`}
-                                                            onClick={() => cycleStatus(key, et.key)}
-                                                            disabled={isLocked}
-                                                            aria-label={`${et.label} (${status.replaceAll('_', ' ')})`}
-                                                            title={isLocked ? `${et.label} (blocat)` : `${et.label} (${status.replaceAll('_', ' ')})`}
-                                                        />
-                                                        {idx < ETAPE_RECRUTARE.length - 1 ? (
-                                                            <div className={`pipeline-line pipeline-line--${status}`} aria-hidden="true" />
-                                                        ) : (
-                                                            <div className="pipeline-line pipeline-line--none" aria-hidden="true" />
-                                                        )}
-                                                    </div>
-                                                )
-                                            })}
-                                        </div>
-                                    </div>
-                                    <div className="aplicant-hint">
-                                        Poți da click pe o etapă din pipeline pentru a schimba statusul (în așteptare → acceptat → respins).
-                                    </div>
-                                </div>
-                            )
-                        })}
+                        {aplicantiActivi.map((entry) => renderAplicantCard(entry, false))}
+                        {aplicantiRespinsi.length > 0 ? (
+                            <div
+                                className="dashboard-aplicanti-zona-respinse"
+                                role="separator"
+                                aria-label="Aplicații respinse"
+                            >
+                                <div className="dashboard-aplicanti-zona-respinse__line" aria-hidden="true" />
+                                <span className="dashboard-aplicanti-zona-respinse__titlu">
+                                    Aplicații respinse
+                                    <span className="dashboard-aplicanti-zona-respinse__count">
+                                        {' '}
+                                        ({aplicantiRespinsi.length})
+                                    </span>
+                                </span>
+                                <div className="dashboard-aplicanti-zona-respinse__line" aria-hidden="true" />
+                            </div>
+                        ) : null}
+                        {aplicantiRespinsi.map((entry) => renderAplicantCard(entry, true))}
                     </div>
                 )}
             </section>
@@ -832,10 +885,8 @@ export default function Dashboard({
                                     cvNumeFisier={candidatDetaliiOpen.candidat.cvNumeFisier}
                                     cvFisierStocat={candidatDetaliiOpen.candidat.cvFisierStocat}
                                 />
-                                {candidatDetaliiOpen.candidat.cv?.trim() ? (
-                                    <div className="aplicant-cv-box">
-                                        {candidatDetaliiOpen.candidat.cv}
-                                    </div>
+                                {!candidatDetaliiOpen.candidat.cvFisierStocat ? (
+                                    <p className="aplicant-cv-hint">Nu există fișier CV încărcat pentru deschidere.</p>
                                 ) : null}
                             </div>
                         </div>

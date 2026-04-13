@@ -149,12 +149,51 @@
   gap: 1rem;
 }
 
+.dashboard-aplicanti-zona-respinse {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin: 0.75rem 0 0.25rem;
+  width: 100%;
+  min-height: 2rem;
+}
+
+.dashboard-aplicanti-zona-respinse__line {
+  flex: 1;
+  min-width: 1.5rem;
+  border: 0;
+  border-top: 2px solid #dc3545;
+  opacity: 0.85;
+}
+
+.dashboard-aplicanti-zona-respinse__titlu {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #842029;
+  white-space: nowrap;
+}
+
+.dashboard-aplicanti-zona-respinse__count {
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+  color: #6c757d;
+}
+
 .aplicant-card {
   border: 1px solid #e9ecef;
   border-radius: 12px;
   background: #fff;
   padding: 1rem;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.aplicant-card--respins {
+  border-color: #f1aeb5;
+  background: linear-gradient(180deg, #fff 0%, #fff5f5 100%);
+  box-shadow: 0 1px 2px rgba(220, 53, 69, 0.08);
 }
 
 .aplicant-top {
@@ -636,6 +675,12 @@
 
 .aplicant-cv h4 {
   margin: 0 0 0.5rem;
+}
+
+.aplicant-cv-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  color: #6c757d;
 }
 
 .aplicant-cv-box {

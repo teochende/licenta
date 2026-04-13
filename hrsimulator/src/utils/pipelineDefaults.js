@@ -2,6 +2,7 @@ export const ETAPE_RECRUTARE = [
   { key: 'depusCv', label: 'Depus CV' },
   { key: 'reviewCv', label: 'Review CV HR / Review CV AI' },
   { key: 'reviewEngleza', label: 'Review CV engleză' },
+  { key: 'interviuHr', label: 'Interviu HR' },
   { key: 'reviewTehnic', label: 'Review CV tehnic' },
   { key: 'interviuTehnic', label: 'Interviu tehnic' },
   { key: 'reviewManagement', label: 'Review CV management' },
@@ -16,12 +17,39 @@ export const STATUS_ETAPA = {
   NEUTRU: 'neutru',
 }
 
+/**
+ * Pipeline-uri salvate înainte de etapa „interviu HR”: inserăm etapa și corectăm indexul unlockedUpTo.
+ */
+function normalizePipelineStateForInterviuHr(state) {
+  if (state.status?.interviuHr !== undefined) {
+    return state
+  }
+  const u = Number.isFinite(state.unlockedUpTo) ? state.unlockedUpTo : 0
+  const next = {
+    ...state,
+    status: { ...state.status, interviuHr: STATUS_ETAPA.NEUTRU },
+    details: {
+      ...state.details,
+      interviuHr: {
+        scheduledAt: state.details?.interviuHr?.scheduledAt,
+        interviewerNotes:
+          state.details?.interviuHr?.interviewerNotes ||
+          'Notițe interviu HR: potrivire cu rolul, motivație, așteptări, disponibilitate.',
+      },
+    },
+  }
+  if (u >= 3) {
+    next.unlockedUpTo = u + 1
+  }
+  return next
+}
+
 export function parsePipelineStateJson(json) {
   if (!json || typeof json !== 'string') return null
   try {
     const o = JSON.parse(json)
     if (o && typeof o === 'object' && o.status && typeof o.status === 'object') {
-      return o
+      return normalizePipelineStateForInterviuHr(o)
     }
   } catch {
     /* ignore */
@@ -63,6 +91,10 @@ export function buildDefaultPipelineState(seedNum) {
         rejectReasons: ['Nivel sub minimul cerut'],
         notes: 'Evaluare engleză: automat/manual (în funcție de toggle).',
       },
+      interviuHr: {
+        scheduledAt: formatDataOra(zileInUrma((seed % 4) + 1)),
+        interviewerNotes: 'Notițe HR: screening comportamental și aliniere cu cultura echipei.',
+      },
       reviewTehnic: {
         acceptReasons: ['Stack potrivit pentru post', 'Experiență hands-on'],
         rejectReasons: ['Lipsă cunoștințe cheie'],
@@ -90,6 +122,7 @@ export function buildDefaultPipelineState(seedNum) {
       depusCv: STATUS_ETAPA.ACCEPTAT,
       reviewCv: STATUS_ETAPA.IN_ASTEPTARE,
       reviewEngleza: STATUS_ETAPA.NEUTRU,
+      interviuHr: STATUS_ETAPA.NEUTRU,
       reviewTehnic: STATUS_ETAPA.NEUTRU,
       interviuTehnic: STATUS_ETAPA.NEUTRU,
       reviewManagement: STATUS_ETAPA.NEUTRU,
