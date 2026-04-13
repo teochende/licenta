@@ -260,6 +260,12 @@
   transform: translateY(1px);
 }
 
+.aplicant-toggle--vizibil-it {
+  border-left: 3px solid #198754;
+  padding-left: 0.65rem;
+  margin-left: 0.15rem;
+}
+
 .aplicant-etape {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

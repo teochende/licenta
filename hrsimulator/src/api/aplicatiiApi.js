@@ -66,6 +66,15 @@ export function patchAplicatiePipeline(token, aplicatieId, pipelineStateJson) {
   })
 }
 
+/** Recrutor / admin / MR: marchează dacă intervievatorii tehnici văd aplicarea în dashboard. */
+export function patchAplicatieVizibilitateIntervievatoriTehnic(token, aplicatieId, vizibilIntervievatoriTehnic) {
+  return apiFetch(`/api/aplicatii/${aplicatieId}/vizibilitate-intervievatori-tehnici`, {
+    method: 'PATCH',
+    token,
+    body: { vizibilIntervievatoriTehnic },
+  })
+}
+
 export function recalcAplicatiiMatchScore(token, { onlyMissing = true } = {}) {
   const qs = `onlyMissing=${onlyMissing ? 'true' : 'false'}`
   return apiFetch(`/api/admin/aplicatii/recalc-match-score?${qs}`, {

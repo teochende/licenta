@@ -23,6 +23,12 @@ public interface AplicatieRepository extends JpaRepository<Aplicatie, Long> {
     @Query(value = "UPDATE aplicatie SET ai_cv_review = false WHERE ai_cv_review IS NULL", nativeQuery = true)
     int backfillAiCvReviewFalse();
 
+    @Modifying
+    @Query(
+            value = "UPDATE aplicatie SET vizibil_intervievatori_tehnic = false WHERE vizibil_intervievatori_tehnic IS NULL",
+            nativeQuery = true)
+    int backfillVizibilIntervievatoriTehnicFalse();
+
     @Query("""
             SELECT DISTINCT a FROM Aplicatie a
             LEFT JOIN FETCH a.post p

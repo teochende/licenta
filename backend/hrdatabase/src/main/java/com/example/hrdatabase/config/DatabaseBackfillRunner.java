@@ -29,6 +29,10 @@ public class DatabaseBackfillRunner implements ApplicationRunner {
         if (n > 0) {
             log.info("Backfill: set ai_cv_review=false pentru {} aplicări existente.", n);
         }
+        int v = aplicatieRepository.backfillVizibilIntervievatoriTehnicFalse();
+        if (v > 0) {
+            log.info("Backfill: set vizibil_intervievatori_tehnic=false pentru {} aplicări existente.", v);
+        }
     }
 }
 

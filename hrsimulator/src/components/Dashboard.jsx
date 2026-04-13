@@ -5,6 +5,7 @@ import { ROLURI } from '../context/login_context'
 import {
     getAplicatiiDashboard,
     patchAplicatiePipeline,
+    patchAplicatieVizibilitateIntervievatoriTehnic,
     recalcAplicatiiMatchScore,
     recalcAplicatieMatchScore,
 } from '../api/aplicatiiApi'
@@ -100,9 +101,16 @@ export default function Dashboard({
     const [recalcAllBusy, setRecalcAllBusy] = useState(false)
     const [recalcOneId, setRecalcOneId] = useState(null)
     const [recalcMessage, setRecalcMessage] = useState('')
+    const [vizibilItSavingId, setVizibilItSavingId] = useState(null)
 
     const poateRecalcScor =
         user?.rol === ROLURI.ADMIN || user?.rol === ROLURI.MANAGER_RECRUTARE
+
+    /** Recrutor / admin / MR pot trimite candidați spre intervievatorii tehnici (vizibilitate în dashboard IT). */
+    const poateSetaVizibilitateIt =
+        user?.rol === ROLURI.RECRUTOR ||
+        user?.rol === ROLURI.ADMIN ||
+        user?.rol === ROLURI.MANAGER_RECRUTARE
 
     const reloadAplicatii = useCallback(async () => {
         if (!authToken) return
@@ -161,6 +169,19 @@ export default function Dashboard({
             setRecalcMessage(e?.message || 'Eroare la recalculare.')
         } finally {
             setRecalcOneId(null)
+        }
+    }
+
+    const handleToggleVizibilitateIt = async (aplicatieId, vizibil) => {
+        if (!authToken || aplicatieId == null || !poateSetaVizibilitateIt) return
+        setVizibilItSavingId(aplicatieId)
+        try {
+            await patchAplicatieVizibilitateIntervievatoriTehnic(authToken, aplicatieId, vizibil)
+            await reloadAplicatii()
+        } catch (e) {
+            alert(e?.message || 'Nu s-a putut salva vizibilitatea pentru intervievatori tehnici.')
+        } finally {
+            setVizibilItSavingId(null)
         }
     }
 
@@ -676,6 +697,28 @@ export default function Dashboard({
                                             />
                                             Review engleză automat
                                         </label>
+                                        {poateSetaVizibilitateIt && aplicatieId != null ? (
+                                            <label
+                                                className="aplicant-toggle aplicant-toggle--vizibil-it"
+                                                title="Doar candidații bifați apar în dashboardul intervievatorilor tehnici atribuiți acestui post."
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={!!aplicatieRaw?.vizibilIntervievatoriTehnic}
+                                                    disabled={vizibilItSavingId === aplicatieId}
+                                                    onChange={(ev) =>
+                                                        handleToggleVizibilitateIt(aplicatieId, ev.target.checked)
+                                                    }
+                                                />
+                                                {vizibilItSavingId === aplicatieId ? (
+                                                    <span
+                                                        className="dashboard-btn-spinner dashboard-btn-spinner--sm"
+                                                        aria-hidden="true"
+                                                    />
+                                                ) : null}
+                                                Vizibil pentru intervievatori tehnici
+                                            </label>
+                                        ) : null}
                                     </div>
 
                                     <div className="aplicant-pipeline">

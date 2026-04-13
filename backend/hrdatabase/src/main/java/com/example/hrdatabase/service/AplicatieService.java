@@ -2,6 +2,7 @@ package com.example.hrdatabase.service;
 
 import com.example.hrdatabase.dto.request.AplicatieCreateRequest;
 import com.example.hrdatabase.dto.request.AplicatiePipelinePatchRequest;
+import com.example.hrdatabase.dto.request.AplicatieVizibilitateItPatchRequest;
 import com.example.hrdatabase.dto.response.AplicatieDashboardDto;
 import com.example.hrdatabase.dto.response.RecalcMatchScoreResultDto;
 import com.example.hrdatabase.entity.Aplicatie;
@@ -191,7 +192,7 @@ public class AplicatieService {
     @Transactional(readOnly = true)
     public List<AplicatieDashboardDto> findDashboardFor(Utilizator utilizator) {
         return aplicatieRepository.findAllWithPostGraph().stream()
-                .filter(app -> postAccessService.canViewPost(utilizator, app.getPost()))
+                .filter(app -> postAccessService.canAccessAplicatieDetail(utilizator, app.getPost(), app))
                 .map(AplicatieService::toDashboardDto)
                 .toList();
     }
@@ -200,7 +201,7 @@ public class AplicatieService {
     public ResponseEntity<Resource> getCvFileResponse(Long aplicatieId, Utilizator utilizator) {
         Aplicatie a = aplicatieRepository.findByIdWithPostGraph(aplicatieId)
                 .orElseThrow(() -> new IllegalArgumentException("Aplicare inexistentă: " + aplicatieId));
-        if (!postAccessService.canViewPost(utilizator, a.getPost())) {
+        if (!postAccessService.canAccessAplicatieDetail(utilizator, a.getPost(), a)) {
             throw new AccessDeniedException("Nu aveți acces la această aplicare.");
         }
         String pathStr = a.getCvFisierPath();
@@ -244,10 +245,22 @@ public class AplicatieService {
     }
 
     @Transactional
+    public void updateVizibilitateIntervievatoriTehnic(
+            Long aplicatieId, AplicatieVizibilitateItPatchRequest request, Utilizator utilizator) {
+        Aplicatie a = aplicatieRepository.findByIdWithPostGraph(aplicatieId)
+                .orElseThrow(() -> new IllegalArgumentException("Aplicare inexistentă: " + aplicatieId));
+        if (!postAccessService.canManageVizibilitateIntervievatoriTehnic(utilizator, a.getPost())) {
+            throw new AccessDeniedException("Nu puteți modifica vizibilitatea acestei aplicări.");
+        }
+        a.setVizibilIntervievatoriTehnic(Boolean.TRUE.equals(request.vizibilIntervievatoriTehnic()));
+        aplicatieRepository.save(a);
+    }
+
+    @Transactional
     public void updatePipeline(Long aplicatieId, AplicatiePipelinePatchRequest request, Utilizator utilizator) {
         Aplicatie a = aplicatieRepository.findByIdWithPostGraph(aplicatieId)
                 .orElseThrow(() -> new IllegalArgumentException("Aplicare inexistentă: " + aplicatieId));
-        if (!postAccessService.canViewPost(utilizator, a.getPost())) {
+        if (!postAccessService.canAccessAplicatieDetail(utilizator, a.getPost(), a)) {
             throw new AccessDeniedException("Nu aveți acces la această aplicare.");
         }
         a.setPipelineState(stripNullChars(request.pipelineStateJson()));
@@ -264,7 +277,7 @@ public class AplicatieService {
         }
         Aplicatie a = aplicatieRepository.findByIdWithPostGraph(aplicatieId)
                 .orElseThrow(() -> new IllegalArgumentException("Aplicare inexistentă: " + aplicatieId));
-        if (!postAccessService.canViewPost(caller, a.getPost())) {
+        if (!postAccessService.canAccessAplicatieDetail(caller, a.getPost(), a)) {
             throw new AccessDeniedException("Nu aveți acces la această aplicare.");
         }
         int processed = 1;
@@ -434,6 +447,7 @@ public class AplicatieService {
                 a.getCvContinut(),
                 a.isAiCvReview(),
                 a.getCvJobMatchScore(),
+                a.isVizibilIntervievatoriTehnic(),
                 a.getPipelineState());
     }
 

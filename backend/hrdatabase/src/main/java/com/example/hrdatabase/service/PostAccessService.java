@@ -1,5 +1,6 @@
 package com.example.hrdatabase.service;
 
+import com.example.hrdatabase.entity.Aplicatie;
 import com.example.hrdatabase.entity.Post;
 import com.example.hrdatabase.entity.Rol;
 import com.example.hrdatabase.entity.Utilizator;
@@ -56,6 +57,39 @@ public class PostAccessService {
         }
         if (user.getRol() == Rol.MANAGER_DEPARTAMENT && user.getDepartament() != null && post.getDepartament() != null) {
             return Objects.equals(user.getDepartament().getId(), post.getDepartament().getId());
+        }
+        return false;
+    }
+
+    /**
+     * Acces la detaliile unei aplicări (dashboard, CV, pipeline): intervievatorul tehnic doar dacă
+     * recrutorul a marcat aplicarea ca vizibilă pentru IT.
+     */
+    public boolean canAccessAplicatieDetail(Utilizator user, Post post, Aplicatie app) {
+        if (user == null || post == null || app == null) {
+            return false;
+        }
+        if (!canViewPost(user, post)) {
+            return false;
+        }
+        if (user.getRol() == Rol.INTERVIEVATOR_TEHNIC) {
+            return app.isVizibilIntervievatoriTehnic();
+        }
+        return true;
+    }
+
+    /**
+     * Cine poate bifa „trimis la intervievatori tehnici” pe o aplicare: recrutor atribuit postului, admin, MR.
+     */
+    public boolean canManageVizibilitateIntervievatoriTehnic(Utilizator user, Post post) {
+        if (user == null || post == null) {
+            return false;
+        }
+        if (user.getRol() == Rol.ADMIN || user.getRol() == Rol.MANAGER_RECRUTARE) {
+            return true;
+        }
+        if (user.getRol() == Rol.RECRUTOR) {
+            return post.getRecrutori().stream().anyMatch(u -> u.getId().equals(user.getId()));
         }
         return false;
     }

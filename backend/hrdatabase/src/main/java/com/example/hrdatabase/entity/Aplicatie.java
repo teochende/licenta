@@ -52,6 +52,13 @@ public class Aplicatie {
     @Column(name = "cv_job_match_score")
     private Integer cvJobMatchScore;
 
+    /**
+     * Dacă este {@code true}, intervievatorii tehnici atribuiți postului văd această aplicare în dashboard
+     * (listă, CV, pipeline). Recrutorii (sau admin / MR) o activează explicit; implicit {@code false}.
+     */
+    @Column(name = "vizibil_intervievatori_tehnic")
+    private Boolean vizibilIntervievatoriTehnic = Boolean.FALSE;
+
     /** JSON: starea pipeline-ului din dashboard (toggle-uri, status etape, detalii). */
     @Column(name = "pipeline_state", columnDefinition = "text")
     private String pipelineState;
@@ -140,6 +147,14 @@ public class Aplicatie {
 
     public void setCvJobMatchScore(Integer cvJobMatchScore) {
         this.cvJobMatchScore = cvJobMatchScore;
+    }
+
+    public boolean isVizibilIntervievatoriTehnic() {
+        return Boolean.TRUE.equals(vizibilIntervievatoriTehnic);
+    }
+
+    public void setVizibilIntervievatoriTehnic(boolean vizibilIntervievatoriTehnic) {
+        this.vizibilIntervievatoriTehnic = vizibilIntervievatoriTehnic;
     }
 
     public String getPipelineState() {

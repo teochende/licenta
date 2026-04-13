@@ -2,6 +2,7 @@ package com.example.hrdatabase.controller;
 
 import com.example.hrdatabase.dto.request.AplicatieCreateRequest;
 import com.example.hrdatabase.dto.request.AplicatiePipelinePatchRequest;
+import com.example.hrdatabase.dto.request.AplicatieVizibilitateItPatchRequest;
 import com.example.hrdatabase.dto.response.AplicatieDashboardDto;
 import com.example.hrdatabase.entity.Aplicatie;
 import com.example.hrdatabase.entity.Utilizator;
@@ -69,5 +70,14 @@ public class AplicatieController {
             @Valid @RequestBody AplicatiePipelinePatchRequest request,
             @AuthenticationPrincipal Utilizator utilizator) {
         aplicatieService.updatePipeline(id, request, utilizator);
+    }
+
+    @PatchMapping("/{id}/vizibilitate-intervievatori-tehnici")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void patchVizibilitateIntervievatoriTehnic(
+            @PathVariable Long id,
+            @Valid @RequestBody AplicatieVizibilitateItPatchRequest request,
+            @AuthenticationPrincipal Utilizator utilizator) {
+        aplicatieService.updateVizibilitateIntervievatoriTehnic(id, request, utilizator);
     }
 }
