@@ -3,7 +3,6 @@ import * as utilizatoriApi from '../api/utilizatoriApi'
 import * as departamenteApi from '../api/departamenteApi'
 import { getPosturi } from '../api/postsApi'
 import { getRecrutori, getIntervievatoriTehnici, getRoluri } from '../api/hrMetaApi'
-import { recalcAplicatiiMatchScore } from '../api/aplicatiiApi'
 import AdministrarePosturi from './administrare_posturi'
 import AdminCerereAngajare from './AdminCerereAngajare'
 import './AdminPanel.css'
@@ -60,7 +59,6 @@ export default function AdminPanel({ token }) {
     const [editingUser, setEditingUser] = useState(null)
     const [managerForDepId, setManagerForDepId] = useState(null)
     const [managerUserId, setManagerUserId] = useState('')
-    const [recalcInfo, setRecalcInfo] = useState('')
 
     const loadAll = useCallback(async () => {
         if (!token) return
@@ -204,24 +202,6 @@ export default function AdminPanel({ token }) {
 
     const rolLabel = (cod) => roluri.find((r) => r.cod === cod)?.denumire || cod
 
-    const runRecalcMatch = async (onlyMissing) => {
-        if (!token) return
-        setErr('')
-        setRecalcInfo('')
-        setLoading(true)
-        try {
-            const res = await recalcAplicatiiMatchScore(token, { onlyMissing })
-            setRecalcInfo(
-                `Recalcul finalizat. Procesate: ${res?.processed ?? 0}, actualizate: ${res?.updated ?? 0}, ` +
-                    `AI: ${res?.skippedAi ?? 0}, fără text: ${res?.skippedNoText ?? 0}.`
-            )
-        } catch (e) {
-            setErr(e?.message || 'Eroare la recalculare scoruri.')
-        } finally {
-            setLoading(false)
-        }
-    }
-
     return (
         <div className="admin-panel">
             <header className="admin-panel__header">
@@ -312,27 +292,6 @@ export default function AdminPanel({ token }) {
                             Adăugați utilizatori noi cu rol și parolă. Din tabel: <strong>Editează</strong> modifică datele și
                             rolul; <strong>Șterge</strong> elimină contul (dacă nu este singurul administrator).
                         </p>
-                        <div className="admin-btn-group" style={{ marginTop: '0.75rem', flexWrap: 'wrap' }}>
-                            <button
-                                type="button"
-                                className="admin-btn-ghost"
-                                onClick={() => runRecalcMatch(true)}
-                                disabled={loading}
-                                title="Recalculează scorul doar pentru aplicările fără scor"
-                            >
-                                Recalculează scoruri (doar lipsă)
-                            </button>
-                            <button
-                                type="button"
-                                className="admin-btn-ghost"
-                                onClick={() => runRecalcMatch(false)}
-                                disabled={loading}
-                                title="Recalculează scorul pentru toate aplicările manuale"
-                            >
-                                Recalculează scoruri (toate)
-                            </button>
-                            {recalcInfo && <span className="admin-form__hint">{recalcInfo}</span>}
-                        </div>
                     </div>
 
                     <div className="admin-card">

@@ -77,6 +77,67 @@
   white-space: nowrap;
 }
 
+.dashboard-aplicanti-recalc-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.dashboard-btn-spinner {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: dashboard-spinner-rotate 0.65s linear infinite;
+  flex-shrink: 0;
+  vertical-align: -0.1em;
+}
+
+.dashboard-btn-spinner--sm {
+  width: 0.85em;
+  height: 0.85em;
+  border-width: 1.5px;
+}
+
+@keyframes dashboard-spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.dashboard-btn-recalc-bulk {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: #fff;
+  color: #0d6efd;
+  border: 1px solid #0d6efd;
+  border-radius: 10px;
+  padding: 0.45rem 0.85rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.dashboard-btn-recalc-bulk:hover:not(:disabled) {
+  background: #e7f1ff;
+}
+
+.dashboard-btn-recalc-bulk:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.dashboard-recalc-msg {
+  font-size: 0.85rem;
+  color: #495057;
+}
+
 .dashboard-aplicanti-gol {
   color: #6c757d;
   margin: 0.5rem 0 0;
@@ -101,6 +162,13 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 1rem;
+}
+
+.aplicant-actiuni {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
 }
 
 .aplicant-nume {
@@ -128,6 +196,30 @@
 
 .aplicant-job strong {
   color: #212529;
+}
+
+.aplicant-btn-recalc {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background: #fff;
+  color: #198754;
+  border: 1px solid #198754;
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.aplicant-btn-recalc:hover:not(:disabled) {
+  background: #d1e7dd;
+}
+
+.aplicant-btn-recalc:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .aplicant-btn-detalii {

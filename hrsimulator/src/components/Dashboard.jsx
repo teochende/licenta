@@ -1,8 +1,13 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import JobCard from './JobCard'
 import CvFisierLink from './CvFisierLink'
 import { ROLURI } from '../context/login_context'
-import { getAplicatiiDashboard, patchAplicatiePipeline } from '../api/aplicatiiApi'
+import {
+    getAplicatiiDashboard,
+    patchAplicatiePipeline,
+    recalcAplicatiiMatchScore,
+    recalcAplicatieMatchScore,
+} from '../api/aplicatiiApi'
 import { patchPost, putOrdineDashboard } from '../api/postsApi'
 import {
     ETAPE_RECRUTARE,
@@ -92,6 +97,22 @@ export default function Dashboard({
     const [aplicantiState, setAplicantiState] = useState({})
     const [candidatDetaliiOpen, setCandidatDetaliiOpen] = useState(null)
     const [hoverEtapa, setHoverEtapa] = useState(null)
+    const [recalcAllBusy, setRecalcAllBusy] = useState(false)
+    const [recalcOneId, setRecalcOneId] = useState(null)
+    const [recalcMessage, setRecalcMessage] = useState('')
+
+    const poateRecalcScor =
+        user?.rol === ROLURI.ADMIN || user?.rol === ROLURI.MANAGER_RECRUTARE
+
+    const reloadAplicatii = useCallback(async () => {
+        if (!authToken) return
+        try {
+            const rows = await getAplicatiiDashboard(authToken)
+            setAplicatiiServer(Array.isArray(rows) ? rows : [])
+        } catch {
+            setAplicatiiServer([])
+        }
+    }, [authToken])
 
     useEffect(() => {
         if (!authToken) {
@@ -110,6 +131,38 @@ export default function Dashboard({
             cancel = true
         }
     }, [authToken, posturiVizibile])
+
+    const handleRecalcAllMatchScores = async () => {
+        if (!authToken || !poateRecalcScor) return
+        setRecalcMessage('')
+        setRecalcAllBusy(true)
+        try {
+            const res = await recalcAplicatiiMatchScore(authToken, { onlyMissing: false })
+            await reloadAplicatii()
+            setRecalcMessage(
+                `Recalcul finalizat: procesate ${res?.processed ?? 0}, actualizate ${res?.updated ?? 0}.`
+            )
+        } catch (e) {
+            setRecalcMessage(e?.message || 'Eroare la recalculare.')
+        } finally {
+            setRecalcAllBusy(false)
+        }
+    }
+
+    const handleRecalcOneMatchScore = async (aplicatieId) => {
+        if (!authToken || aplicatieId == null || !poateRecalcScor) return
+        setRecalcMessage('')
+        setRecalcOneId(aplicatieId)
+        try {
+            await recalcAplicatieMatchScore(authToken, aplicatieId, { force: true })
+            await reloadAplicatii()
+            setRecalcMessage('Scor actualizat pentru această aplicare.')
+        } catch (e) {
+            setRecalcMessage(e?.message || 'Eroare la recalculare.')
+        } finally {
+            setRecalcOneId(null)
+        }
+    }
 
     const schedulePipelinePersist = (aplicatieId, stateSlice) => {
         if (!authToken || aplicatieId == null) return
@@ -516,6 +569,32 @@ export default function Dashboard({
                     <span className="dashboard-aplicanti-count">{aplicantiVizibili.length} aplicări</span>
                 </div>
 
+                {poateRecalcScor && aplicantiVizibili.length > 0 ? (
+                    <div className="dashboard-aplicanti-recalc-toolbar">
+                        <button
+                            type="button"
+                            className="dashboard-btn-recalc-bulk"
+                            onClick={handleRecalcAllMatchScores}
+                            disabled={recalcAllBusy}
+                            aria-busy={recalcAllBusy}
+                        >
+                            {recalcAllBusy ? (
+                                <>
+                                    <span className="dashboard-btn-spinner" aria-hidden="true" />
+                                    Se recalculează…
+                                </>
+                            ) : (
+                                'Recalculează scor (toți candidații)'
+                            )}
+                        </button>
+                        {recalcMessage ? (
+                            <span className="dashboard-recalc-msg" role="status">
+                                {recalcMessage}
+                            </span>
+                        ) : null}
+                    </div>
+                ) : null}
+
                 {aplicantiVizibili.length === 0 ? (
                     <p className="dashboard-aplicanti-gol">Nu există candidați care au aplicat la joburile vizibile pentru rolul tău.</p>
                 ) : (
@@ -548,6 +627,28 @@ export default function Dashboard({
                                             </div>
                                         </div>
                                         <div className="aplicant-actiuni">
+                                            {poateRecalcScor && aplicatieId != null ? (
+                                                <button
+                                                    type="button"
+                                                    className="aplicant-btn-recalc"
+                                                    onClick={() => handleRecalcOneMatchScore(aplicatieId)}
+                                                    disabled={recalcOneId === aplicatieId || recalcAllBusy}
+                                                    aria-busy={recalcOneId === aplicatieId}
+                                                    title="Recalculează match score (cuvinte cheie) pentru această aplicare"
+                                                >
+                                                    {recalcOneId === aplicatieId ? (
+                                                        <>
+                                                            <span
+                                                                className="dashboard-btn-spinner dashboard-btn-spinner--sm"
+                                                                aria-hidden="true"
+                                                            />
+                                                            Se calculează…
+                                                        </>
+                                                    ) : (
+                                                        'Recalculează scor'
+                                                    )}
+                                                </button>
+                                            ) : null}
                                             <button
                                                 type="button"
                                                 className="aplicant-btn-detalii"
