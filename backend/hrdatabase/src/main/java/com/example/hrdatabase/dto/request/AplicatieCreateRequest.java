@@ -5,6 +5,8 @@ public record AplicatieCreateRequest(
         String numeCandidat,
         String email,
         String cvNumeFisier,
-        String cvContinut
+        String cvContinut,
+        /** Opțional: dacă e {@code true}, se marchează flux AI pentru review CV. Implicit: {@code false}. */
+        Boolean aiCvReview
 ) {
 }

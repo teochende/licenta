@@ -19,6 +19,10 @@ public interface AplicatieRepository extends JpaRepository<Aplicatie, Long> {
 
     boolean existsByPost_IdAndEmailIgnoreCase(Long postId, String email);
 
+    @Modifying
+    @Query(value = "UPDATE aplicatie SET ai_cv_review = false WHERE ai_cv_review IS NULL", nativeQuery = true)
+    int backfillAiCvReviewFalse();
+
     @Query("""
             SELECT DISTINCT a FROM Aplicatie a
             LEFT JOIN FETCH a.post p

@@ -3,11 +3,14 @@ package com.example.hrdatabase.service;
 import com.example.hrdatabase.dto.request.AplicatieCreateRequest;
 import com.example.hrdatabase.dto.request.AplicatiePipelinePatchRequest;
 import com.example.hrdatabase.dto.response.AplicatieDashboardDto;
+import com.example.hrdatabase.dto.response.RecalcMatchScoreResultDto;
 import com.example.hrdatabase.entity.Aplicatie;
 import com.example.hrdatabase.entity.Post;
 import com.example.hrdatabase.entity.Utilizator;
 import com.example.hrdatabase.repository.AplicatieRepository;
 import com.example.hrdatabase.repository.PostRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ContentDisposition;
@@ -25,24 +28,36 @@ import java.nio.file.Files;
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 @Service
 public class AplicatieService {
+
+    private static final Logger log = LoggerFactory.getLogger(AplicatieService.class);
 
     private final AplicatieRepository aplicatieRepository;
     private final PostRepository postRepository;
     private final PostAccessService postAccessService;
     private final AplicatieCvFileStorageService aplicatieCvFileStorageService;
+    private final PostDescriereFileStorageService postDescriereFileStorageService;
+    private final DocumentTextExtractor documentTextExtractor;
+    private final CvJobMatchService cvJobMatchService;
 
     public AplicatieService(
             AplicatieRepository aplicatieRepository,
             PostRepository postRepository,
             PostAccessService postAccessService,
-            AplicatieCvFileStorageService aplicatieCvFileStorageService) {
+            AplicatieCvFileStorageService aplicatieCvFileStorageService,
+            PostDescriereFileStorageService postDescriereFileStorageService,
+            DocumentTextExtractor documentTextExtractor,
+            CvJobMatchService cvJobMatchService) {
         this.aplicatieRepository = aplicatieRepository;
         this.postRepository = postRepository;
         this.postAccessService = postAccessService;
         this.aplicatieCvFileStorageService = aplicatieCvFileStorageService;
+        this.postDescriereFileStorageService = postDescriereFileStorageService;
+        this.documentTextExtractor = documentTextExtractor;
+        this.cvJobMatchService = cvJobMatchService;
     }
 
     @Transactional
@@ -62,11 +77,23 @@ public class AplicatieService {
         Aplicatie a = new Aplicatie(post, nume, email, cvFile);
         a.setDataAplicare(Instant.now());
         a.setCvContinut(stripNullChars(request.cvContinut()));
+        boolean ai = Boolean.TRUE.equals(request.aiCvReview());
+        a.setAiCvReview(ai);
+        if (!ai) {
+            String jobText = buildJobTextForMatching(post);
+            Set<String> jobKw = cvJobMatchService.extractJobKeywordsFromKeywordLines(jobText);
+            logJobKeywords(post.getId(), jobKw);
+            logCvKeywords(a.getId(), jobKw, a.getCvContinut());
+            Integer score = cvJobMatchService.computeMatchScorePercentFromJobKeywords(jobKw, a.getCvContinut());
+            a.setCvJobMatchScore(score);
+        } else {
+            a.setCvJobMatchScore(null);
+        }
         return aplicatieRepository.save(a);
     }
 
     @Transactional
-    public Aplicatie savePublicApplicationMultipart(Long postId, String numeCandidat, String email, MultipartFile file)
+    public Aplicatie savePublicApplicationMultipart(Long postId, String numeCandidat, String email, MultipartFile file, boolean aiCvReview)
             throws IOException {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Post inexistent: " + postId));
@@ -89,10 +116,66 @@ public class AplicatieService {
         a.setDataAplicare(Instant.now());
         a.setCvFisierPath(relative);
         a.setCvContinut(stripNullChars(buildCvContinutFromUpload(bytes, originalName)));
+        a.setAiCvReview(aiCvReview);
+        if (!aiCvReview) {
+            String jobText = buildJobTextForMatching(post);
+            Set<String> jobKw = cvJobMatchService.extractJobKeywordsFromKeywordLines(jobText);
+            logJobKeywords(post.getId(), jobKw);
+            logCvKeywords(a.getId(), jobKw, a.getCvContinut());
+            Integer score = cvJobMatchService.computeMatchScorePercentFromJobKeywords(jobKw, a.getCvContinut());
+            a.setCvJobMatchScore(score);
+        } else {
+            a.setCvJobMatchScore(null);
+        }
         return aplicatieRepository.save(a);
     }
 
-    private static String buildCvContinutFromUpload(byte[] bytes, String originalName) {
+    /**
+     * Text folosit la matching: descriere text + câmpuri job + text extras din PDF/DOCX descriere (dacă există).
+     */
+    private String buildJobTextForMatching(Post post) {
+        StringBuilder sb = new StringBuilder();
+        if (post.getDescriere() != null && !post.getDescriere().isBlank()) {
+            sb.append(post.getDescriere().trim());
+        }
+        if (post.getNume() != null && !post.getNume().isBlank()) {
+            if (!sb.isEmpty()) sb.append('\n');
+            sb.append(post.getNume().trim());
+        }
+        if (post.getSubdomeniu() != null && !post.getSubdomeniu().isBlank()) {
+            sb.append(' ').append(post.getSubdomeniu().trim());
+        }
+        if (post.getNivel() != null && !post.getNivel().isBlank()) {
+            sb.append(' ').append(post.getNivel().trim());
+        }
+        String relPath = post.getDescriereFisierPath();
+        if (relPath != null && !relPath.isBlank()) {
+            try {
+                var path = postDescriereFileStorageService.resolveStoredPath(relPath);
+                if (Files.exists(path)) {
+                    byte[] fileBytes = Files.readAllBytes(path);
+                    String name = post.getDescriereFisierNume() != null && !post.getDescriereFisierNume().isBlank()
+                            ? post.getDescriereFisierNume()
+                            : path.getFileName().toString();
+                    String extracted = documentTextExtractor.extractFromBytes(fileBytes, name);
+                    if (extracted != null && !extracted.isBlank()) {
+                        if (!sb.isEmpty()) sb.append('\n');
+                        sb.append(extracted);
+                    }
+                }
+            } catch (Exception e) {
+                // continuăm doar cu textul din câmpuri
+            }
+        }
+        return sb.toString();
+    }
+
+    private String buildCvContinutFromUpload(byte[] bytes, String originalName) {
+        String extracted = documentTextExtractor.extractFromBytes(bytes, originalName);
+        if (extracted != null) {
+            return stripNullChars(extracted);
+        }
+        // fallback: doar .txt dacă extractorul nu acoperă extensia
         String ext = AplicatieCvFileStorageService.extensionOf(originalName);
         if (".txt".equals(ext)) {
             String s = new String(bytes, StandardCharsets.UTF_8);
@@ -171,6 +254,165 @@ public class AplicatieService {
         aplicatieRepository.save(a);
     }
 
+    /**
+     * Recalculează scorul pentru o aplicare existentă (și re-extrage text CV din fișier dacă lipsește).
+     */
+    @Transactional
+    public RecalcMatchScoreResultDto recalcMatchScoreForAplicatie(Long aplicatieId, boolean force, Utilizator caller) {
+        if (caller == null) {
+            throw new AccessDeniedException("Neautentificat");
+        }
+        Aplicatie a = aplicatieRepository.findByIdWithPostGraph(aplicatieId)
+                .orElseThrow(() -> new IllegalArgumentException("Aplicare inexistentă: " + aplicatieId));
+        if (!postAccessService.canViewPost(caller, a.getPost())) {
+            throw new AccessDeniedException("Nu aveți acces la această aplicare.");
+        }
+        int processed = 1;
+        if (a.isAiCvReview()) {
+            return new RecalcMatchScoreResultDto(processed, 0, 1, 0);
+        }
+        if (!force && a.getCvJobMatchScore() != null) {
+            return new RecalcMatchScoreResultDto(processed, 0, 0, 0);
+        }
+        boolean textOk = ensureCvTextIfPossible(a);
+        String jobText = buildJobTextForMatching(a.getPost());
+        Set<String> jobKw = cvJobMatchService.extractJobKeywordsFromKeywordLines(jobText);
+        logJobKeywords(a.getPost().getId(), jobKw);
+        logCvKeywords(a.getId(), jobKw, a.getCvContinut());
+        Integer score = cvJobMatchService.computeMatchScorePercentFromJobKeywords(jobKw, a.getCvContinut());
+        if (score == null) {
+            return new RecalcMatchScoreResultDto(processed, 0, 0, textOk ? 1 : 1);
+        }
+        a.setCvJobMatchScore(score);
+        aplicatieRepository.save(a);
+        return new RecalcMatchScoreResultDto(processed, 1, 0, 0);
+    }
+
+    /**
+     * Recalculează scorul pentru toate aplicările vizibile pentru caller (admin/mr) care sunt manual.
+     * Dacă {@code onlyMissing} este {@code true}, recalculează doar cele fără scor.
+     */
+    @Transactional
+    public RecalcMatchScoreResultDto recalcMatchScoreForAll(boolean onlyMissing, Utilizator caller) {
+        if (caller == null) {
+            throw new AccessDeniedException("Neautentificat");
+        }
+        int processed = 0;
+        int updated = 0;
+        int skippedAi = 0;
+        int skippedNoText = 0;
+        List<Aplicatie> apps = aplicatieRepository.findAllWithPostGraph();
+        for (Aplicatie a : apps) {
+            if (!postAccessService.canViewPost(caller, a.getPost())) {
+                continue;
+            }
+            processed++;
+            if (a.isAiCvReview()) {
+                skippedAi++;
+                continue;
+            }
+            if (onlyMissing && a.getCvJobMatchScore() != null) {
+                continue;
+            }
+            ensureCvTextIfPossible(a);
+            String jobText = buildJobTextForMatching(a.getPost());
+            Set<String> jobKw = cvJobMatchService.extractJobKeywordsFromKeywordLines(jobText);
+            logJobKeywords(a.getPost().getId(), jobKw);
+            logCvKeywords(a.getId(), jobKw, a.getCvContinut());
+            Integer score = cvJobMatchService.computeMatchScorePercentFromJobKeywords(jobKw, a.getCvContinut());
+            if (score == null) {
+                skippedNoText++;
+                continue;
+            }
+            a.setCvJobMatchScore(score);
+            aplicatieRepository.save(a);
+            updated++;
+        }
+        return new RecalcMatchScoreResultDto(processed, updated, skippedAi, skippedNoText);
+    }
+
+    /**
+     * Dacă {@code cvContinut} lipsește, încearcă să îl extragă din fișierul CV existent (pdf/doc/docx/txt).
+     */
+    private boolean ensureCvTextIfPossible(Aplicatie a) {
+        String existing = a.getCvContinut();
+        if (existing != null && !existing.isBlank()) {
+            return true;
+        }
+        String pathStr = a.getCvFisierPath();
+        if (pathStr == null || pathStr.isBlank()) {
+            return false;
+        }
+        try {
+            var path = aplicatieCvFileStorageService.resolveStoredPath(pathStr);
+            if (!Files.exists(path)) {
+                return false;
+            }
+            byte[] bytes = Files.readAllBytes(path);
+            String name = a.getCvNumeFisier() != null && !a.getCvNumeFisier().isBlank()
+                    ? a.getCvNumeFisier()
+                    : path.getFileName().toString();
+            String extracted = documentTextExtractor.extractFromBytes(bytes, name);
+            if (extracted == null || extracted.isBlank()) {
+                return false;
+            }
+            a.setCvContinut(stripNullChars(extracted));
+            aplicatieRepository.save(a);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private void logJobKeywords(Long postId, Set<String> jobKeywords) {
+        // logăm la INFO doar keywords job (nu CV) pentru trasabilitate
+        if (postId == null) {
+            return;
+        }
+        if (jobKeywords == null || jobKeywords.isEmpty()) {
+            log.info("Job {} keywords: (none found via =keywords=)", postId);
+            return;
+        }
+        // evităm linii gigantice în log
+        List<String> sorted = jobKeywords.stream().sorted().toList();
+        if (sorted.size() <= 200) {
+            log.info("Job {} keywords: {}", postId, sorted);
+        } else {
+            log.info("Job {} keywords (first 200 of {}): {}", postId, sorted.size(), sorted.subList(0, 200));
+        }
+    }
+
+    private void logCvKeywords(Long aplicatieId, Set<String> jobKeywords, String cvText) {
+        if (aplicatieId == null) {
+            return;
+        }
+        if (jobKeywords == null || jobKeywords.isEmpty()) {
+            log.info("Aplicatie {} CV keywords: (job has no keywords via =keywords=)", aplicatieId);
+            return;
+        }
+        String cv = cvJobMatchService.normalizeSearchable(cvText);
+        if (cv.isEmpty()) {
+            log.info("Aplicatie {} CV keywords: (no CV text)", aplicatieId);
+            return;
+        }
+        List<String> found = jobKeywords.stream()
+                .filter(k -> k != null && !k.isBlank() && cv.contains(k))
+                .sorted()
+                .toList();
+        List<String> missing = jobKeywords.stream()
+                .filter(k -> k != null && !k.isBlank() && !cv.contains(k))
+                .sorted()
+                .toList();
+        if (!found.isEmpty()) {
+            log.info("Aplicatie {} CV keywords found: {}", aplicatieId, found.size() <= 200 ? found : found.subList(0, 200));
+        } else {
+            log.info("Aplicatie {} CV keywords found: (none)", aplicatieId);
+        }
+        if (!missing.isEmpty()) {
+            log.info("Aplicatie {} CV keywords missing: {}", aplicatieId, missing.size() <= 200 ? missing : missing.subList(0, 200));
+        }
+    }
+
     /** PostgreSQL respinge U+0000 în tipurile text/varchar. */
     private static String stripNullChars(String s) {
         if (s == null || s.isEmpty()) {
@@ -190,6 +432,8 @@ public class AplicatieService {
                 path != null && !path.isBlank(),
                 a.getDataAplicare(),
                 a.getCvContinut(),
+                a.isAiCvReview(),
+                a.getCvJobMatchScore(),
                 a.getPipelineState());
     }
 

@@ -36,6 +36,22 @@ public class Aplicatie {
     @Column(name = "cv_continut", columnDefinition = "text")
     private String cvContinut;
 
+    /**
+     * Dacă este {@code true}, etapa de Review CV folosește fluxul AI (nu se calculează scorul manual).
+     * <p>
+     * Notă: este {@link Boolean} (nu primitive) ca să putem porni aplicația chiar dacă în DB există rânduri vechi
+     * cu {@code NULL}; la runtime tratăm {@code NULL} ca {@code false} și facem backfill automat la startup.
+     */
+    @Column(name = "ai_cv_review")
+    private Boolean aiCvReview = Boolean.FALSE;
+
+    /**
+     * Scor de potrivire CV ↔ descriere job (0-100) pentru review manual.
+     * Este calculat doar când {@link #aiCvReview} este {@code false}.
+     */
+    @Column(name = "cv_job_match_score")
+    private Integer cvJobMatchScore;
+
     /** JSON: starea pipeline-ului din dashboard (toggle-uri, status etape, detalii). */
     @Column(name = "pipeline_state", columnDefinition = "text")
     private String pipelineState;
@@ -104,6 +120,26 @@ public class Aplicatie {
 
     public void setCvContinut(String cvContinut) {
         this.cvContinut = cvContinut;
+    }
+
+    public boolean isAiCvReview() {
+        return Boolean.TRUE.equals(aiCvReview);
+    }
+
+    public void setAiCvReview(boolean aiCvReview) {
+        this.aiCvReview = aiCvReview;
+    }
+
+    public Boolean getAiCvReviewRaw() {
+        return aiCvReview;
+    }
+
+    public Integer getCvJobMatchScore() {
+        return cvJobMatchScore;
+    }
+
+    public void setCvJobMatchScore(Integer cvJobMatchScore) {
+        this.cvJobMatchScore = cvJobMatchScore;
     }
 
     public String getPipelineState() {

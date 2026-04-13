@@ -25,6 +25,11 @@ dependencies {
 	implementation('org.springframework.boot:spring-boot-starter-data-jpa')
 	implementation 'org.postgresql:postgresql'
 
+	// Extragere text din PDF / Word pentru matching CV ↔ descriere job
+	implementation 'org.apache.pdfbox:pdfbox:2.0.31'
+	implementation 'org.apache.poi:poi-ooxml:5.2.5'
+	implementation 'org.apache.poi:poi-scratchpad:5.2.5'
+
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'

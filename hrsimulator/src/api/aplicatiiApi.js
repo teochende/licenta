@@ -65,3 +65,19 @@ export function patchAplicatiePipeline(token, aplicatieId, pipelineStateJson) {
     body: { pipelineStateJson },
   })
 }
+
+export function recalcAplicatiiMatchScore(token, { onlyMissing = true } = {}) {
+  const qs = `onlyMissing=${onlyMissing ? 'true' : 'false'}`
+  return apiFetch(`/api/admin/aplicatii/recalc-match-score?${qs}`, {
+    method: 'POST',
+    token,
+  })
+}
+
+export function recalcAplicatieMatchScore(token, aplicatieId, { force = false } = {}) {
+  const qs = `force=${force ? 'true' : 'false'}`
+  return apiFetch(`/api/admin/aplicatii/${aplicatieId}/recalc-match-score?${qs}`, {
+    method: 'POST',
+    token,
+  })
+}

@@ -38,8 +38,10 @@ public class AplicatieController {
             @RequestParam("postId") Long postId,
             @RequestParam("numeCandidat") String numeCandidat,
             @RequestParam("email") String email,
-            @RequestParam("file") MultipartFile file) throws IOException {
-        return aplicatieService.savePublicApplicationMultipart(postId, numeCandidat, email, file);
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "aiCvReview", required = false) Boolean aiCvReview) throws IOException {
+        return aplicatieService.savePublicApplicationMultipart(
+                postId, numeCandidat, email, file, Boolean.TRUE.equals(aiCvReview));
     }
 
     /** Aplicare fără fișier pe disc (JSON) — pentru teste / integrări vechi. */

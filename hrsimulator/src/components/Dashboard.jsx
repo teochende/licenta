@@ -284,10 +284,15 @@ export default function Dashboard({
                             ? 'Review CV tehnic'
                             : 'Review CV management'
 
+            const aplicatieId = Number(String(aplicantKey).replace('app-', ''))
+            const aplicatieRaw = aplicatiiServer.find((a) => a.id === aplicatieId)
+            const matchScore = etapaKey === 'reviewCv' && !st?.reviewAi ? aplicatieRaw?.cvJobMatchScore : null
+
             return {
                 title: label,
                 lines: [
                     `Status: ${etapaStatus.replaceAll('_', ' ')}`,
+                    matchScore != null ? `Match Score: ${matchScore}%` : null,
                     details.notes ? `Notițe: ${details.notes}` : null,
                     reasons ? `Motive ${isAcceptat ? 'acceptare' : 'respingere'}:` : null,
                     ...(Array.isArray(reasons) ? reasons.map((r) => `- ${r}`) : [])
@@ -515,12 +520,16 @@ export default function Dashboard({
                     <p className="dashboard-aplicanti-gol">Nu există candidați care au aplicat la joburile vizibile pentru rolul tău.</p>
                 ) : (
                     <div className="dashboard-aplicanti-lista">
-                        {aplicantiVizibili.map(({ key, candidat, job, aplicatieId }) => {
+                        {aplicantiVizibili.map(({ key, candidat, job, aplicatieId, aplicatieRaw }) => {
                             const state = aplicantiState[key]
-                            const reviewAi = state?.reviewAi ?? true
+                            const reviewAi = state?.reviewAi ?? false
                             const reviewEnglezaAutomat = state?.reviewEnglezaAutomat ?? true
                             const statusEtape = state?.status || {}
                             const unlockedUpTo = Number.isFinite(state?.unlockedUpTo) ? state.unlockedUpTo : 0
+                            const matchScore =
+                                !reviewAi && aplicatieRaw?.cvJobMatchScore != null
+                                    ? Number(aplicatieRaw.cvJobMatchScore)
+                                    : null
                             return (
                                 <div
                                     key={key}
@@ -584,7 +593,11 @@ export default function Dashboard({
                                                             onMouseLeave={clearHoverEticheta}
                                                         >
                                                             <div className={`pipeline-label pipeline-label--${status}`}>
-                                                                {pipelineLabelFor(et.key)}
+                                                                {et.key === 'reviewCv'
+                                                                    ? matchScore != null
+                                                                        ? `CV Review manual – Match Score: ${matchScore}%`
+                                                                        : (reviewAi ? 'CV Review AI' : 'CV Review manual')
+                                                                    : pipelineLabelFor(et.key)}
                                                             </div>
                                                         </div>
                                                         <button

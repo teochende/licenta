@@ -10,6 +10,7 @@ export default function AplicareJob() {
     const [email, setEmail] = useState('')
     const [cv, setCv] = useState(null)
     const [cvError, setCvError] = useState('')
+    const [aiCvReview, setAiCvReview] = useState(false)
     const [sending, setSending] = useState(false)
     const [doneMsg, setDoneMsg] = useState('')
     const inputCvRef = useRef(null)
@@ -50,11 +51,14 @@ export default function AplicareJob() {
             fd.append('numeCandidat', nume.trim())
             fd.append('email', email.trim())
             fd.append('file', cv)
+            // implicit false: review manual; se trimite doar ca să fie explicit în backend
+            fd.append('aiCvReview', aiCvReview ? 'true' : 'false')
             await createAplicatie(fd)
             setDoneMsg('Aplicarea a fost trimisă cu succes.')
             setNume('')
             setEmail('')
             setCv(null)
+            setAiCvReview(false)
             if (inputCvRef.current) inputCvRef.current.value = ''
         } catch (e) {
             setCvError(e?.message || 'Eroare la trimiterea aplicării.')
@@ -121,6 +125,20 @@ export default function AplicareJob() {
                     />
                     {cv && <span style={{ marginLeft: '0.5rem' }}>Fișier selectat: {cv.name}</span>}
                     {cvError && <div style={{ color: 'red' }}>{cvError}</div>}
+                </div>
+
+                <div className="campAplicare campAplicareToggle">
+                    <label>
+                        <input
+                            type="checkbox"
+                            checked={aiCvReview}
+                            onChange={(e) => setAiCvReview(e.target.checked)}
+                        />{' '}
+                        AI CV Review
+                    </label>
+                    <div className="hintToggle">
+                        Implicit este review manual. Bifați doar dacă doriți activarea fluxului AI pentru această aplicare.
+                    </div>
                 </div>
 
                 <button className="butonTrimiteAplicare" type="submit" disabled={sending}>

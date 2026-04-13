@@ -11,6 +11,8 @@ public record AplicatieDashboardDto(
         boolean cvFisierStocat,
         Instant dataAplicare,
         String cvContinut,
+        boolean aiCvReview,
+        Integer cvJobMatchScore,
         String pipelineStateJson
 ) {
 }
