@@ -829,7 +829,10 @@ export default function Dashboard({
                                         if (jobId && dragDomeniu === domeniu) {
                                             handleReorderToEnd(jobId, domeniu)
                                         }
-                                    } catch (_) {}
+                                    } catch (e) {
+                                        // ignore invalid drag payload
+                                        console.debug('Dashboard drop payload invalid', e)
+                                    }
                                 }}
                             >
                                 Eliberează aici pentru ultima poziție

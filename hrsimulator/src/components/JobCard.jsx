@@ -87,7 +87,10 @@ export default function JobCard({
             } else if (onReorder) {
                 onReorder(draggedJobId, job.id)
             }
-        } catch (_) {}
+        } catch (e) {
+            // ignore invalid drag payload
+            console.debug('JobCard drop payload invalid', e)
+        }
     }
 
     return (

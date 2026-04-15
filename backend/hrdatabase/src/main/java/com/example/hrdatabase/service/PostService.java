@@ -14,6 +14,8 @@ import com.example.hrdatabase.repository.CerereAngajareRepository;
 import com.example.hrdatabase.repository.DepartamentRepository;
 import com.example.hrdatabase.repository.PostRepository;
 import com.example.hrdatabase.repository.UtilizatorRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ContentDisposition;
@@ -39,6 +41,8 @@ import java.util.stream.Collectors;
 @Service
 public class PostService {
 
+    private static final Logger log = LoggerFactory.getLogger(PostService.class);
+
     private final PostRepository postRepository;
     private final DepartamentRepository departamentRepository;
     private final UtilizatorRepository utilizatorRepository;
@@ -46,6 +50,7 @@ public class PostService {
     private final CerereAngajareRepository cerereAngajareRepository;
     private final PostAccessService postAccessService;
     private final PostDescriereFileStorageService postDescriereFileStorageService;
+    private final DocumentTextExtractor documentTextExtractor;
 
     public PostService(
             PostRepository postRepository,
@@ -54,7 +59,8 @@ public class PostService {
             AplicatieRepository aplicatieRepository,
             CerereAngajareRepository cerereAngajareRepository,
             PostAccessService postAccessService,
-            PostDescriereFileStorageService postDescriereFileStorageService) {
+            PostDescriereFileStorageService postDescriereFileStorageService,
+            DocumentTextExtractor documentTextExtractor) {
         this.postRepository = postRepository;
         this.departamentRepository = departamentRepository;
         this.utilizatorRepository = utilizatorRepository;
@@ -62,6 +68,7 @@ public class PostService {
         this.cerereAngajareRepository = cerereAngajareRepository;
         this.postAccessService = postAccessService;
         this.postDescriereFileStorageService = postDescriereFileStorageService;
+        this.documentTextExtractor = documentTextExtractor;
     }
 
     @Transactional
@@ -271,7 +278,7 @@ public class PostService {
     public List<PostViewDto> findPublicEnabledDtos() {
         return postRepository.findAll().stream()
                 .filter(Post::isEnabled)
-                .map(PostMapper::toView)
+                .map(this::toViewForListing)
                 .toList();
     }
 
@@ -279,8 +286,112 @@ public class PostService {
     public List<PostViewDto> findPostDtosFor(Utilizator utilizator) {
         return postRepository.findAll().stream()
                 .filter(p -> postAccessService.canViewPost(utilizator, p))
-                .map(PostMapper::toView)
+                .map(this::toViewForListing)
                 .toList();
+    }
+
+    /**
+     * Text descriere pentru afișare: descrierea introdusă ca text sau, dacă lipsește, text extras din fișierul PDF/DOCX.
+     * Zona de keywords (linii care încep cu {@code =keywords=}) este exclusă din afișare.
+     */
+    private PostViewDto toViewForListing(Post p) {
+        PostViewDto base = PostMapper.toView(p);
+        String descriereAfisare = buildDescriereAfisareFaraKeywords(p);
+        return new PostViewDto(
+                base.id(),
+                base.departamentId(),
+                base.domeniu(),
+                base.subdomeniu(),
+                base.nume(),
+                base.nivel(),
+                descriereAfisare,
+                base.descriereFisierNume(),
+                base.descriereFisierStocat(),
+                base.enabled(),
+                base.prioritate(),
+                base.ordineDashboard(),
+                base.assignedRecrutori(),
+                base.assignedIntervievatori()
+        );
+    }
+
+    private String buildDescriereAfisareFaraKeywords(Post post) {
+        if (post == null) {
+            return "";
+        }
+        String text = post.getDescriere();
+        if (text == null || text.isBlank()) {
+            String pathStr = post.getDescriereFisierPath();
+            if (pathStr != null && !pathStr.isBlank()) {
+                try {
+                    var path = postDescriereFileStorageService.resolveStoredPath(pathStr);
+                    if (Files.exists(path)) {
+                        byte[] bytes = Files.readAllBytes(path);
+                        // Pentru extensie folosim numele real de pe disc (uuid.pdf / uuid.docx),
+                        // ca să funcționeze chiar dacă numele original nu conține extensie.
+                        text = documentTextExtractor.extractFromBytes(bytes, path.getFileName().toString());
+                        if (text == null || text.isBlank()) {
+                            log.warn(
+                                    "Nu s-a putut extrage descrierea pentru post {} din fișierul {} (nume afișare: {}).",
+                                    post.getId(),
+                                    pathStr,
+                                    post.getDescriereFisierNume());
+                        }
+                    } else {
+                        log.warn("Fișier descriere lipsă pe disc pentru post {}: {}", post.getId(), pathStr);
+                    }
+                } catch (Exception e) {
+                    log.warn(
+                            "Eroare la extragerea descrierii pentru post {} din {}: {}",
+                            post.getId(),
+                            pathStr,
+                            e.getMessage());
+                }
+            }
+        }
+        return stripKeywordsSection(text != null ? text : "");
+    }
+
+    /**
+     * Returnează doar conținutul de job până la prima linie care începe cu {@code =keywords=}.
+     * Keywords-urile rămân doar în fișier / textul original folosit de angajați, nu în afișare.
+     */
+    private static String stripKeywordsSection(String s) {
+        if (s == null || s.isBlank()) {
+            return "";
+        }
+        String[] lines = s.replace("\r\n", "\n").split("\n", -1);
+        StringBuilder out = new StringBuilder();
+        for (String line : lines) {
+            String t = line != null ? line.trim() : "";
+            if (t.startsWith("=keywords=")) {
+                break;
+            }
+            // Dacă există o zonă marcată „keywords / key words / cuvinte cheie”, nu o afișăm public (și oprim acolo).
+            String lower = t.toLowerCase(Locale.ROOT);
+            if (lower.contains("keywords")
+                    || lower.contains("key words")
+                    || lower.contains("key-words")
+                    || lower.contains("cuvinte cheie")) {
+                break;
+            }
+            // Ascundem delimitatorul intern (și liniile cu doar '=') din descrierile publice.
+            // Exemplu:
+            // ====================================================================
+            // // for internal usage – do not publish on the public job description
+            // ====================================================================
+            if (!t.isEmpty()
+                    && t.chars().allMatch(ch -> ch == '=')
+                    && t.length() >= 12) {
+                continue;
+            }
+            if (lower.contains("for internal usage") || lower.contains("do not publish")) {
+                continue;
+            }
+            if (!out.isEmpty()) out.append('\n');
+            out.append(line);
+        }
+        return out.toString().trim();
     }
 
     @Transactional

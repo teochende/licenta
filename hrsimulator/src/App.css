@@ -140,42 +140,165 @@
 }
 
 .optiuneJob {
-  padding: 2px;
-  margin: 2px;
-  border: solid 0.5px lightskyblue;
-  border-radius: 5px;
+  padding: 0.85rem 0.9rem;
+  margin: 0.5rem 0;
+  border: 1px solid rgba(2, 132, 199, 0.20);
+  border-radius: 14px;
   display: flex;
+  gap: 1rem;
+  background: #ffffff;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+  transition: box-shadow 140ms ease, transform 140ms ease, border-color 140ms ease;
 }
+
+.optiuneJob:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  border-color: rgba(2, 132, 199, 0.32);
+}
+
 .optiuneJob h3 {
-  padding-top: 2px;
-  margin-top: 2px;
+  padding-top: 0;
+  margin-top: 0;
 }
 .informatiiJob {
   /*background:silver;*/
   clear: both;
   /*flex:auto;*/
-  width:80%;
-  padding-left:1rem;
+  width: 80%;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}
+
+.job-titlu {
+  margin: 0;
+  font-size: 1.12rem;
+  line-height: 1.25;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+.job-meta {
+  margin: 0.35rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  color: #475569;
+  font-size: 0.85rem;
+}
+
+.job-meta__pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(2, 132, 199, 0.08);
+  border: 1px solid rgba(2, 132, 199, 0.14);
+  color: #0f172a;
+}
+
+.job-meta__sep {
+  color: rgba(100, 116, 139, 0.85);
+}
+
+.job-descriere {
+  margin: 0.65rem 0 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: #1f2937;
+  white-space: pre-line; /* păstrează newline-urile din descriere */
+  max-width: 78ch;
+  padding: 0.65rem 0.75rem;
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.10), rgba(148, 163, 184, 0.05));
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 12px;
+  position: relative;
+}
+
+/* Preview estetic: 4 linii max (fără să lipească rândurile între ele) */
+.job-descriere:not(.job-descriere--expanded) {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.job-descriere--collapsed {
+  padding-bottom: 1.05rem; /* loc pentru „show more” */
+}
+
+/* „show more” mic, ca înainte, dar ancorat la finalul preview-ului */
+.job-descriere-toggle-inline {
+  position: absolute;
+  right: 0.65rem;
+  bottom: 0.55rem;
+  background: transparent;
+  border: none;
+  color: #6b7280;
+  font-size: 0.78rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+
+.job-descriere-toggle-inline::before {
+  content: '';
+  position: absolute;
+  right: 100%;
+  bottom: 0;
+  width: 4.5rem;
+  height: 1.2rem;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(255,255,255,0), rgba(241,245,249,0.95));
+}
+
+.job-descriere--empty {
+  color: #6c757d;
 }
 
 .divAplicaJob {
+  display: flex;
   align-items: center;
-  vertical-align:middle;
-  padding:3rem;
+  justify-content: center;
+  padding: 0.25rem 0.35rem;
   /*background:cyan;*/
 }
 
 .aplicaJob {
-  /*background:yellow;*/
-  border-radius:5px;
-  border-width: 1px;
+  border-radius: 12px;
+  border: 1px solid rgba(2, 132, 199, 0.35);
+  background: linear-gradient(180deg, #0ea5e9, #0284c7);
+  color: #ffffff;
+  padding: 0.55rem 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 18px rgba(2, 132, 199, 0.22);
+  transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
+}
+
+.aplicaJob:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.02);
+  box-shadow: 0 14px 24px rgba(2, 132, 199, 0.28);
+}
+
+.aplicaJob:active {
+  transform: translateY(0px);
 }
 
 .toggleDescriere {
-  color: grey;
-  font-size: small;
+  background: transparent;
+  border: none;
+  color: #6b7280;
+  font-size: 0.78rem;
+  font-weight: 600;
   text-decoration: underline;
   cursor: pointer;
-  margin-top: 0.5rem;
-  padding: 1rem;
+  margin-top: 0.45rem;
+  padding: 0;
+}
+
+.toggleDescriere:hover {
+  color: #4b5563;
 }
