@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
+import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import JobCard from './JobCard'
 import CvFisierLink from './CvFisierLink'
 import { ROLURI } from '../context/login_context'
@@ -35,17 +36,17 @@ function pipelineLabelFor(etapaKey) {
         case 'depusCv':
             return 'Depus\nCV'
         case 'reviewCv':
-            return 'Review CV\n(HR / AI)'
+            return 'Review\nCV'
         case 'reviewEngleza':
-            return 'Review CV\nengleză'
+            return 'Review\nengleză'
         case 'interviuHr':
             return 'Interviu\nHR'
         case 'reviewTehnic':
-            return 'Review CV\ntehnic'
+            return 'Review\ntehnic'
         case 'interviuTehnic':
             return 'Interviu\ntehnic'
         case 'reviewManagement':
-            return 'Review CV\nmanagement'
+            return 'Review\nmanagement'
         case 'interviuManagement':
             return 'Interviu\nmanagement'
         case 'oferta':
@@ -109,10 +110,15 @@ export default function Dashboard({
     const posturiVizibile = useMemo(() => posturi, [posturi])
     const [aplicatiiServer, setAplicatiiServer] = useState([])
     const pipelineSaveTimers = useRef({})
+    /** Aplicații cu PATCH pipeline în curs (debounce sau reîncărcare) — nu suprascriem din server până se termină. */
+    const pipelinePendingSaveRef = useRef(new Set())
+    /** Aplicații la care am trimis deja pipeline implicit la DB (fără JSON inițial). */
+    const pipelineDefaultSavedRef = useRef(new Set())
     const [jobStats, setJobStats] = useState({})
     const [aplicantiState, setAplicantiState] = useState({})
     const [candidatDetaliiOpen, setCandidatDetaliiOpen] = useState(null)
     const [hoverEtapa, setHoverEtapa] = useState(null)
+    const pipelineTooltipRef = useRef(null)
     const [recalcAllBusy, setRecalcAllBusy] = useState(false)
     const [recalcOneId, setRecalcOneId] = useState(null)
     const [recalcMessage, setRecalcMessage] = useState('')
@@ -134,6 +140,13 @@ export default function Dashboard({
             setAplicatiiServer(Array.isArray(rows) ? rows : [])
         } catch {
             setAplicatiiServer([])
+        }
+    }, [authToken])
+
+    useEffect(() => {
+        if (!authToken) {
+            pipelineDefaultSavedRef.current.clear()
+            pipelinePendingSaveRef.current.clear()
         }
     }, [authToken])
 
@@ -200,14 +213,22 @@ export default function Dashboard({
         }
     }
 
-    const schedulePipelinePersist = (aplicatieId, stateSlice) => {
+    const schedulePipelinePersist = (aplicatieId, fullState) => {
         if (!authToken || aplicatieId == null) return
+        pipelinePendingSaveRef.current.add(aplicatieId)
         const prev = pipelineSaveTimers.current[aplicatieId]
         if (prev) clearTimeout(prev)
-        pipelineSaveTimers.current[aplicatieId] = setTimeout(() => {
-            patchAplicatiePipeline(authToken, aplicatieId, JSON.stringify(stateSlice)).catch(() => {})
-            delete pipelineSaveTimers.current[aplicatieId]
-        }, 550)
+        pipelineSaveTimers.current[aplicatieId] = setTimeout(async () => {
+            try {
+                await patchAplicatiePipeline(authToken, aplicatieId, JSON.stringify(fullState))
+                await reloadAplicatii()
+            } catch (e) {
+                alert(e?.message || 'Starea pipeline nu s-a putut salva pe server.')
+            } finally {
+                delete pipelineSaveTimers.current[aplicatieId]
+                pipelinePendingSaveRef.current.delete(aplicatieId)
+            }
+        }, 450)
     }
 
     useEffect(() => {
@@ -329,6 +350,14 @@ export default function Dashboard({
         return aplicari
     }, [aplicatiiServer, jobIdsVizibile, jobsVizibileMap])
 
+    const serverPipelineSyncKey = useMemo(
+        () =>
+            aplicantiVizibili
+                .map(({ aplicatieRaw }) => `${aplicatieRaw?.id ?? ''}:${aplicatieRaw?.pipelineStateJson ?? ''}`)
+                .join('|'),
+        [aplicantiVizibili]
+    )
+
     const { aplicantiActivi, aplicantiRespinsi } = useMemo(() => {
         const activi = []
         const respinsi = []
@@ -346,13 +375,39 @@ export default function Dashboard({
         setAplicantiState((prev) => {
             const next = { ...prev }
             aplicantiVizibili.forEach(({ key, aplicatieRaw, aplicatieId }) => {
-                if (next[key] != null) return
+                const aid = aplicatieRaw?.id ?? aplicatieId
                 const fromServer = parsePipelineStateJson(aplicatieRaw?.pipelineStateJson)
-                next[key] = fromServer || buildDefaultPipelineState(aplicatieId)
+                if (pipelinePendingSaveRef.current.has(aid)) {
+                    if (prev[key] != null) next[key] = prev[key]
+                    return
+                }
+                if (fromServer) {
+                    next[key] = fromServer
+                } else if (prev[key] != null) {
+                    next[key] = prev[key]
+                } else {
+                    next[key] = buildDefaultPipelineState(aid)
+                }
             })
             return next
         })
-    }, [aplicantiVizibili])
+    }, [authToken, serverPipelineSyncKey, aplicantiVizibili])
+
+    /** Prima dată când lipsește pipeline în DB, salvăm starea implicită (același JSON ca în UI). */
+    useEffect(() => {
+        if (!authToken) return
+        aplicantiVizibili.forEach(({ aplicatieRaw, aplicatieId }) => {
+            if (aplicatieRaw?.pipelineStateJson) return
+            if (pipelineDefaultSavedRef.current.has(aplicatieId)) return
+            pipelineDefaultSavedRef.current.add(aplicatieId)
+            const def = buildDefaultPipelineState(aplicatieId)
+            patchAplicatiePipeline(authToken, aplicatieId, JSON.stringify(def))
+                .then(() => reloadAplicatii())
+                .catch(() => {
+                    pipelineDefaultSavedRef.current.delete(aplicatieId)
+                })
+        })
+    }, [authToken, aplicantiVizibili, reloadAplicatii])
 
     const getEtapaTooltip = (aplicantKey, etapaKey) => {
         const st = aplicantiState[aplicantKey]
@@ -438,6 +493,24 @@ export default function Dashboard({
     }
 
     const clearHoverEticheta = () => setHoverEtapa(null)
+
+    useLayoutEffect(() => {
+        if (!hoverEtapa?.aplicantKey || !hoverEtapa?.etapaKey) return
+        const el = pipelineTooltipRef.current
+        if (!el) return
+        const pad = 12
+        el.style.setProperty('--pipeline-tip-dx', '0px')
+        el.style.setProperty('--pipeline-tip-dy', '0px')
+        const r = el.getBoundingClientRect()
+        let dx = 0
+        let dy = 0
+        if (r.left < pad) dx = pad - r.left
+        if (r.right > window.innerWidth - pad) dx = window.innerWidth - pad - r.right
+        if (r.top < pad) dy = pad - r.top
+        if (r.bottom > window.innerHeight - pad) dy = window.innerHeight - pad - r.bottom
+        el.style.setProperty('--pipeline-tip-dx', `${dx}px`)
+        el.style.setProperty('--pipeline-tip-dy', `${dy}px`)
+    }, [hoverEtapa])
 
     const aplicatieIdFromKey = (aplicantKey) => {
         const m = String(aplicantKey).match(/^app-(\d+)$/)
@@ -641,10 +714,10 @@ export default function Dashboard({
                                         <div className={`pipeline-label pipeline-label--${status}`}>
                                             {et.key === 'reviewCv'
                                                 ? matchScore != null
-                                                    ? `CV Review manual – Match Score: ${matchScore}%`
+                                                    ? `Review manual\n${matchScore}%`
                                                     : reviewAi
-                                                      ? 'CV Review AI'
-                                                      : 'CV Review manual'
+                                                      ? 'Review\nCV AI'
+                                                      : 'Review\nCV HR'
                                                 : pipelineLabelFor(et.key)}
                                         </div>
                                     </div>
@@ -825,28 +898,35 @@ export default function Dashboard({
                 )}
             </section>
 
-            {hoverEtapa?.aplicantKey && hoverEtapa?.etapaKey && (
-                (() => {
-                    const tip = getEtapaTooltip(hoverEtapa.aplicantKey, hoverEtapa.etapaKey)
-                    return (
-                        <div
-                            className="pipeline-tooltip pipeline-tooltip--fixed"
-                            role="tooltip"
-                            style={{
-                                left: `${hoverEtapa.anchorX}px`,
-                                top: `${hoverEtapa.anchorY}px`
-                            }}
-                        >
-                            <div className="pipeline-tooltip-title">{tip.title}</div>
-                            <div className="pipeline-tooltip-body">
-                                {tip.lines.map((ln, i) => (
-                                    <div key={i} className="pipeline-tooltip-line">{ln}</div>
-                                ))}
+            {typeof document !== 'undefined' &&
+                hoverEtapa?.aplicantKey &&
+                hoverEtapa?.etapaKey &&
+                createPortal(
+                    (() => {
+                        const tip = getEtapaTooltip(hoverEtapa.aplicantKey, hoverEtapa.etapaKey)
+                        return (
+                            <div
+                                ref={pipelineTooltipRef}
+                                className="pipeline-tooltip pipeline-tooltip--fixed"
+                                role="tooltip"
+                                style={{
+                                    left: `${hoverEtapa.anchorX}px`,
+                                    top: `${hoverEtapa.anchorY}px`,
+                                }}
+                            >
+                                <div className="pipeline-tooltip-title">{tip.title}</div>
+                                <div className="pipeline-tooltip-body">
+                                    {tip.lines.map((ln, i) => (
+                                        <div key={i} className="pipeline-tooltip-line">
+                                            {ln}
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    )
-                })()
-            )}
+                        )
+                    })(),
+                    document.body
+                )}
 
             {candidatDetaliiOpen && (
                 <div className="aplicant-modal-overlay" onClick={() => setCandidatDetaliiOpen(null)}>

@@ -1,11 +1,11 @@
 export const ETAPE_RECRUTARE = [
   { key: 'depusCv', label: 'Depus CV' },
-  { key: 'reviewCv', label: 'Review CV HR / Review CV AI' },
-  { key: 'reviewEngleza', label: 'Review CV engleză' },
+  { key: 'reviewCv', label: 'Review CV (HR / AI)' },
+  { key: 'reviewEngleza', label: 'Review engleză' },
   { key: 'interviuHr', label: 'Interviu HR' },
-  { key: 'reviewTehnic', label: 'Review CV tehnic' },
+  { key: 'reviewTehnic', label: 'Review tehnic' },
   { key: 'interviuTehnic', label: 'Interviu tehnic' },
-  { key: 'reviewManagement', label: 'Review CV management' },
+  { key: 'reviewManagement', label: 'Review management' },
   { key: 'interviuManagement', label: 'Interviu management' },
   { key: 'oferta', label: 'Ofertă' },
 ]
