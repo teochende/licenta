@@ -468,6 +468,11 @@
   box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.18);
 }
 
+.pipeline-dot--hold {
+  background: #0d6efd;
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.22);
+}
+
 .pipeline-dot--neutru {
   background: #adb5bd;
   box-shadow: 0 0 0 2px rgba(173, 181, 189, 0.18);
@@ -501,6 +506,10 @@
 
 .pipeline-line--in_asteptare {
   background: rgba(255, 193, 7, 0.65);
+}
+
+.pipeline-line--hold {
+  background: rgba(13, 110, 253, 0.55);
 }
 
 .pipeline-line--neutru {
@@ -633,6 +642,11 @@
   border-color: rgba(255, 193, 7, 0.35);
 }
 
+.pipeline-label--hold {
+  background: rgba(13, 110, 253, 0.12);
+  border-color: rgba(13, 110, 253, 0.35);
+}
+
 .pipeline-label--neutru {
   background: #f1f3f5;
   border-color: #e9ecef;
@@ -723,4 +737,151 @@
   background: #f8f9fa;
   white-space: pre-wrap;
   line-height: 1.45;
+}
+
+/* Dropdown status pipeline */
+.pipeline-status-dropdown {
+  z-index: 2147482600;
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 10px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.18);
+  padding: 0.35rem;
+  max-width: min(280px, calc(100vw - 20px));
+  box-sizing: border-box;
+}
+
+.pipeline-status-dropdown__btn {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  padding: 0.45rem 0.5rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+.pipeline-status-dropdown__btn:hover {
+  background: #f1f3f5;
+}
+
+.pipeline-status-dropdown__swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  margin-top: 0.2rem;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.06);
+}
+
+.pipeline-status-dropdown__btn--acceptat .pipeline-status-dropdown__swatch {
+  background: #198754;
+}
+
+.pipeline-status-dropdown__btn--respins .pipeline-status-dropdown__swatch {
+  background: #dc3545;
+}
+
+.pipeline-status-dropdown__btn--in_asteptare .pipeline-status-dropdown__swatch {
+  background: #ffc107;
+}
+
+.pipeline-status-dropdown__btn--hold .pipeline-status-dropdown__swatch {
+  background: #0d6efd;
+}
+
+.pipeline-status-dropdown__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.pipeline-status-dropdown__label {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #212529;
+}
+
+.pipeline-status-dropdown__desc {
+  font-size: 0.78rem;
+  color: #6c757d;
+  line-height: 1.25;
+}
+
+/* Modal observații pipeline */
+.pipeline-note-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.pipeline-note-modal {
+  width: min(480px, 100%);
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.15rem 1.25rem 1.25rem;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.22);
+  box-sizing: border-box;
+}
+
+.pipeline-note-modal__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  color: #0f172a;
+}
+
+.pipeline-note-modal__hint {
+  margin: 0 0 0.65rem;
+  font-size: 0.82rem;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.pipeline-note-modal__textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 0.55rem 0.65rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 6rem;
+}
+
+.pipeline-note-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+
+.pipeline-note-modal__btn-cancel {
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid #ced4da;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.pipeline-note-modal__btn-save {
+  padding: 0.45rem 0.95rem;
+  border-radius: 8px;
+  border: none;
+  background: #0d6efd;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
 }

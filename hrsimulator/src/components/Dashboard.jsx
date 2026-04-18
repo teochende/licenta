@@ -16,6 +16,12 @@ import {
     STATUS_ETAPA,
     parsePipelineStateJson,
     buildDefaultPipelineState,
+    pipelineStatusLabelRo,
+    pipelineStatusOptionsForEtapa,
+    pipelineHoldAllowedForUser,
+    appendPipelineObservatiiToTooltipLines,
+    applyPipelineEtapaChange,
+    appendPipelineObservationOnly,
 } from '../utils/pipelineDefaults'
 import { formatDataAplicare } from '../utils/dateFormat'
 import './Dashboard.css'
@@ -119,6 +125,9 @@ export default function Dashboard({
     const [candidatDetaliiOpen, setCandidatDetaliiOpen] = useState(null)
     const [hoverEtapa, setHoverEtapa] = useState(null)
     const pipelineTooltipRef = useRef(null)
+    const [pipelineDropdown, setPipelineDropdown] = useState(null)
+    const pipelineDropdownRef = useRef(null)
+    const [pipelineNoteModal, setPipelineNoteModal] = useState(null)
     const [recalcAllBusy, setRecalcAllBusy] = useState(false)
     const [recalcOneId, setRecalcOneId] = useState(null)
     const [recalcMessage, setRecalcMessage] = useState('')
@@ -413,15 +422,19 @@ export default function Dashboard({
         const st = aplicantiState[aplicantKey]
         const etapaStatus = st?.status?.[etapaKey] ?? STATUS_ETAPA.NEUTRU
         const details = st?.details?.[etapaKey] || {}
+        const finish = (tip) => {
+            appendPipelineObservatiiToTooltipLines(details, tip.lines)
+            return tip
+        }
 
         if (etapaKey === 'depusCv') {
-            return {
+            return finish({
                 title: 'Depus CV',
                 lines: [
                     `Data depunere: ${details.submittedAt || '—'}`,
                     `Sursă: ${details.source || '—'}`
                 ]
-            }
+            })
         }
         if (etapaKey === 'reviewCv' || etapaKey === 'reviewEngleza' || etapaKey === 'reviewTehnic' || etapaKey === 'reviewManagement') {
             const isAcceptat = etapaStatus === STATUS_ETAPA.ACCEPTAT
@@ -440,16 +453,16 @@ export default function Dashboard({
             const aplicatieRaw = aplicatiiServer.find((a) => a.id === aplicatieId)
             const matchScore = etapaKey === 'reviewCv' && !st?.reviewAi ? aplicatieRaw?.cvJobMatchScore : null
 
-            return {
+            return finish({
                 title: label,
                 lines: [
-                    `Status: ${etapaStatus.replaceAll('_', ' ')}`,
+                    `Status: ${pipelineStatusLabelRo(etapaStatus)}`,
                     matchScore != null ? `Match Score: ${matchScore}%` : null,
                     details.notes ? `Notițe: ${details.notes}` : null,
                     reasons ? `Motive ${isAcceptat ? 'acceptare' : 'respingere'}:` : null,
                     ...(Array.isArray(reasons) ? reasons.map((r) => `- ${r}`) : [])
                 ].filter(Boolean)
-            }
+            })
         }
         if (etapaKey === 'interviuHr' || etapaKey === 'interviuTehnic' || etapaKey === 'interviuManagement') {
             const label =
@@ -458,26 +471,26 @@ export default function Dashboard({
                     : etapaKey === 'interviuTehnic'
                         ? 'Interviu tehnic'
                         : 'Interviu management'
-            return {
+            return finish({
                 title: label,
                 lines: [
-                    `Status: ${etapaStatus.replaceAll('_', ' ')}`,
+                    `Status: ${pipelineStatusLabelRo(etapaStatus)}`,
                     `Programare: ${details.scheduledAt || '—'}`,
                     details.interviewerNotes ? `Notițe: ${details.interviewerNotes}` : null
                 ].filter(Boolean)
-            }
+            })
         }
         if (etapaKey === 'oferta') {
-            return {
+            return finish({
                 title: 'Ofertă',
                 lines: [
-                    `Status: ${etapaStatus.replaceAll('_', ' ')}`,
+                    `Status: ${pipelineStatusLabelRo(etapaStatus)}`,
                     details.offerStatus ? `Ofertă: ${details.offerStatus}` : null,
                     details.notes ? `Notițe: ${details.notes}` : null
                 ].filter(Boolean)
-            }
+            })
         }
-        return { title: etapaKey, lines: [] }
+        return finish({ title: etapaKey, lines: [] })
     }
 
     const onHoverEticheta = (aplicantKey, etapaKey, element) => {
@@ -536,65 +549,76 @@ export default function Dashboard({
         })
     }
 
-    const cycleStatus = (aplicantKey, etapaKey) => {
-        const order = [STATUS_ETAPA.IN_ASTEPTARE, STATUS_ETAPA.ACCEPTAT, STATUS_ETAPA.RESPINS]
-        setAplicantiState((prev) => {
-            const currentState = prev[aplicantKey]
-            if (!currentState) return prev
-
-            const etapaIndex = ETAPE_RECRUTARE.findIndex((e) => e.key === etapaKey)
-            const unlockedUpTo = Number.isFinite(currentState.unlockedUpTo) ? currentState.unlockedUpTo : 0
-            if (etapaIndex === -1 || etapaIndex > unlockedUpTo) {
-                return prev
-            }
-
-            const current = currentState?.status?.[etapaKey] ?? STATUS_ETAPA.IN_ASTEPTARE
-            const idx = order.indexOf(current)
-            const nextStatus = order[(idx + 1) % order.length]
-
-            const next = {
-                ...prev,
-                [aplicantKey]: {
-                    ...currentState,
-                    status: {
-                        ...(currentState?.status || {}),
-                        [etapaKey]: nextStatus
-                    }
-                }
-            }
-
-            if (nextStatus === STATUS_ETAPA.ACCEPTAT) {
-                const nextIndex = etapaIndex + 1
-                if (nextIndex < ETAPE_RECRUTARE.length) {
-                    const nextKey = ETAPE_RECRUTARE[nextIndex].key
-                    const nextUnlocked = Math.max(unlockedUpTo, nextIndex)
-                    const prevNextStatus = next[aplicantKey]?.status?.[nextKey]
-                    next[aplicantKey] = {
-                        ...next[aplicantKey],
-                        unlockedUpTo: nextUnlocked,
-                        status: {
-                            ...next[aplicantKey].status,
-                            [nextKey]: prevNextStatus === STATUS_ETAPA.NEUTRU ? STATUS_ETAPA.IN_ASTEPTARE : prevNextStatus
-                        }
-                    }
-                }
-            } else if (nextStatus === STATUS_ETAPA.RESPINS) {
-                const lockedStatus = { ...(next[aplicantKey]?.status || {}) }
-                for (let i = etapaIndex + 1; i < ETAPE_RECRUTARE.length; i += 1) {
-                    lockedStatus[ETAPE_RECRUTARE[i].key] = STATUS_ETAPA.NEUTRU
-                }
-                next[aplicantKey] = {
-                    ...next[aplicantKey],
-                    unlockedUpTo: etapaIndex,
-                    status: lockedStatus
-                }
-            }
-
-            const aid = aplicatieIdFromKey(aplicantKey)
-            schedulePipelinePersist(aid, next[aplicantKey])
-
-            return next
+    const openPipelineStatusDropdown = (ev, aplicantKey, etapaKey) => {
+        ev.preventDefault()
+        ev.stopPropagation()
+        const rect = ev.currentTarget.getBoundingClientRect()
+        setPipelineDropdown({
+            aplicantKey,
+            etapaKey,
+            left: rect.left,
+            top: rect.bottom + 6,
+            minWidth: Math.max(168, rect.width),
         })
+    }
+
+    const closePipelineDropdown = useCallback(() => setPipelineDropdown(null), [])
+
+    useEffect(() => {
+        if (!pipelineDropdown) return undefined
+        const onDown = (e) => {
+            const root = pipelineDropdownRef.current
+            if (root && !root.contains(e.target)) closePipelineDropdown()
+        }
+        document.addEventListener('mousedown', onDown)
+        return () => document.removeEventListener('mousedown', onDown)
+    }, [pipelineDropdown, closePipelineDropdown])
+
+    useEffect(() => {
+        if (!pipelineDropdown && !pipelineNoteModal) return undefined
+        const onKey = (e) => {
+            if (e.key === 'Escape') {
+                closePipelineDropdown()
+                setPipelineNoteModal(null)
+            }
+        }
+        window.addEventListener('keydown', onKey)
+        return () => window.removeEventListener('keydown', onKey)
+    }, [pipelineDropdown, pipelineNoteModal, closePipelineDropdown])
+
+    const pickPipelineStatusForModal = (status) => {
+        if (!pipelineDropdown) return
+        setPipelineNoteModal({
+            aplicantKey: pipelineDropdown.aplicantKey,
+            etapaKey: pipelineDropdown.etapaKey,
+            status,
+            noteDraft: '',
+        })
+        closePipelineDropdown()
+    }
+
+    const confirmPipelineStatusNote = () => {
+        if (!pipelineNoteModal) return
+        const { aplicantKey, etapaKey, status, noteDraft } = pipelineNoteModal
+        if (status === STATUS_ETAPA.HOLD && !pipelineHoldAllowedForUser(user?.rol, etapaKey)) {
+            window.alert('Statusul Hold poate fi setat doar de administrator, intervievatorul tehnic sau managerul de departament, la etapele review tehnic, interviu tehnic, review management și interviu management.')
+            setPipelineNoteModal(null)
+            return
+        }
+        const aid = aplicatieIdFromKey(aplicantKey)
+        setAplicantiState((prev) => {
+            const cur = prev[aplicantKey]
+            if (!cur) return prev
+            const prevStatus = cur.status?.[etapaKey]
+            const updated =
+                prevStatus === status
+                    ? appendPipelineObservationOnly(cur, etapaKey, noteDraft)
+                    : applyPipelineEtapaChange(cur, etapaKey, status, noteDraft)
+            if (!updated) return prev
+            schedulePipelinePersist(aid, updated)
+            return { ...prev, [aplicantKey]: updated }
+        })
+        setPipelineNoteModal(null)
     }
 
     const renderAplicantCard = (entry, inRespinsZone) => {
@@ -702,7 +726,9 @@ export default function Dashboard({
                             const isLocked = idx > unlockedUpTo
                             const rawStatus = statusEtape[et.key] ?? STATUS_ETAPA.NEUTRU
                             const status = isLocked ? STATUS_ETAPA.NEUTRU : rawStatus
-                            const isCurrent = idx === unlockedUpTo && status === STATUS_ETAPA.IN_ASTEPTARE
+                            const isCurrent =
+                                idx === unlockedUpTo &&
+                                (status === STATUS_ETAPA.IN_ASTEPTARE || status === STATUS_ETAPA.HOLD)
                             return (
                                 <div key={et.key} className="pipeline-item" role="listitem">
                                     <div
@@ -724,13 +750,14 @@ export default function Dashboard({
                                     <button
                                         type="button"
                                         className={`pipeline-dot pipeline-dot--${status}${isCurrent ? ' pipeline-dot--current' : ''}`}
-                                        onClick={() => cycleStatus(key, et.key)}
+                                        onClick={(ev) => openPipelineStatusDropdown(ev, key, et.key)}
                                         disabled={isLocked}
-                                        aria-label={`${et.label} (${status.replaceAll('_', ' ')})`}
+                                        aria-label={`${et.label}, status ${pipelineStatusLabelRo(status)}`}
+                                        aria-haspopup="listbox"
                                         title={
                                             isLocked
                                                 ? `${et.label} (blocat)`
-                                                : `${et.label} (${status.replaceAll('_', ' ')})`
+                                                : `${et.label} — click pentru a schimba statusul`
                                         }
                                     />
                                     {idx < ETAPE_RECRUTARE.length - 1 ? (
@@ -744,8 +771,9 @@ export default function Dashboard({
                     </div>
                 </div>
                 <div className="aplicant-hint">
-                    Poți da click pe o etapă din pipeline pentru a schimba statusul (în așteptare → acceptat →
-                    respins).
+                    Click pe bulina unei etape: listă de statusuri (Admis, Respins, În procesare; Hold doar pentru
+                    administrator / intervievator tehnic / manager departament, la review & interviu tehnic și
+                    management). După alegere, notezi observațiile — apar la hover pe etichetă.
                 </div>
             </div>
         )
@@ -928,6 +956,95 @@ export default function Dashboard({
                             </div>
                         )
                     })(),
+                    document.body
+                )}
+
+            {typeof document !== 'undefined' &&
+                pipelineDropdown &&
+                createPortal(
+                    <div
+                        ref={pipelineDropdownRef}
+                        className="pipeline-status-dropdown"
+                        role="listbox"
+                        aria-label="Alege status etapă"
+                        style={{
+                            position: 'fixed',
+                            left: `${Math.max(
+                                10,
+                                Math.min(
+                                    pipelineDropdown.left,
+                                    typeof window !== 'undefined'
+                                        ? window.innerWidth - 230
+                                        : pipelineDropdown.left
+                                )
+                            )}px`,
+                            top: `${pipelineDropdown.top}px`,
+                            minWidth: `${pipelineDropdown.minWidth}px`,
+                        }}
+                    >
+                        {pipelineStatusOptionsForEtapa(user?.rol, pipelineDropdown.etapaKey).map((opt) => (
+                            <button
+                                key={opt.value}
+                                type="button"
+                                role="option"
+                                className={`pipeline-status-dropdown__btn pipeline-status-dropdown__btn--${opt.value}`}
+                                onClick={() => pickPipelineStatusForModal(opt.value)}
+                            >
+                                <span className="pipeline-status-dropdown__swatch" aria-hidden="true" />
+                                <span className="pipeline-status-dropdown__text">
+                                    <span className="pipeline-status-dropdown__label">{opt.label}</span>
+                                    <span className="pipeline-status-dropdown__desc">{opt.description}</span>
+                                </span>
+                            </button>
+                        ))}
+                    </div>,
+                    document.body
+                )}
+
+            {typeof document !== 'undefined' &&
+                pipelineNoteModal &&
+                createPortal(
+                    <div
+                        className="pipeline-note-modal-overlay"
+                        role="presentation"
+                        onClick={() => setPipelineNoteModal(null)}
+                    >
+                        <div
+                            className="pipeline-note-modal"
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="pipeline-note-modal-title"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <h3 id="pipeline-note-modal-title" className="pipeline-note-modal__title">
+                                Observații —{' '}
+                                {ETAPE_RECRUTARE.find((e) => e.key === pipelineNoteModal.etapaKey)?.label ?? 'Etapă'}{' '}
+                                ({pipelineStatusLabelRo(pipelineNoteModal.status)})
+                            </h3>
+                            <p className="pipeline-note-modal__hint">
+                                Aceste note sunt salvate în pipeline și apar la hover pe eticheta etapei.
+                            </p>
+                            <textarea
+                                className="pipeline-note-modal__textarea"
+                                rows={5}
+                                value={pipelineNoteModal.noteDraft}
+                                onChange={(e) =>
+                                    setPipelineNoteModal((m) =>
+                                        m ? { ...m, noteDraft: e.target.value } : m
+                                    )
+                                }
+                                placeholder="Ex. motivul respingerii, feedback de la interviu, următorii pași…"
+                            />
+                            <div className="pipeline-note-modal__actions">
+                                <button type="button" className="pipeline-note-modal__btn-cancel" onClick={() => setPipelineNoteModal(null)}>
+                                    Anulare
+                                </button>
+                                <button type="button" className="pipeline-note-modal__btn-save" onClick={confirmPipelineStatusNote}>
+                                    Salvează statusul
+                                </button>
+                            </div>
+                        </div>
+                    </div>,
                     document.body
                 )}
 
