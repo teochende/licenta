@@ -78,7 +78,8 @@ public class SecurityConfig {
                 .exceptionHandling(e -> e.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .authorizeHttpRequests(a -> a
                         .requestMatchers(HttpMethod.POST, "/api/aplicatii", "/api/aplicatii/json").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/posturi/disponibile").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/posturi/disponibile", "/api/posturi/disponibile/meta")
+                                .permitAll()
                         .requestMatchers("/auth/login", "/auth/register").permitAll()
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider)

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import './auth_pages.css'
 
 /** Valori enum backend (RegisterPublicRequestDTO.rolDorit) — fără ADMIN / GUEST. */
 const ROLURI_INREGISTRARE = [
@@ -42,13 +43,13 @@ export default function Register({ onRegistered }) {
     }
 
     return (
-        <>
+        <div className="auth-page">
             <h3>Înregistrare</h3>
             <p>
                 Doar adrese <strong>@hrsim.ro</strong>. Veți primi rolul <strong>Invitat</strong> până la validarea de către un
                 administrator; rolul ales mai jos este doar o solicitare.
             </p>
-            <form onSubmit={handleSubmit} style={{ display: 'block' }}>
+            <form onSubmit={handleSubmit}>
                 <table>
                     <tbody>
                         <tr>
@@ -132,10 +133,10 @@ export default function Register({ onRegistered }) {
                     </tbody>
                 </table>
             </form>
-            {infoform && <p style={{ color: 'crimson' }}>{infoform}</p>}
-            <p>
+            {infoform && <p className="auth-alert">{infoform}</p>}
+            <p className="auth-footer-note">
                 <Link to="/login">Înapoi la autentificare</Link>
             </p>
-        </>
+        </div>
     )
 }

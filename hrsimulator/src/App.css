@@ -1,11 +1,31 @@
+/* ========= Meniu principal (bară de sus) — paletă albastru / lizibilitate ========= */
 .mainToolbar {
-  border: solid 0.5px lightskyblue;
-  border-radius: 5px;
+  --tb-bg-top: #f4f9ff;
+  --tb-bg-bottom: #e2eefc;
+  --tb-border: rgba(30, 64, 175, 0.2);
+  --tb-shadow: 0 2px 14px rgba(15, 23, 42, 0.05);
+  --tb-text: #0c4a6e;
+  --tb-text-strong: #082f49;
+  --tb-muted: #0369a1;
+  --tb-link-hover-bg: rgba(255, 255, 255, 0.88);
+  --tb-link-border: rgba(37, 99, 235, 0.28);
+  --tb-accent: #2563eb;
+
+  position: sticky;
+  top: 0;
+  z-index: 50;
   display: flex;
   align-items: center;
-  min-height: 2rem;
-  padding: 0.25rem 0.5rem;
-  position: relative;
+  gap: 0.45rem;
+  min-height: 2.35rem;
+  padding: 0.28rem 0.65rem 0.28rem 0.55rem;
+  margin: 0 0 0.75rem;
+  border: 1px solid var(--tb-border);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(244, 249, 255, 0.94) 0%, rgba(226, 238, 252, 0.94) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--tb-shadow);
 }
 
 /* Buton burger – vizibil doar pe ecrane mici */
@@ -14,71 +34,251 @@
   flex-direction: column;
   justify-content: center;
   gap: 4px;
-  width: 2rem;
-  height: 2rem;
-  padding: 0.25rem;
-  background: whitesmoke;
-  border: 1px solid lightblue;
-  border-radius: 3px;
+  width: 2.05rem;
+  height: 2.05rem;
+  padding: 0.28rem;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid var(--tb-link-border);
+  border-radius: 8px;
   cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.toolbar-burger:hover {
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.12);
+}
+
+.toolbar-burger:focus-visible {
+  outline: 2px solid var(--tb-accent);
+  outline-offset: 2px;
 }
 
 .toolbar-burger-linie {
   display: block;
   width: 100%;
   height: 2px;
-  background: #333;
-  border-radius: 1px;
+  background: var(--tb-text-strong);
+  border-radius: 2px;
 }
 
 .toolbar-nav-links {
   display: flex;
   flex: 1;
+  min-width: 0;
   justify-content: space-between;
   align-items: center;
+  gap: 0.45rem 0.65rem;
 }
 
 .grupPrincipal {
-  flex: auto;
-  padding-left: 5px;
-  padding-top: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 2px;
+  align-items: center;
+  gap: 0.2rem 0.35rem;
 }
 
 .grupLogin {
-  padding-right: 5px;
-  padding-top: 2px;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.45rem 0.55rem;
   flex-wrap: wrap;
   justify-content: flex-end;
 }
 
-.toolbar-user {
+.toolbar-login-cluster {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem 0.55rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* Zona utilizator: nume mare, rol gri dedesubt; click pe nume → dropdown Deconectare */
+.toolbar-user-menu-wrap {
+  position: relative;
+  display: inline-block;
+  text-align: right;
+  max-width: min(18rem, 100%);
+}
+
+.toolbar-user-trigger {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 2px;
+  justify-content: center;
+  gap: 0.12rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.15rem 0.4rem 0.2rem 0.45rem;
+  font: inherit;
+  cursor: pointer;
   text-align: right;
-  line-height: 1.25;
+  color: inherit;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.toolbar-user-trigger-top {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.toolbar-user-trigger:hover {
+  background: rgba(255, 255, 255, 0.65);
+  border-color: rgba(37, 99, 235, 0.2);
+}
+
+.toolbar-user-trigger:focus-visible {
+  outline: 2px solid var(--tb-accent);
+  outline-offset: 2px;
+}
+
+.toolbar-user-trigger[aria-expanded='true'] {
+  background: rgba(255, 255, 255, 0.75);
+  border-color: rgba(37, 99, 235, 0.28);
 }
 
 .toolbar-user-name {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: #212529;
+  display: block;
+  font-weight: 700;
+  font-size: 1.02rem;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  color: var(--tb-text-strong);
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .toolbar-user-role {
-  font-size: 0.8rem;
-  color: #495057;
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.25;
+  color: #6c757d;
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.articolMeniu-logout {
+.toolbar-user-trigger-chevron {
+  display: block;
+  width: 0;
+  height: 0;
   flex-shrink: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid rgba(73, 80, 87, 0.5);
+}
+
+.toolbar-user-trigger[aria-expanded='true'] .toolbar-user-trigger-chevron {
+  border-top-color: var(--tb-accent);
+}
+
+.toolbar-user-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 11rem;
+  padding: 0.25rem;
+  background: #fff;
+  border: 1px solid rgba(30, 64, 175, 0.18);
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.12);
+  z-index: 120;
+}
+
+.mainToolbar .toolbar-user-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #495057;
+  text-decoration: none;
+  text-align: left;
+  border: none;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.mainToolbar .toolbar-user-dropdown-item:hover {
+  background: rgba(37, 99, 235, 0.08);
+  color: #c92a2a;
+}
+
+/* Link-uri nav — pill, contrast ridicat pe fundal deschis */
+.mainToolbar .articolMeniu {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  height: auto;
+  z-index: 0;
+}
+
+.mainToolbar .articolMeniu > a,
+.mainToolbar .articolMeniu-login-register a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem 0.72rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.01em;
+  color: var(--tb-text);
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition:
+    background 0.16s ease,
+    color 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.mainToolbar .articolMeniu > a:hover,
+.mainToolbar .articolMeniu-login-register a:hover {
+  background: var(--tb-link-hover-bg);
+  border-color: var(--tb-link-border);
+  color: var(--tb-text-strong);
+  box-shadow: 0 1px 6px rgba(37, 99, 235, 0.1);
+}
+
+.mainToolbar .articolMeniu > a:focus-visible,
+.mainToolbar .articolMeniu-login-register a:focus-visible {
+  outline: 2px solid var(--tb-accent);
+  outline-offset: 2px;
+}
+
+.mainToolbar .articolMeniu-login-register {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.35rem;
+  padding: 0.12rem 0.1rem;
+  font-size: 0.8rem;
+  color: var(--tb-muted);
+}
+
+.mainToolbar .articolMeniu-login-register > span[aria-hidden] {
+  color: rgba(3, 105, 161, 0.45);
+  user-select: none;
 }
 
 /* Ecrane mici: doar butonul burger vizibil, meniul se deschide la click */
@@ -90,18 +290,19 @@
   .toolbar-nav-links {
     display: none;
     position: absolute;
-    top: 100%;
+    top: calc(100% + 6px);
     left: 0;
     right: 0;
-    margin-top: 4px;
     flex-direction: column;
     align-items: stretch;
-    background: whitesmoke;
-    border: 1px solid lightblue;
-    border-radius: 5px;
-    padding: 0.5rem;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    z-index: 10;
+    gap: 0.5rem;
+    padding: 0.65rem 0.75rem;
+    margin-top: 0;
+    background: linear-gradient(180deg, #f8fbff 0%, #e8f2fc 100%);
+    border: 1px solid var(--tb-border);
+    border-radius: 10px;
+    box-shadow: 0 12px 40px rgba(15, 23, 42, 0.12);
+    z-index: 100;
   }
 
   .toolbar-nav-links.toolbar-nav-links-deschis {
@@ -111,32 +312,56 @@
   .mainToolbar .grupPrincipal,
   .mainToolbar .grupLogin {
     flex-direction: column;
-    padding: 0;
+    align-items: stretch;
     width: 100%;
   }
 
   .mainToolbar .grupPrincipal {
-    padding-bottom: 0.5rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid rgba(30, 64, 175, 0.12);
   }
 
-  .mainToolbar .articolMeniu {
-    margin: 2px 0;
+  .mainToolbar .articolMeniu > a,
+  .mainToolbar .articolMeniu-login-register a {
+    width: 100%;
+    justify-content: center;
+    padding: 0.42rem 0.85rem;
+  }
+
+  .mainToolbar .toolbar-user-menu-wrap {
+    max-width: none;
+    width: 100%;
     text-align: center;
   }
-}
 
-.articolMeniu {
-  margin-top: 3px;
-  margin-right: 2px;
-  padding-right: 2px;
-  padding-left:2px;
-  background-color:whitesmoke; /*necesara la extinderea div-ului cu elementele de submeniu*/
-  border-width: 1px;
-  border-style: solid;
-  border-color: lightblue;
-  border-radius: 3px;
-  height:fit-content;
-  z-index: 0;
+  .mainToolbar .toolbar-user-trigger {
+    align-items: center;
+    text-align: center;
+    padding: 0.35rem 0.5rem;
+  }
+
+  .mainToolbar .toolbar-user-trigger-top {
+    justify-content: center;
+  }
+
+  .mainToolbar .toolbar-user-name,
+  .mainToolbar .toolbar-user-role {
+    max-width: 100%;
+    text-align: center;
+  }
+
+  .mainToolbar .toolbar-user-dropdown {
+    right: auto;
+    left: 0;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .mainToolbar .toolbar-login-cluster {
+    flex-direction: column;
+    width: 100%;
+    align-items: stretch;
+  }
 }
 
 .optiuneJob {

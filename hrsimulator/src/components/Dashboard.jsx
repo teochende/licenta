@@ -960,34 +960,6 @@ export default function Dashboard({
                                 />
                                 )
                             })}
-                            <div
-                                className="dashboard-drop-ultima-pozitie"
-                                onDragOver={(e) => {
-                                    e.preventDefault()
-                                    e.dataTransfer.dropEffect = 'move'
-                                    e.currentTarget.classList.add('dashboard-drop-ultima-pozitie--active')
-                                }}
-                                onDragLeave={(e) => {
-                                    if (!e.currentTarget.contains(e.relatedTarget)) {
-                                        e.currentTarget.classList.remove('dashboard-drop-ultima-pozitie--active')
-                                    }
-                                }}
-                                onDrop={(e) => {
-                                    e.preventDefault()
-                                    e.currentTarget.classList.remove('dashboard-drop-ultima-pozitie--active')
-                                    try {
-                                        const { jobId, domeniu: dragDomeniu } = JSON.parse(e.dataTransfer.getData('application/json') || '{}')
-                                        if (jobId && dragDomeniu === domeniu) {
-                                            handleReorderToEnd(jobId, domeniu)
-                                        }
-                                    } catch (e) {
-                                        // ignore invalid drag payload
-                                        console.debug('Dashboard drop payload invalid', e)
-                                    }
-                                }}
-                            >
-                                Eliberează aici pentru ultima poziție
-                            </div>
                         </div>
                     </section>
                 ))

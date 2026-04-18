@@ -1,15 +1,356 @@
-.formularAplicare {
-  margin-top: 1rem;
+/* =============================================================================
+   Pagină aplicare job — paletă albastru, stil SaaS discret
+   Selectori :has() limitează cardul job la contextul urmat de .formularAplicare
+   ============================================================================= */
+
+:root {
+  --aj-blue: #3b82f6;
+  --aj-blue-deep: #2563eb;
+  --aj-blue-dark: #1d4ed8;
+  --aj-slate-900: #0f172a;
+  --aj-slate-600: #475569;
+  --aj-slate-500: #64748b;
+  --aj-slate-200: #e2e8f0;
+  --aj-slate-100: #f1f5f9;
+  --aj-white: #ffffff;
+  --aj-danger-bg: #fef2f2;
+  --aj-danger-text: #b91c1c;
+  --aj-danger-border: #fecaca;
+  --aj-success-bg: #eff6ff;
+  --aj-success-text: #1e40af;
+  --aj-success-border: #bfdbfe;
+  --aj-radius-lg: 14px;
+  --aj-radius-md: 10px;
+  --aj-radius-sm: 8px;
+  --aj-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --aj-shadow-md: 0 4px 20px rgba(15, 23, 42, 0.06);
+  --aj-transition: 0.18s ease;
 }
 
+/* Titlu pagină — doar când urmează card + formular */
+h2:has(+ .optiuneJob:has(+ .formularAplicare)) {
+  margin: 0 0 0.65rem;
+  font-size: clamp(1.2rem, 2.5vw, 1.45rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--aj-slate-900);
+}
+
+/* Rezumat job — același card ca App, finisaje doar pe această rută */
+.optiuneJob:has(+ .formularAplicare) {
+  margin-top: 0.35rem;
+  margin-bottom: 1rem;
+  border-radius: var(--aj-radius-lg);
+  border-color: rgba(59, 130, 246, 0.18);
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(239, 246, 255, 0.65) 50%,
+    rgba(219, 234, 254, 0.4) 100%
+  );
+  box-shadow: var(--aj-shadow-md);
+  transition: box-shadow var(--aj-transition), border-color var(--aj-transition),
+    transform var(--aj-transition);
+}
+
+.optiuneJob:has(+ .formularAplicare):hover {
+  border-color: rgba(59, 130, 246, 0.28);
+  box-shadow: 0 8px 28px rgba(37, 99, 235, 0.08);
+}
+
+.optiuneJob:has(+ .formularAplicare) .informatiiJob h3 {
+  color: var(--aj-slate-900);
+}
+
+.optiuneJob:has(+ .formularAplicare) .informatiiJob > p {
+  margin: 0.35rem 0 0;
+  font-size: 0.875rem;
+  color: var(--aj-slate-600);
+  line-height: 1.45;
+}
+
+/* Formular principal — card centrat, lățime citibilă */
+.formularAplicare {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 32rem;
+  margin-top: 0.25rem;
+  padding: 1.25rem 1.35rem 1.35rem;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: var(--aj-radius-lg);
+  background: linear-gradient(165deg, #ffffff 0%, rgba(239, 246, 255, 0.55) 55%, rgba(219, 234, 254, 0.3) 100%);
+  box-shadow: var(--aj-shadow-md);
+}
+
+.formularAplicare br {
+  display: none;
+}
+
+.campAplicarePrimul,
 .campAplicare {
-  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0;
 }
 
 .campAplicarePrimul {
+  margin-top: 0;
+}
+
+.campAplicare + .campAplicare,
+.campAplicarePrimul + .campAplicare {
   margin-top: 1rem;
 }
 
+.formularAplicare label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--aj-slate-600);
+  letter-spacing: 0.01em;
+}
+
+.formularAplicare input[type='text'],
+.formularAplicare input[type='email'] {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  padding: 0.55rem 0.75rem;
+  font: inherit;
+  font-size: 0.9375rem;
+  color: var(--aj-slate-900);
+  background: var(--aj-white);
+  border: 1px solid var(--aj-slate-200);
+  border-radius: var(--aj-radius-sm);
+  box-shadow: var(--aj-shadow-sm);
+  transition: border-color var(--aj-transition), box-shadow var(--aj-transition),
+    background-color var(--aj-transition);
+}
+
+.formularAplicare input[type='text']:hover,
+.formularAplicare input[type='email']:hover {
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+.formularAplicare input[type='text']:focus,
+.formularAplicare input[type='email']:focus {
+  outline: none;
+  border-color: var(--aj-blue);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+}
+
+/* Zonă fișier: buton „Browse” stilizat (standard + WebKit) */
+.formularAplicare input[type='file'] {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  padding: 0.55rem 0.65rem;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--aj-slate-600);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(241, 245, 249, 0.9) 100%);
+  border: 1px dashed rgba(59, 130, 246, 0.32);
+  border-radius: var(--aj-radius-md);
+  cursor: pointer;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  transition: border-color var(--aj-transition), background-color var(--aj-transition),
+    box-shadow var(--aj-transition);
+}
+
+.formularAplicare input[type='file']::file-selector-button {
+  margin: 0 0.65rem 0 0;
+  padding: 0.48rem 1rem 0.48rem 2.15rem;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  background-color: var(--aj-blue);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/%3E%3Cpolyline points='17 8 12 3 7 8'/%3E%3Cline x1='12' y1='3' x2='12' y2='15'/%3E%3C/svg%3E"),
+    linear-gradient(135deg, #93c5fd 0%, var(--aj-blue) 45%, var(--aj-blue-dark) 100%);
+  background-repeat: no-repeat, no-repeat;
+  background-position: 0.62rem 50%, 0 0;
+  background-size: 0.88rem, auto;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.28);
+  transition: filter var(--aj-transition), box-shadow var(--aj-transition), transform var(--aj-transition);
+}
+
+.formularAplicare input[type='file']::-webkit-file-upload-button {
+  margin: 0 0.65rem 0 0;
+  padding: 0.48rem 1rem 0.48rem 2.15rem;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  background-color: var(--aj-blue);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/%3E%3Cpolyline points='17 8 12 3 7 8'/%3E%3Cline x1='12' y1='3' x2='12' y2='15'/%3E%3C/svg%3E"),
+    linear-gradient(135deg, #93c5fd 0%, var(--aj-blue) 45%, var(--aj-blue-dark) 100%);
+  background-repeat: no-repeat, no-repeat;
+  background-position: 0.62rem 50%, 0 0;
+  background-size: 0.88rem, auto;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.28);
+  transition: filter var(--aj-transition), box-shadow var(--aj-transition), transform var(--aj-transition);
+}
+
+.formularAplicare input[type='file']:hover {
+  border-color: rgba(59, 130, 246, 0.45);
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.formularAplicare input[type='file']:hover::file-selector-button,
+.formularAplicare input[type='file']:hover::-webkit-file-upload-button {
+  filter: brightness(1.06);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+}
+
+.formularAplicare input[type='file']:active::file-selector-button,
+.formularAplicare input[type='file']:active::-webkit-file-upload-button {
+  filter: brightness(0.97);
+  transform: translateY(1px);
+}
+
+.formularAplicare input[type='file']:focus {
+  outline: none;
+  border-color: rgba(37, 99, 235, 0.55);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+}
+
+.formularAplicare input[type='file']:focus::file-selector-button,
+.formularAplicare input[type='file']:focus::-webkit-file-upload-button {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), 0 4px 16px rgba(37, 99, 235, 0.38);
+}
+
+.formularAplicare input[type='file'] + span {
+  display: inline-block;
+  margin-top: 0.35rem;
+  margin-left: 0 !important;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.8125rem;
+  color: var(--aj-slate-600);
+  background: rgba(241, 245, 249, 0.9);
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  word-break: break-word;
+}
+
+.formularAplicare .campAplicare > div:not(.hintToggle) {
+  margin-top: 0.45rem;
+  padding: 0.55rem 0.65rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--aj-danger-text) !important;
+  background: var(--aj-danger-bg);
+  border: 1px solid var(--aj-danger-border);
+  border-radius: var(--aj-radius-sm);
+}
+
+.campAplicareToggle {
+  margin-top: 1.1rem !important;
+  padding: 0.85rem 1rem;
+  border-radius: var(--aj-radius-md);
+  background: rgba(239, 246, 255, 0.65);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+}
+
+.campAplicareToggle label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--aj-slate-900);
+}
+
+.campAplicareToggle input[type='checkbox'] {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--aj-blue-deep);
+  cursor: pointer;
+}
+
+.hintToggle {
+  margin-top: 0.45rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--aj-slate-500);
+  max-width: 36rem;
+}
+
 .butonTrimiteAplicare {
-  margin-top: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1.25rem;
+  padding: 0.65rem 1.35rem;
+  min-height: 2.65rem;
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #fff;
+  border: none;
+  border-radius: var(--aj-radius-md);
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--aj-blue) 0%, var(--aj-blue-deep) 50%, var(--aj-blue-dark) 100%);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.28);
+  transition: transform var(--aj-transition), box-shadow var(--aj-transition),
+    filter var(--aj-transition), opacity var(--aj-transition);
+}
+
+.butonTrimiteAplicare:hover:not(:disabled) {
+  filter: brightness(1.04);
+  box-shadow: 0 6px 22px rgba(37, 99, 235, 0.35);
+  transform: translateY(-1px);
+}
+
+.butonTrimiteAplicare:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.25);
+}
+
+.butonTrimiteAplicare:focus-visible {
+  outline: 2px solid var(--aj-blue);
+  outline-offset: 3px;
+}
+
+.butonTrimiteAplicare:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Mesaj succes după formular (p fără clasă) */
+.formularAplicare + p {
+  max-width: 32rem;
+  margin-top: 1rem;
+  margin-bottom: 0;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--aj-success-text) !important;
+  background: var(--aj-success-bg);
+  border: 1px solid var(--aj-success-border);
+  border-radius: var(--aj-radius-sm);
+}
+
+@media (max-width: 520px) {
+  .formularAplicare {
+    padding: 1rem 1rem 1.15rem;
+    border-radius: 12px;
+  }
+
+  .butonTrimiteAplicare {
+    width: 100%;
+  }
 }

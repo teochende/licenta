@@ -4,6 +4,7 @@ import com.example.hrdatabase.dto.request.PostCreateRequest;
 import com.example.hrdatabase.dto.request.PostDashboardOrderRequest;
 import com.example.hrdatabase.dto.request.PostPatchRequest;
 import com.example.hrdatabase.dto.response.PageResponse;
+import com.example.hrdatabase.dto.response.PosturiDisponibileMetaDto;
 import com.example.hrdatabase.dto.response.PostViewDto;
 import com.example.hrdatabase.entity.Departament;
 import com.example.hrdatabase.entity.Post;
@@ -33,11 +34,13 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 @Service
@@ -286,6 +289,77 @@ public class PostService {
                 .filter(Post::isEnabled)
                 .map(this::toViewForListing)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public PosturiDisponibileMetaDto findPublicEnabledMeta() {
+        TreeSet<String> domenii = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        TreeSet<String> subdomenii = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        TreeSet<String> niveluri = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        for (Post p : postRepository.findAll()) {
+            if (!p.isEnabled()) {
+                continue;
+            }
+            String d = depName(p);
+            if (!d.isBlank()) {
+                domenii.add(d);
+            }
+            if (p.getSubdomeniu() != null && !p.getSubdomeniu().isBlank()) {
+                subdomenii.add(p.getSubdomeniu());
+            }
+            if (p.getNivel() != null && !p.getNivel().isBlank()) {
+                niveluri.add(p.getNivel());
+            }
+        }
+        return new PosturiDisponibileMetaDto(List.copyOf(domenii), List.copyOf(subdomenii), List.copyOf(niveluri));
+    }
+
+    /**
+     * Listă publică paginată: filtre exacte pe domeniu (nume departament), subdomeniu, nivel; căutare {@code q}
+     * pe nume, subdomeniu, nivel, nume departament (ca în administrare).
+     */
+    @Transactional(readOnly = true)
+    public PageResponse<PostViewDto> findPublicEnabledDtosPaged(
+            String q, String domeniu, String subdomeniu, String nivel, int page, int size) {
+        String qNorm = q != null ? q.trim().toLowerCase(Locale.ROOT) : "";
+        String dExact = domeniu != null ? domeniu.trim() : "";
+        String sdExact = subdomeniu != null ? subdomeniu.trim() : "";
+        String nExact = nivel != null ? nivel.trim() : "";
+
+        Comparator<Post> cmp = Comparator.comparing(PostService::depName, String.CASE_INSENSITIVE_ORDER)
+                .thenComparing(
+                        p -> p.getNume() != null ? p.getNume() : "",
+                        String.CASE_INSENSITIVE_ORDER);
+
+        List<Post> filtered = postRepository.findAll().stream()
+                .filter(Post::isEnabled)
+                .filter(p -> dExact.isEmpty() || depName(p).equals(dExact))
+                .filter(p -> sdExact.isEmpty() || Objects.equals(nullToEmpty(p.getSubdomeniu()), sdExact))
+                .filter(p -> nExact.isEmpty() || Objects.equals(nullToEmpty(p.getNivel()), nExact))
+                .filter(p -> qNorm.isEmpty() || postMatchesAdminQuery(p, qNorm))
+                .sorted(cmp)
+                .toList();
+
+        long total = filtered.size();
+        int safeSize = Math.max(1, Math.min(100, size));
+        int safePage = Math.max(0, page);
+        int from = (int) Math.min((long) safePage * safeSize, total);
+        int to = (int) Math.min(from + safeSize, total);
+        List<PostViewDto> content =
+                from >= to ? List.of() : filtered.subList(from, to).stream().map(this::toViewForListing).toList();
+        int totalPages = total == 0 ? 0 : (int) Math.ceil((double) total / safeSize);
+        return new PageResponse<>(content, total, safePage, safeSize, totalPages);
+    }
+
+    private static String nullToEmpty(String s) {
+        return s != null ? s : "";
+    }
+
+    private static String depName(Post p) {
+        if (p.getDepartament() == null || p.getDepartament().getNume() == null) {
+            return "";
+        }
+        return p.getDepartament().getNume();
     }
 
     @Transactional(readOnly = true)

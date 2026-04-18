@@ -1,87 +1,275 @@
-.formular-adaugare-post {
-  max-width: 480px;
-  margin-top: 1rem;
+/* =============================================================================
+   Adăugare post nou — layout tip dashboard, accente albastru + verde
+   ============================================================================= */
+
+.pagina-adaugare-post {
+  --ap-blue: #3b82f6;
+  --ap-blue-mid: #2563eb;
+  --ap-blue-deep: #1d4ed8;
+  --ap-green: #10b981;
+  --ap-green-mid: #059669;
+  --ap-slate-900: #0f172a;
+  --ap-slate-700: #334155;
+  --ap-slate-600: #475569;
+  --ap-slate-500: #64748b;
+  --ap-slate-200: #e2e8f0;
+  --ap-slate-100: #f1f5f9;
+  --ap-white: #ffffff;
+  --ap-danger-bg: #fef2f2;
+  --ap-danger-text: #b91c1c;
+  --ap-danger-border: #fecaca;
+  --ap-radius-lg: 16px;
+  --ap-radius-md: 10px;
+  --ap-radius-sm: 8px;
+  --ap-shadow: 0 4px 24px rgba(15, 23, 42, 0.07);
+  --ap-transition: 0.18s ease;
+
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 0 0 2.5rem;
 }
 
-.formular-adaugare-post .form-camp {
-  margin-bottom: 1rem;
+.pagina-adaugare-post__titlu {
+  margin: 0 0 0.35rem;
+  font-size: clamp(1.35rem, 2.5vw, 1.65rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ap-slate-900);
+}
+
+.adaugare-post-alert {
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.9rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  font-weight: 500;
+  color: var(--ap-danger-text);
+  background: var(--ap-danger-bg);
+  border: 1px solid var(--ap-danger-border);
+  border-radius: var(--ap-radius-sm);
+  max-width: 42rem;
+}
+
+.formular-adaugare-post {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 42rem;
+  margin-top: 0.5rem;
+  padding: clamp(1.15rem, 3vw, 1.5rem) clamp(1.1rem, 3vw, 1.65rem) clamp(1.35rem, 3vw, 1.75rem);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: var(--ap-radius-lg);
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(239, 246, 255, 0.55) 45%,
+    rgba(236, 253, 245, 0.28) 100%
+  );
+  box-shadow: var(--ap-shadow);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 1.15rem;
+}
+
+.formular-adaugare-post > .form-camp {
+  margin-bottom: 1.05rem;
+}
+
+.formular-adaugare-post > .form-camp:nth-child(5),
+.formular-adaugare-post > .form-camp:nth-child(6),
+.formular-adaugare-post > .form-butonuri {
+  grid-column: 1 / -1;
 }
 
 .formular-adaugare-post .form-camp label {
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 0.35rem;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ap-slate-600);
+}
+
+.formular-adaugare-post .form-camp.form-checkbox label {
+  text-transform: none;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--ap-slate-700);
 }
 
 .form-hint-descriere-structura {
-  margin: 0 0 8px;
-  font-size: 13px;
-  line-height: 1.45;
-  color: #4b5563;
+  margin: 0 0 0.45rem;
+  padding: 0.55rem 0.65rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--ap-slate-600);
+  background: rgba(241, 245, 249, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: var(--ap-radius-sm);
+  border-left: 3px solid var(--ap-blue-mid);
 }
 
-.formular-adaugare-post .form-camp input[type="text"],
-.formular-adaugare-post .form-camp textarea {
-  width: 100%;
-  padding: 8px 10px;
-  border: 1px solid #e1e4e8;
-  border-radius: 4px;
-  font-size: 14px;
+.formular-adaugare-post .form-camp input[type='text'],
+.formular-adaugare-post .form-camp textarea,
+.formular-adaugare-post .form-camp select {
   box-sizing: border-box;
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  font: inherit;
+  font-size: 0.9375rem;
+  color: var(--ap-slate-900);
+  background: var(--ap-white);
+  border: 1px solid var(--ap-slate-200);
+  border-radius: var(--ap-radius-sm);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: border-color var(--ap-transition), box-shadow var(--ap-transition),
+    background-color var(--ap-transition);
+}
+
+.formular-adaugare-post .form-camp select {
+  padding-right: 2.25rem;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.65rem center;
+}
+
+.formular-adaugare-post .form-camp input[type='text']:hover,
+.formular-adaugare-post .form-camp textarea:hover,
+.formular-adaugare-post .form-camp select:hover {
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+.formular-adaugare-post .form-camp input[type='text']:focus,
+.formular-adaugare-post .form-camp textarea:focus,
+.formular-adaugare-post .form-camp select:focus {
+  outline: none;
+  border-color: var(--ap-blue);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
 }
 
 .formular-adaugare-post .form-camp textarea {
   resize: vertical;
-  min-height: 80px;
+  min-height: 7.5rem;
+  line-height: 1.5;
+}
+
+.formular-adaugare-post .form-camp input::placeholder,
+.formular-adaugare-post .form-camp textarea::placeholder {
+  color: #94a3b8;
+}
+
+.form-checkbox {
+  margin-bottom: 0.25rem !important;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--ap-radius-md);
+  background: rgba(239, 246, 255, 0.65);
+  border: 1px solid rgba(59, 130, 246, 0.14);
 }
 
 .form-checkbox label {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-weight: normal;
+  gap: 0.55rem;
   cursor: pointer;
 }
 
-.form-checkbox input[type="checkbox"] {
-  width: auto;
+.form-checkbox input[type='checkbox'] {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--ap-green-mid);
   cursor: pointer;
 }
 
 .form-id-info {
   margin: 1rem 0;
-  font-size: 14px;
-  color: #555;
+  font-size: 0.875rem;
+  color: var(--ap-slate-600);
 }
 
 .form-butonuri {
   display: flex;
-  gap: 10px;
-  margin-top: 1.25rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e1e4e8;
+  flex-wrap: wrap;
+  gap: 0.65rem 0.85rem;
+  margin-top: 0.35rem;
+  margin-bottom: 0;
+  padding-top: 1.15rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.22);
+  align-items: center;
 }
 
 .formular-adaugare-post .btn {
-  padding: 8px 16px;
+  padding: 0.6rem 1.25rem;
+  min-height: 2.55rem;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--ap-radius-md);
   cursor: pointer;
+  font: inherit;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 0.9375rem;
+  letter-spacing: 0.02em;
+  transition: transform var(--ap-transition), box-shadow var(--ap-transition),
+    filter var(--ap-transition), opacity var(--ap-transition);
 }
 
-.formular-adaugare-post .btn:hover {
-  filter: brightness(0.95);
+.formular-adaugare-post .btn:focus-visible {
+  outline: 2px solid var(--ap-blue-mid);
+  outline-offset: 2px;
 }
 
 .btn-anulare {
-  background: #95a5a6;
-  color: #fff;
+  background: var(--ap-slate-100);
+  color: var(--ap-slate-700);
+  border: 1px solid var(--ap-slate-200) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.btn-anulare:hover {
+  filter: brightness(0.97);
+  background: #e2e8f0;
 }
 
 .btn-salvare {
-  background: #27ae60;
   color: #fff;
+  background: linear-gradient(135deg, var(--ap-blue) 0%, var(--ap-blue-mid) 48%, var(--ap-green-mid) 100%);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.32);
+}
+
+.btn-salvare:hover {
+  filter: brightness(1.04);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.38);
+  transform: translateY(-1px);
+}
+
+.btn-salvare:active {
+  transform: translateY(0);
+  filter: brightness(0.98);
+}
+
+@media (max-width: 640px) {
+  .formular-adaugare-post {
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 1.1rem 1rem 1.35rem;
+  }
+
+  .formular-adaugare-post > .form-camp:nth-child(1),
+  .formular-adaugare-post > .form-camp:nth-child(2),
+  .formular-adaugare-post > .form-camp:nth-child(3),
+  .formular-adaugare-post > .form-camp:nth-child(4) {
+    grid-column: 1 / -1;
+  }
+
+  .form-butonuri {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .formular-adaugare-post .btn {
+    width: 100%;
+    justify-content: center;
+  }
 }

@@ -60,9 +60,9 @@ export default function AdaugarePost({ token, onCreated }) {
     }
 
     return (
-        <>
-            <h1>Adăugare post nou</h1>
-            {err && <p style={{ color: 'crimson' }}>{err}</p>}
+        <div className="pagina-adaugare-post">
+            <h1 className="pagina-adaugare-post__titlu">Adăugare post nou</h1>
+            {err && <p className="adaugare-post-alert">{err}</p>}
             <form className="formular-adaugare-post" onSubmit={handleSubmit}>
                 <div className="form-camp">
                     <label htmlFor="adaugare-dep">Departament</label>
@@ -140,6 +140,6 @@ export default function AdaugarePost({ token, onCreated }) {
                     </button>
                 </div>
             </form>
-        </>
+        </div>
     )
 }

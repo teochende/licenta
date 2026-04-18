@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import './auth_pages.css'
 
 export default function Login({ onLogin }) {
     const [email, setEmail] = useState('')
@@ -27,10 +28,10 @@ export default function Login({ onLogin }) {
     }
 
     return (
-        <>
+        <div className="auth-page">
             <h3>Login</h3>
             <p>Folosiți emailul @hrsim.ro. Nu aveți cont? <Link to="/register">Înregistrare</Link></p>
-            <form onSubmit={handleLogin} style={{ display: 'block' }}>
+            <form onSubmit={handleLogin}>
                 <table>
                     <tbody>
                         <tr>
@@ -76,7 +77,7 @@ export default function Login({ onLogin }) {
                     </tbody>
                 </table>
             </form>
-            {infoform && <p style={{ color: 'crimson' }}>{infoform}</p>}
-        </>
+            {infoform && <p className="auth-alert">{infoform}</p>}
+        </div>
     )
 }

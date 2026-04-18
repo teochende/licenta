@@ -4,6 +4,8 @@ import com.example.hrdatabase.dto.request.IntervievatoriAssignRequest;
 import com.example.hrdatabase.dto.request.PostCreateRequest;
 import com.example.hrdatabase.dto.request.PostDashboardOrderRequest;
 import com.example.hrdatabase.dto.request.PostPatchRequest;
+import com.example.hrdatabase.dto.response.PageResponse;
+import com.example.hrdatabase.dto.response.PosturiDisponibileMetaDto;
 import com.example.hrdatabase.dto.response.PostViewDto;
 import com.example.hrdatabase.entity.Utilizator;
 import com.example.hrdatabase.service.PostService;
@@ -25,8 +27,27 @@ public class PostController {
         this.postService = postService;
     }
 
+    @GetMapping("/disponibile/meta")
+    public PosturiDisponibileMetaDto listPublicEnabledMeta() {
+        return postService.findPublicEnabledMeta();
+    }
+
+    /**
+     * Fără {@code page}/{@code size} → lista completă (compatibilitate înapoi); cu paginare → {@link PageResponse}.
+     */
     @GetMapping("/disponibile")
-    public List<PostViewDto> listPublicEnabled() {
+    public Object listPublicEnabled(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String domeniu,
+            @RequestParam(required = false) String subdomeniu,
+            @RequestParam(required = false) String nivel) {
+        if (page != null && size != null) {
+            int p = Math.max(0, page);
+            int s = Math.min(100, Math.max(1, size));
+            return postService.findPublicEnabledDtosPaged(q, domeniu, subdomeniu, nivel, p, s);
+        }
         return postService.findPublicEnabledDtos();
     }
 
