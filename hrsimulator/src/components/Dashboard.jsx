@@ -78,10 +78,37 @@ function pipelineAreCandidatRespins(state) {
 }
 
 function compareAplicantiEntries(a, b) {
-    const an = numeDinEmail(a.candidat.email)
-    const bn = numeDinEmail(b.candidat.email)
+    const an = (a.candidat?.numeCandidat && String(a.candidat.numeCandidat).trim()) || numeDinEmail(a.candidat.email)
+    const bn = (b.candidat?.numeCandidat && String(b.candidat.numeCandidat).trim()) || numeDinEmail(b.candidat.email)
     if (an !== bn) return an.localeCompare(bn)
     return String(a.job?.nume || '').localeCompare(String(b.job?.nume || ''))
+}
+
+/** Intrare listă dashboard (card candidat) din răspuns API + job vizibil. */
+function entryFromAplicatie(a, jobsVizibileMap, jobIdsVizibile) {
+    const jobId = a.postId
+    if (jobId == null || !jobIdsVizibile.has(jobId)) return null
+    const job = jobsVizibileMap[jobId]
+    if (!job) return null
+    return {
+        key: `app-${a.id}`,
+        aplicatieId: a.id,
+        candidat: {
+            id: a.id,
+            email: a.email,
+            numeCandidat: a.numeCandidat,
+            dataAplicare: a.dataAplicare,
+            cvNumeFisier: a.cvNumeFisier,
+            cvFisierStocat: !!a.cvFisierStocat,
+            cv: cvContinutPentruAfisare(
+                a,
+                '(Text CV necompletat la aplicare – verificați fișierul atașat în sistem.)'
+            ),
+        },
+        jobId,
+        job,
+        aplicatieRaw: a,
+    }
 }
 
 /** Previzualizare text CV: fără placeholder vechi când există fișier; ascunde mesajul „[CV încărcat: …]”. */
@@ -115,6 +142,16 @@ export default function Dashboard({
 }) {
     const posturiVizibile = useMemo(() => posturi, [posturi])
     const [aplicatiiServer, setAplicatiiServer] = useState([])
+    const [listaPage, setListaPage] = useState(0)
+    const [listaPageSize, setListaPageSize] = useState(8)
+    const [listaQInput, setListaQInput] = useState('')
+    const [listaQDebounced, setListaQDebounced] = useState('')
+    const [listaPostFilter, setListaPostFilter] = useState('')
+    /** toți | activi | respinsi — filtru server pentru lista paginată */
+    const [listaStatusFilter, setListaStatusFilter] = useState('toti')
+    const [listaRowsRaw, setListaRowsRaw] = useState([])
+    const [listaTotal, setListaTotal] = useState(0)
+    const [listaLoading, setListaLoading] = useState(false)
     const pipelineSaveTimers = useRef({})
     /** Aplicații cu PATCH pipeline în curs (debounce sau reîncărcare) — nu suprascriem din server până se termină. */
     const pipelinePendingSaveRef = useRef(new Set())
@@ -142,7 +179,16 @@ export default function Dashboard({
         user?.rol === ROLURI.ADMIN ||
         user?.rol === ROLURI.MANAGER_RECRUTARE
 
-    const reloadAplicatii = useCallback(async () => {
+    useEffect(() => {
+        const t = setTimeout(() => setListaQDebounced(listaQInput.trim()), 350)
+        return () => clearTimeout(t)
+    }, [listaQInput])
+
+    useEffect(() => {
+        setListaPage(0)
+    }, [listaQDebounced, listaPostFilter, listaStatusFilter])
+
+    const reloadAplicatiiFull = useCallback(async () => {
         if (!authToken) return
         try {
             const rows = await getAplicatiiDashboard(authToken)
@@ -151,6 +197,41 @@ export default function Dashboard({
             setAplicatiiServer([])
         }
     }, [authToken])
+
+    const loadListaPaged = useCallback(async () => {
+        if (!authToken) {
+            setListaRowsRaw([])
+            setListaTotal(0)
+            return
+        }
+        setListaLoading(true)
+        try {
+            const data = await getAplicatiiDashboard(authToken, {
+                page: listaPage,
+                size: listaPageSize,
+                q: listaQDebounced || undefined,
+                postId: listaPostFilter || undefined,
+                listaStatus: listaStatusFilter === 'toti' ? undefined : listaStatusFilter,
+            })
+            if (data && Array.isArray(data.content)) {
+                setListaRowsRaw(data.content)
+                setListaTotal(Number(data.totalElements) || 0)
+            } else {
+                setListaRowsRaw([])
+                setListaTotal(0)
+            }
+        } catch {
+            setListaRowsRaw([])
+            setListaTotal(0)
+        } finally {
+            setListaLoading(false)
+        }
+    }, [authToken, listaPage, listaPageSize, listaQDebounced, listaPostFilter, listaStatusFilter])
+
+    const reloadAplicatii = useCallback(async () => {
+        await reloadAplicatiiFull()
+        await loadListaPaged()
+    }, [reloadAplicatiiFull, loadListaPaged])
 
     useEffect(() => {
         if (!authToken) {
@@ -165,17 +246,22 @@ export default function Dashboard({
             return
         }
         let cancel = false
-        getAplicatiiDashboard(authToken)
-            .then((rows) => {
+        ;(async () => {
+            try {
+                const rows = await getAplicatiiDashboard(authToken)
                 if (!cancel) setAplicatiiServer(Array.isArray(rows) ? rows : [])
-            })
-            .catch(() => {
+            } catch {
                 if (!cancel) setAplicatiiServer([])
-            })
+            }
+        })()
         return () => {
             cancel = true
         }
     }, [authToken, posturiVizibile])
+
+    useEffect(() => {
+        loadListaPaged()
+    }, [loadListaPaged, posturiVizibile])
 
     const handleRecalcAllMatchScores = async () => {
         if (!authToken || !poateRecalcScor) return
@@ -332,32 +418,35 @@ export default function Dashboard({
     const aplicantiVizibili = useMemo(() => {
         const aplicari = []
         aplicatiiServer.forEach((a) => {
-            const jobId = a.postId
-            if (!jobIdsVizibile.has(jobId)) return
-            const job = jobsVizibileMap[jobId]
-            if (!job) return
-            aplicari.push({
-                key: `app-${a.id}`,
-                aplicatieId: a.id,
-                candidat: {
-                    id: a.id,
-                    email: a.email,
-                    dataAplicare: a.dataAplicare,
-                    cvNumeFisier: a.cvNumeFisier,
-                    cvFisierStocat: !!a.cvFisierStocat,
-                    cv: cvContinutPentruAfisare(
-                        a,
-                        '(Text CV necompletat la aplicare – verificați fișierul atașat în sistem.)'
-                    ),
-                },
-                jobId,
-                job,
-                aplicatieRaw: a,
-            })
+            const e = entryFromAplicatie(a, jobsVizibileMap, jobIdsVizibile)
+            if (e) aplicari.push(e)
         })
         aplicari.sort(compareAplicantiEntries)
         return aplicari
     }, [aplicatiiServer, jobIdsVizibile, jobsVizibileMap])
+
+    const listaEntries = useMemo(() => {
+        const out = []
+        listaRowsRaw.forEach((a) => {
+            const e = entryFromAplicatie(a, jobsVizibileMap, jobIdsVizibile)
+            if (e) out.push(e)
+        })
+        return out
+    }, [listaRowsRaw, jobsVizibileMap, jobIdsVizibile])
+
+    const { listaActivi, listaRespinsi } = useMemo(() => {
+        const activi = []
+        const respinsi = []
+        listaEntries.forEach((entry) => {
+            const st = aplicantiState[entry.key]
+            if (pipelineAreCandidatRespins(st)) respinsi.push(entry)
+            else activi.push(entry)
+        })
+        return { listaActivi: activi, listaRespinsi: respinsi }
+    }, [listaEntries, aplicantiState])
+
+    const listaTotalPages =
+        listaTotal === 0 ? 0 : Math.ceil(listaTotal / listaPageSize)
 
     const serverPipelineSyncKey = useMemo(
         () =>
@@ -367,23 +456,10 @@ export default function Dashboard({
         [aplicantiVizibili]
     )
 
-    const { aplicantiActivi, aplicantiRespinsi } = useMemo(() => {
-        const activi = []
-        const respinsi = []
-        aplicantiVizibili.forEach((entry) => {
-            const st = aplicantiState[entry.key]
-            if (pipelineAreCandidatRespins(st)) respinsi.push(entry)
-            else activi.push(entry)
-        })
-        activi.sort(compareAplicantiEntries)
-        respinsi.sort(compareAplicantiEntries)
-        return { aplicantiActivi: activi, aplicantiRespinsi: respinsi }
-    }, [aplicantiVizibili, aplicantiState])
-
     useEffect(() => {
         setAplicantiState((prev) => {
             const next = { ...prev }
-            aplicantiVizibili.forEach(({ key, aplicatieRaw, aplicatieId }) => {
+            const mergeFromEntry = ({ key, aplicatieRaw, aplicatieId }) => {
                 const aid = aplicatieRaw?.id ?? aplicatieId
                 const fromServer = parsePipelineStateJson(aplicatieRaw?.pipelineStateJson)
                 if (pipelinePendingSaveRef.current.has(aid)) {
@@ -397,10 +473,12 @@ export default function Dashboard({
                 } else {
                     next[key] = buildDefaultPipelineState(aid)
                 }
-            })
+            }
+            aplicantiVizibili.forEach(mergeFromEntry)
+            listaEntries.forEach(mergeFromEntry)
             return next
         })
-    }, [authToken, serverPipelineSyncKey, aplicantiVizibili])
+    }, [authToken, serverPipelineSyncKey, aplicantiVizibili, listaEntries])
 
     /** Prima dată când lipsește pipeline în DB, salvăm starea implicită (același JSON ca în UI). */
     useEffect(() => {
@@ -556,13 +634,54 @@ export default function Dashboard({
         setPipelineDropdown({
             aplicantKey,
             etapaKey,
-            left: rect.left,
-            top: rect.bottom + 6,
-            minWidth: Math.max(168, rect.width),
+            anchorLeft: rect.left,
+            anchorTop: rect.top,
+            anchorBottom: rect.bottom,
+            minWidth: Math.max(220, rect.width),
         })
     }
 
     const closePipelineDropdown = useCallback(() => setPipelineDropdown(null), [])
+
+    /** Repoziționează dropdown-ul în viewport cu înălțime scrollabilă ca toate statusurile să fie accesibile. */
+    useLayoutEffect(() => {
+        if (!pipelineDropdown) return undefined
+        const el = pipelineDropdownRef.current
+        if (!el) return undefined
+
+        const position = () => {
+            const pad = 12
+            const vh = window.innerHeight
+            const vw = window.innerWidth
+            const { anchorLeft, anchorTop, anchorBottom } = pipelineDropdown
+            const h = el.offsetHeight
+            const w = el.offsetWidth
+
+            let top = anchorBottom + 6
+            if (top + h > vh - pad) {
+                const above = anchorTop - h - 6
+                top = above >= pad ? above : Math.max(pad, vh - pad - h)
+            }
+
+            let left = anchorLeft
+            if (left + w > vw - pad) left = Math.max(pad, vw - w - pad)
+            if (left < pad) left = pad
+
+            const maxH = Math.max(200, Math.min((85 * vh) / 100, vh - top - pad))
+            el.style.top = `${top}px`
+            el.style.left = `${left}px`
+            el.style.maxHeight = `${maxH}px`
+        }
+
+        position()
+        window.addEventListener('resize', position)
+        return () => {
+            window.removeEventListener('resize', position)
+            el.style.top = ''
+            el.style.left = ''
+            el.style.maxHeight = ''
+        }
+    }, [pipelineDropdown])
 
     useEffect(() => {
         if (!pipelineDropdown) return undefined
@@ -640,7 +759,10 @@ export default function Dashboard({
             >
                 <div className="aplicant-top">
                     <div className="aplicant-identitate">
-                        <div className="aplicant-nume">{numeDinEmail(candidat.email)}</div>
+                        <div className="aplicant-nume">
+                            {(candidat.numeCandidat && String(candidat.numeCandidat).trim()) ||
+                                numeDinEmail(candidat.email)}
+                        </div>
                         <div className="aplicant-meta">
                             <span className="aplicant-email">{candidat.email}</span>
                             <span className="aplicant-data-aplicare">
@@ -799,6 +921,7 @@ export default function Dashboard({
                                     .map((a) => ({
                                         id: a.id,
                                         email: a.email,
+                                        numeCandidat: a.numeCandidat,
                                         dataAplicare: a.dataAplicare,
                                         cvNumeFisier: a.cvNumeFisier,
                                         cvFisierStocat: !!a.cvFisierStocat,
@@ -873,7 +996,15 @@ export default function Dashboard({
             <section className="dashboard-aplicanti">
                 <div className="dashboard-aplicanti-header">
                     <h2 className="dashboard-aplicanti-titlu">Candidați pentru joburile vizibile</h2>
-                    <span className="dashboard-aplicanti-count">{aplicantiVizibili.length} aplicări</span>
+                    <span className="dashboard-aplicanti-count" title="Total în lista curentă (după filtre)">
+                        {listaTotal} aplicări
+                        {aplicantiVizibili.length !== listaTotal ? (
+                            <span className="dashboard-aplicanti-count-hint">
+                                {' '}
+                                · {aplicantiVizibili.length} în total pentru rolul tău
+                            </span>
+                        ) : null}
+                    </span>
                 </div>
 
                 {poateRecalcScor && aplicantiVizibili.length > 0 ? (
@@ -904,28 +1035,118 @@ export default function Dashboard({
 
                 {aplicantiVizibili.length === 0 ? (
                     <p className="dashboard-aplicanti-gol">Nu există candidați care au aplicat la joburile vizibile pentru rolul tău.</p>
+                ) : listaTotal === 0 && !listaLoading ? (
+                    <p className="dashboard-aplicanti-gol">
+                        Niciun rezultat pentru filtrele curente. Modificați căutarea sau resetați filtrele.
+                    </p>
                 ) : (
-                    <div className="dashboard-aplicanti-lista">
-                        {aplicantiActivi.map((entry) => renderAplicantCard(entry, false))}
-                        {aplicantiRespinsi.length > 0 ? (
-                            <div
-                                className="dashboard-aplicanti-zona-respinse"
-                                role="separator"
-                                aria-label="Aplicații respinse"
-                            >
-                                <div className="dashboard-aplicanti-zona-respinse__line" aria-hidden="true" />
-                                <span className="dashboard-aplicanti-zona-respinse__titlu">
-                                    Aplicații respinse
-                                    <span className="dashboard-aplicanti-zona-respinse__count">
-                                        {' '}
-                                        ({aplicantiRespinsi.length})
+                    <>
+                        <div className="dashboard-candidati-toolbar" role="search">
+                            <label className="dashboard-candidati-toolbar__field">
+                                <span className="dashboard-candidati-toolbar__label">Căutare</span>
+                                <input
+                                    type="search"
+                                    placeholder="Nume, email, job, departament…"
+                                    value={listaQInput}
+                                    onChange={(ev) => setListaQInput(ev.target.value)}
+                                    aria-label="Căutare candidați"
+                                />
+                            </label>
+                            <label className="dashboard-candidati-toolbar__field">
+                                <span className="dashboard-candidati-toolbar__label">Post</span>
+                                <select
+                                    value={listaPostFilter}
+                                    onChange={(ev) => setListaPostFilter(ev.target.value)}
+                                    aria-label="Filtru post"
+                                >
+                                    <option value="">Toate posturile</option>
+                                    {posturiVizibile.map((p) => (
+                                        <option key={p.id} value={p.id}>
+                                            {p.nume} ({p.domeniu})
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                            <label className="dashboard-candidati-toolbar__field">
+                                <span className="dashboard-candidati-toolbar__label">Stare</span>
+                                <select
+                                    value={listaStatusFilter}
+                                    onChange={(ev) => setListaStatusFilter(ev.target.value)}
+                                    aria-label="Filtru stare candidat"
+                                >
+                                    <option value="toti">Toți (activi + respinși)</option>
+                                    <option value="activi">Doar activi</option>
+                                    <option value="respinsi">Doar respinși</option>
+                                </select>
+                            </label>
+                            <label className="dashboard-candidati-toolbar__field dashboard-candidati-toolbar__field--narrow">
+                                <span className="dashboard-candidati-toolbar__label">Pe pagină</span>
+                                <select
+                                    value={listaPageSize}
+                                    onChange={(ev) => {
+                                        setListaPageSize(Number(ev.target.value))
+                                        setListaPage(0)
+                                    }}
+                                    aria-label="Mărime pagină"
+                                >
+                                    {[5, 8, 10, 15, 20].map((n) => (
+                                        <option key={n} value={n}>
+                                            {n}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                        </div>
+                        {listaLoading ? (
+                            <p className="dashboard-candidati-loading">Se încarcă lista…</p>
+                        ) : null}
+                        <div className="dashboard-aplicanti-lista">
+                            {listaActivi.map((entry) => renderAplicantCard(entry, false))}
+                            {listaRespinsi.length > 0 ? (
+                                <div
+                                    className="dashboard-aplicanti-zona-respinse"
+                                    role="separator"
+                                    aria-label="Aplicații respinse"
+                                >
+                                    <div className="dashboard-aplicanti-zona-respinse__line" aria-hidden="true" />
+                                    <span className="dashboard-aplicanti-zona-respinse__titlu">
+                                        Aplicații respinse
+                                        <span className="dashboard-aplicanti-zona-respinse__count">
+                                            {' '}
+                                            ({listaRespinsi.length} pe această pagină)
+                                        </span>
                                     </span>
+                                    <div className="dashboard-aplicanti-zona-respinse__line" aria-hidden="true" />
+                                </div>
+                            ) : null}
+                            {listaRespinsi.map((entry) => renderAplicantCard(entry, true))}
+                        </div>
+                        {listaTotalPages > 0 ? (
+                            <div className="dashboard-candidati-pager" aria-label="Paginare candidați">
+                                <span className="dashboard-candidati-pager__meta">
+                                    Pagina {listaPage + 1} din {listaTotalPages}
                                 </span>
-                                <div className="dashboard-aplicanti-zona-respinse__line" aria-hidden="true" />
+                                <div className="dashboard-candidati-pager__btns">
+                                    <button
+                                        type="button"
+                                        className="dashboard-candidati-pager__btn"
+                                        disabled={listaPage <= 0 || listaLoading}
+                                        onClick={() => setListaPage((p) => Math.max(0, p - 1))}
+                                    >
+                                        Înapoi
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="dashboard-candidati-pager__btn"
+                                        disabled={listaPage + 1 >= listaTotalPages || listaLoading}
+                                        onClick={() => setListaPage((p) => p + 1)}
+                                    >
+                                        Înainte
+                                    </button>
+                                </div>
                             </div>
                         ) : null}
-                        {aplicantiRespinsi.map((entry) => renderAplicantCard(entry, true))}
-                    </div>
+                    </>
                 )}
             </section>
 
@@ -969,19 +1190,14 @@ export default function Dashboard({
                         aria-label="Alege status etapă"
                         style={{
                             position: 'fixed',
-                            left: `${Math.max(
-                                10,
-                                Math.min(
-                                    pipelineDropdown.left,
-                                    typeof window !== 'undefined'
-                                        ? window.innerWidth - 230
-                                        : pipelineDropdown.left
-                                )
-                            )}px`,
-                            top: `${pipelineDropdown.top}px`,
+                            left: `${Math.max(10, pipelineDropdown.anchorLeft)}px`,
+                            top: `${pipelineDropdown.anchorBottom + 6}px`,
                             minWidth: `${pipelineDropdown.minWidth}px`,
+                            width: 'min(320px, calc(100vw - 16px))',
                         }}
                     >
+                        <div className="pipeline-status-dropdown__head">Alege statusul</div>
+                        <div className="pipeline-status-dropdown__scroll">
                         {pipelineStatusOptionsForEtapa(user?.rol, pipelineDropdown.etapaKey).map((opt) => (
                             <button
                                 key={opt.value}
@@ -997,6 +1213,7 @@ export default function Dashboard({
                                 </span>
                             </button>
                         ))}
+                        </div>
                     </div>,
                     document.body
                 )}

@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import * as utilizatoriApi from '../api/utilizatoriApi'
 import * as departamenteApi from '../api/departamenteApi'
-import { getPosturi } from '../api/postsApi'
 import { getRecrutori, getIntervievatoriTehnici, getRoluri } from '../api/hrMetaApi'
 import AdministrarePosturi from './administrare_posturi'
 import AdminCerereAngajare from './AdminCerereAngajare'
@@ -43,40 +42,76 @@ function emptyUserForm() {
     }
 }
 
+const PAGE_SIZE_OPTIONS = [5, 10, 20]
+
 export default function AdminPanel({ token }) {
     const [tab, setTab] = useState('utilizatori')
-    const [utilizatori, setUtilizatori] = useState([])
-    const [departamente, setDepartamente] = useState([])
+    /** Rânduri tabel utilizatori (paginat server). */
+    const [utilizatoriRows, setUtilizatoriRows] = useState([])
+    /** Lista completă departamente (formulare, cereri). */
+    const [departamenteAll, setDepartamenteAll] = useState([])
+    /** Rânduri tabel departamente (paginat server). */
+    const [departamenteRows, setDepartamenteRows] = useState([])
+    /** Toți utilizatorii (fără paginare) — manager departament și dropdown „Setează manager”. */
+    const [utilizatoriAll, setUtilizatoriAll] = useState([])
     const [roluri, setRoluri] = useState([])
-    const [posturi, setPosturi] = useState([])
     const [recrutoriDto, setRecrutoriDto] = useState([])
     const [intervievatoriDto, setIntervievatoriDto] = useState([])
     const [err, setErr] = useState('')
     const [loading, setLoading] = useState(false)
+    const [userPage, setUserPage] = useState(0)
+    const [userPageSize, setUserPageSize] = useState(10)
+    const [userTotal, setUserTotal] = useState(0)
+    const [userQInput, setUserQInput] = useState('')
+    const [userQDebounced, setUserQDebounced] = useState('')
+    const [userRolFilter, setUserRolFilter] = useState('')
+    const [userDepFilter, setUserDepFilter] = useState('')
+    const [depPage, setDepPage] = useState(0)
+    const [depPageSize, setDepPageSize] = useState(10)
+    const [depTotal, setDepTotal] = useState(0)
+    const [depQInput, setDepQInput] = useState('')
+    const [depQDebounced, setDepQDebounced] = useState('')
+    const [listBusy, setListBusy] = useState(false)
     const [createForm, setCreateForm] = useState(emptyUserForm)
     const [depForm, setDepForm] = useState({ nume: '' })
     const [editingDep, setEditingDep] = useState(null)
     const [editingUser, setEditingUser] = useState(null)
     const [managerForDepId, setManagerForDepId] = useState(null)
     const [managerUserId, setManagerUserId] = useState('')
+    /** Formular utilizator nou: deschis doar după click pe indicatorul dropdown */
+    const [createUserFormOpen, setCreateUserFormOpen] = useState(false)
 
-    const loadAll = useCallback(async () => {
+    useEffect(() => {
+        const t = setTimeout(() => setUserQDebounced(userQInput.trim()), 350)
+        return () => clearTimeout(t)
+    }, [userQInput])
+
+    useEffect(() => {
+        const t = setTimeout(() => setDepQDebounced(depQInput.trim()), 350)
+        return () => clearTimeout(t)
+    }, [depQInput])
+
+    useEffect(() => {
+        setUserPage(0)
+    }, [userQDebounced, userRolFilter, userDepFilter])
+
+    useEffect(() => {
+        setDepPage(0)
+    }, [depQDebounced])
+
+    const loadMeta = useCallback(async () => {
         if (!token) return
         setLoading(true)
         setErr('')
         try {
-            const [u, d, r, p, rec, int] = await Promise.all([
-                utilizatoriApi.listUtilizatori(token),
+            const [d, r, rec, int] = await Promise.all([
                 departamenteApi.getDepartamente(token),
                 getRoluri(token),
-                getPosturi(token),
                 getRecrutori(token),
                 getIntervievatoriTehnici(token),
             ])
-            setUtilizatori(Array.isArray(u) ? u : [])
-            setDepartamente(Array.isArray(d) ? d : [])
+            setDepartamenteAll(Array.isArray(d) ? d : [])
             setRoluri(Array.isArray(r) ? r : [])
-            setPosturi(Array.isArray(p) ? p : [])
             setRecrutoriDto(Array.isArray(rec) ? rec : [])
             setIntervievatoriDto(Array.isArray(int) ? int : [])
         } catch (e) {
@@ -86,9 +121,128 @@ export default function AdminPanel({ token }) {
         }
     }, [token])
 
+    const loadUtilizatoriPage = useCallback(async () => {
+        if (!token) return
+        setListBusy(true)
+        setErr('')
+        try {
+            const data = await utilizatoriApi.listUtilizatori(token, {
+                page: userPage,
+                size: userPageSize,
+                q: userQDebounced || undefined,
+                rol: userRolFilter || undefined,
+                departamentId: userDepFilter || undefined,
+            })
+            if (data && Array.isArray(data.content)) {
+                setUtilizatoriRows(data.content)
+                setUserTotal(Number(data.totalElements) || 0)
+            } else {
+                setUtilizatoriRows([])
+                setUserTotal(0)
+            }
+        } catch (e) {
+            setErr(e?.message || 'Eroare la încărcare utilizatori.')
+            setUtilizatoriRows([])
+        } finally {
+            setListBusy(false)
+        }
+    }, [token, userPage, userPageSize, userQDebounced, userRolFilter, userDepFilter])
+
+    const loadDepartamentePage = useCallback(async () => {
+        if (!token) return
+        setListBusy(true)
+        setErr('')
+        try {
+            const data = await departamenteApi.getDepartamente(token, {
+                page: depPage,
+                size: depPageSize,
+                q: depQDebounced || undefined,
+            })
+            if (data && Array.isArray(data.content)) {
+                setDepartamenteRows(data.content)
+                setDepTotal(Number(data.totalElements) || 0)
+            } else {
+                setDepartamenteRows([])
+                setDepTotal(0)
+            }
+        } catch (e) {
+            setErr(e?.message || 'Eroare la încărcare departamente.')
+            setDepartamenteRows([])
+        } finally {
+            setListBusy(false)
+        }
+    }, [token, depPage, depPageSize, depQDebounced])
+
     useEffect(() => {
-        loadAll()
-    }, [loadAll])
+        if (!token) return
+        loadMeta()
+    }, [token, loadMeta])
+
+    useEffect(() => {
+        if (!token || tab !== 'utilizatori') return
+        loadUtilizatoriPage()
+    }, [token, tab, loadUtilizatoriPage])
+
+    useEffect(() => {
+        if (!token || tab !== 'departamente') return
+        loadDepartamentePage()
+    }, [token, tab, loadDepartamentePage])
+
+    useEffect(() => {
+        if (!token || tab !== 'departamente') return
+        let cancelled = false
+        ;(async () => {
+            try {
+                const u = await utilizatoriApi.listUtilizatori(token)
+                if (!cancelled) setUtilizatoriAll(Array.isArray(u) ? u : [])
+            } catch {
+                if (!cancelled) setUtilizatoriAll([])
+            }
+        })()
+        return () => {
+            cancelled = true
+        }
+    }, [token, tab])
+
+    const userTotalPages = Math.max(1, Math.ceil(userTotal / userPageSize) || 1)
+    const depTotalPages = Math.max(1, Math.ceil(depTotal / depPageSize) || 1)
+
+    const refreshAfterUserMutate = useCallback(async () => {
+        await loadUtilizatoriPage()
+        await loadMeta()
+        if (tab === 'departamente' && token) {
+            try {
+                const u = await utilizatoriApi.listUtilizatori(token)
+                setUtilizatoriAll(Array.isArray(u) ? u : [])
+            } catch {
+                /* ignore */
+            }
+        }
+    }, [loadUtilizatoriPage, loadMeta, tab, token])
+
+    const refreshAfterDepMutate = useCallback(async () => {
+        await loadDepartamentePage()
+        await loadMeta()
+    }, [loadDepartamentePage, loadMeta])
+
+    const refreshAfterManagerAssign = useCallback(async () => {
+        await loadDepartamentePage()
+        await loadMeta()
+        if (token) {
+            try {
+                const u = await utilizatoriApi.listUtilizatori(token)
+                setUtilizatoriAll(Array.isArray(u) ? u : [])
+            } catch {
+                /* ignore */
+            }
+        }
+        await loadUtilizatoriPage()
+    }, [loadDepartamentePage, loadMeta, token, loadUtilizatoriPage])
+
+    const refreshCerereCreated = useCallback(async () => {
+        await loadMeta()
+        await loadDepartamentePage()
+    }, [loadMeta, loadDepartamentePage])
 
     const createUtilizator = async (e) => {
         e.preventDefault()
@@ -106,7 +260,8 @@ export default function AdminPanel({ token }) {
             }
             await utilizatoriApi.createUtilizator(token, body)
             setCreateForm(emptyUserForm())
-            await loadAll()
+            setCreateUserFormOpen(false)
+            await refreshAfterUserMutate()
         } catch (e2) {
             setErr(e2?.message || 'Eroare la creare utilizator.')
         }
@@ -132,7 +287,7 @@ export default function AdminPanel({ token }) {
             }
             await utilizatoriApi.patchUtilizator(token, editingUser.id, body)
             setEditingUser(null)
-            await loadAll()
+            await refreshAfterUserMutate()
         } catch (e2) {
             setErr(e2?.message || 'Eroare la salvare.')
         }
@@ -143,7 +298,7 @@ export default function AdminPanel({ token }) {
         setErr('')
         try {
             await utilizatoriApi.deleteUtilizator(token, id)
-            await loadAll()
+            await refreshAfterUserMutate()
         } catch (e2) {
             setErr(e2?.message || 'Eroare la ștergere.')
         }
@@ -156,7 +311,7 @@ export default function AdminPanel({ token }) {
         try {
             await departamenteApi.createDepartament(token, { nume: depForm.nume.trim() })
             setDepForm({ nume: '' })
-            await loadAll()
+            await refreshAfterDepMutate()
         } catch (e2) {
             setErr(e2?.message || 'Eroare.')
         }
@@ -169,7 +324,7 @@ export default function AdminPanel({ token }) {
         try {
             await departamenteApi.updateDepartament(token, editingDep.id, { nume: editingDep.nume.trim() })
             setEditingDep(null)
-            await loadAll()
+            await refreshAfterDepMutate()
         } catch (e2) {
             setErr(e2?.message || 'Eroare.')
         }
@@ -180,7 +335,7 @@ export default function AdminPanel({ token }) {
         setErr('')
         try {
             await departamenteApi.deleteDepartament(token, id)
-            await loadAll()
+            await refreshAfterDepMutate()
         } catch (e2) {
             setErr(e2?.message || 'Nu s-a putut șterge (verificați posturi/utilizatori legați).')
         }
@@ -194,7 +349,7 @@ export default function AdminPanel({ token }) {
             await departamenteApi.assignDepartamentManager(token, managerForDepId, Number(managerUserId))
             setManagerForDepId(null)
             setManagerUserId('')
-            await loadAll()
+            await refreshAfterManagerAssign()
         } catch (e2) {
             setErr(e2?.message || 'Eroare la setarea managerului.')
         }
@@ -275,7 +430,7 @@ export default function AdminPanel({ token }) {
                     <span>{err}</span>
                 </div>
             )}
-            {loading && (
+            {(loading || listBusy) && (
                 <div className="admin-loading-bar">
                     <span className="admin-spinner" aria-hidden />
                     <span>Se încarcă datele…</span>
@@ -289,14 +444,38 @@ export default function AdminPanel({ token }) {
                             Utilizatori
                         </h2>
                         <p className="admin-section__desc">
-                            Adăugați utilizatori noi cu rol și parolă. Din tabel: <strong>Editează</strong> modifică datele și
-                            rolul; <strong>Șterge</strong> elimină contul (dacă nu este singurul administrator).
+                            Din tabel: <strong>Editează</strong> modifică datele și rolul; <strong>Șterge</strong> elimină
+                            contul (dacă nu este singurul administrator). Conturile <strong>Invitat (GUEST)</strong> — în
+                            așteptare după înregistrare — apar primele în listă și sunt evidențiate pentru atribuire rapidă
+                            a rolului.
                         </p>
                     </div>
 
-                    <div className="admin-card">
-                        <h3 className="admin-card__title">Utilizator nou</h3>
-                        <form className="admin-form-grid" onSubmit={createUtilizator}>
+                    <div
+                        className={`admin-card admin-card--user-create${createUserFormOpen ? ' admin-card--user-create-open' : ''}`}
+                    >
+                        <div className="admin-user-create-head">
+                            <h3 className="admin-card__title admin-card__title--inline">Utilizator nou</h3>
+                            <button
+                                type="button"
+                                id="admin-user-create-toggle"
+                                className={`admin-user-create-toggle${createUserFormOpen ? ' admin-user-create-toggle--open' : ''}`}
+                                aria-expanded={createUserFormOpen}
+                                aria-controls="admin-user-create-form-panel"
+                                onClick={() => setCreateUserFormOpen((v) => !v)}
+                            >
+                                <span className="visually-hidden">
+                                    {createUserFormOpen ? 'Închide' : 'Deschide'} formularul utilizator nou
+                                </span>
+                                <span className="admin-user-create-toggle__chevron" aria-hidden />
+                            </button>
+                        </div>
+                        {createUserFormOpen ? (
+                        <form
+                            id="admin-user-create-form-panel"
+                            className="admin-form-grid admin-user-create-form"
+                            onSubmit={createUtilizator}
+                        >
                             <div className="admin-field">
                                 <span>Nume utilizator</span>
                                 <input
@@ -354,7 +533,7 @@ export default function AdminPanel({ token }) {
                                         required
                                     >
                                         <option value="">— Selectați departamentul —</option>
-                                        {departamente.map((d) => (
+                                        {departamenteAll.map((d) => (
                                             <option key={d.id} value={d.id}>
                                                 {d.nume}
                                             </option>
@@ -369,6 +548,67 @@ export default function AdminPanel({ token }) {
                                 </button>
                             </div>
                         </form>
+                        ) : null}
+                    </div>
+
+                    <div className="admin-list-toolbar" role="search">
+                        <label className="admin-list-toolbar__field">
+                            <span className="admin-list-toolbar__label">Căutare</span>
+                            <input
+                                type="search"
+                                placeholder="Nume sau email…"
+                                value={userQInput}
+                                onChange={(ev) => setUserQInput(ev.target.value)}
+                                aria-label="Căutare utilizatori"
+                            />
+                        </label>
+                        <label className="admin-list-toolbar__field">
+                            <span className="admin-list-toolbar__label">Rol</span>
+                            <select
+                                value={userRolFilter}
+                                onChange={(ev) => setUserRolFilter(ev.target.value)}
+                                aria-label="Filtru rol"
+                            >
+                                <option value="">Toate rolurile</option>
+                                {roluri.map((r) => (
+                                    <option key={r.cod} value={r.cod}>
+                                        {r.denumire}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                        <label className="admin-list-toolbar__field">
+                            <span className="admin-list-toolbar__label">Departament</span>
+                            <select
+                                value={userDepFilter}
+                                onChange={(ev) => setUserDepFilter(ev.target.value)}
+                                aria-label="Filtru departament"
+                            >
+                                <option value="">Toate</option>
+                                {departamenteAll.map((d) => (
+                                    <option key={d.id} value={d.id}>
+                                        {d.nume}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                        <label className="admin-list-toolbar__field admin-list-toolbar__field--narrow">
+                            <span className="admin-list-toolbar__label">Pe pagină</span>
+                            <select
+                                value={userPageSize}
+                                onChange={(ev) => {
+                                    setUserPageSize(Number(ev.target.value))
+                                    setUserPage(0)
+                                }}
+                                aria-label="Mărime pagină"
+                            >
+                                {PAGE_SIZE_OPTIONS.map((n) => (
+                                    <option key={n} value={n}>
+                                        {n}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
                     </div>
 
                     <div className="admin-table-wrap">
@@ -386,22 +626,33 @@ export default function AdminPanel({ token }) {
                                 </tr>
                             </thead>
                             <tbody>
-                                {utilizatori.length === 0 && !loading ? (
+                                {utilizatoriRows.length === 0 && !loading && !listBusy ? (
                                     <tr>
                                         <td colSpan={7} className="admin-table-empty">
-                                            Nu există utilizatori afișați. Adăugați primul cont folosind formularul de mai sus.
+                                            Nu există utilizatori afișați.
                                         </td>
                                     </tr>
                                 ) : (
-                                    utilizatori.map((u) => (
-                                        <tr key={u.id}>
+                                    utilizatoriRows.map((u) => (
+                                        <tr
+                                            key={u.id}
+                                            className={u.rolCod === 'guest' ? 'admin-table-row--guest' : undefined}
+                                        >
                                             <td>
                                                 <span className="admin-id">{u.id}</span>
                                             </td>
                                             <td>{u.numeUtilizator}</td>
                                             <td>{u.email}</td>
                                             <td>
-                                                <span className="admin-badge">{u.rolDenumire || rolLabel(u.rolCod)}</span>
+                                                <span
+                                                    className={
+                                                        u.rolCod === 'guest'
+                                                            ? 'admin-badge admin-badge--guest'
+                                                            : 'admin-badge'
+                                                    }
+                                                >
+                                                    {u.rolDenumire || rolLabel(u.rolCod)}
+                                                </span>
                                             </td>
                                             <td>
                                                 {u.rolDoritDenumire ? (
@@ -442,6 +693,30 @@ export default function AdminPanel({ token }) {
                                 )}
                             </tbody>
                         </table>
+                    </div>
+
+                    <div className="admin-pager" aria-label="Paginare utilizatori">
+                        <span className="admin-pager__meta">
+                            {userTotal} utilizator{userTotal === 1 ? '' : 'i'} · pagina {userPage + 1} din {userTotalPages}
+                        </span>
+                        <div className="admin-pager__btns">
+                            <button
+                                type="button"
+                                className="admin-btn-secondary"
+                                disabled={userPage <= 0 || listBusy}
+                                onClick={() => setUserPage((p) => Math.max(0, p - 1))}
+                            >
+                                Înapoi
+                            </button>
+                            <button
+                                type="button"
+                                className="admin-btn-secondary"
+                                disabled={userPage + 1 >= userTotalPages || listBusy}
+                                onClick={() => setUserPage((p) => p + 1)}
+                            >
+                                Înainte
+                            </button>
+                        </div>
                     </div>
 
                     {editingUser && (
@@ -518,7 +793,7 @@ export default function AdminPanel({ token }) {
                                                 }
                                             >
                                                 <option value="">—</option>
-                                                {departamente.map((d) => (
+                                                {departamenteAll.map((d) => (
                                                     <option key={d.id} value={d.id}>
                                                         {d.nume}
                                                     </option>
@@ -574,6 +849,36 @@ export default function AdminPanel({ token }) {
                         </button>
                     </form>
 
+                    <div className="admin-list-toolbar" role="search">
+                        <label className="admin-list-toolbar__field">
+                            <span className="admin-list-toolbar__label">Căutare</span>
+                            <input
+                                type="search"
+                                placeholder="Nume departament…"
+                                value={depQInput}
+                                onChange={(ev) => setDepQInput(ev.target.value)}
+                                aria-label="Căutare departamente"
+                            />
+                        </label>
+                        <label className="admin-list-toolbar__field admin-list-toolbar__field--narrow">
+                            <span className="admin-list-toolbar__label">Pe pagină</span>
+                            <select
+                                value={depPageSize}
+                                onChange={(ev) => {
+                                    setDepPageSize(Number(ev.target.value))
+                                    setDepPage(0)
+                                }}
+                                aria-label="Mărime pagină departamente"
+                            >
+                                {PAGE_SIZE_OPTIONS.map((n) => (
+                                    <option key={n} value={n}>
+                                        {n}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                    </div>
+
                     <div className="admin-table-wrap">
                         <table className="admin-table">
                             <caption className="visually-hidden">Lista departamentelor</caption>
@@ -586,8 +891,15 @@ export default function AdminPanel({ token }) {
                                 </tr>
                             </thead>
                             <tbody>
-                                {departamente.map((d) => {
-                                    const mgr = managerDepartamentPentru(d.id, utilizatori)
+                                {departamenteRows.length === 0 && !loading && !listBusy ? (
+                                    <tr>
+                                        <td colSpan={4} className="admin-table-empty">
+                                            Nu există departamente afișate.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    departamenteRows.map((d) => {
+                                    const mgr = managerDepartamentPentru(d.id, utilizatoriAll)
                                     return (
                                         <tr key={d.id}>
                                             <td>
@@ -652,9 +964,34 @@ export default function AdminPanel({ token }) {
                                             </td>
                                         </tr>
                                     )
-                                })}
+                                })
+                                )}
                             </tbody>
                         </table>
+                    </div>
+
+                    <div className="admin-pager" aria-label="Paginare departamente">
+                        <span className="admin-pager__meta">
+                            {depTotal} departament{depTotal === 1 ? '' : 'e'} · pagina {depPage + 1} din {depTotalPages}
+                        </span>
+                        <div className="admin-pager__btns">
+                            <button
+                                type="button"
+                                className="admin-btn-secondary"
+                                disabled={depPage <= 0 || listBusy}
+                                onClick={() => setDepPage((p) => Math.max(0, p - 1))}
+                            >
+                                Înapoi
+                            </button>
+                            <button
+                                type="button"
+                                className="admin-btn-secondary"
+                                disabled={depPage + 1 >= depTotalPages || listBusy}
+                                onClick={() => setDepPage((p) => p + 1)}
+                            >
+                                Înainte
+                            </button>
+                        </div>
                     </div>
 
                     {managerForDepId != null && (
@@ -675,7 +1012,7 @@ export default function AdminPanel({ token }) {
                                         required
                                     >
                                         <option value="">— Alegeți utilizatorul —</option>
-                                        {utilizatori.map((u) => (
+                                        {utilizatoriAll.map((u) => (
                                             <option key={u.id} value={u.id}>
                                                 {u.numeUtilizator} ({u.email})
                                             </option>
@@ -713,11 +1050,10 @@ export default function AdminPanel({ token }) {
                         </p>
                     </div>
                     <AdministrarePosturi
-                        posturi={posturi}
                         recrutoriDto={recrutoriDto}
                         intervievatoriDto={intervievatoriDto}
                         token={token}
-                        onRefreshPosturi={loadAll}
+                        onRefreshPosturi={loadMeta}
                         allowDeletePost
                         embeddedInAdmin
                     />
@@ -727,8 +1063,8 @@ export default function AdminPanel({ token }) {
             {tab === 'cerere-angajare' && (
                 <AdminCerereAngajare
                     token={token}
-                    departamente={departamente}
-                    onCreated={loadAll}
+                    departamente={departamenteAll}
+                    onCreated={refreshCerereCreated}
                 />
             )}
         </div>

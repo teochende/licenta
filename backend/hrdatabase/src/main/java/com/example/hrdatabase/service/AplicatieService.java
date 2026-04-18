@@ -4,6 +4,7 @@ import com.example.hrdatabase.dto.request.AplicatieCreateRequest;
 import com.example.hrdatabase.dto.request.AplicatiePipelinePatchRequest;
 import com.example.hrdatabase.dto.request.AplicatieVizibilitateItPatchRequest;
 import com.example.hrdatabase.dto.response.AplicatieDashboardDto;
+import com.example.hrdatabase.dto.response.PageResponse;
 import com.example.hrdatabase.dto.response.RecalcMatchScoreResultDto;
 import com.example.hrdatabase.entity.Aplicatie;
 import com.example.hrdatabase.entity.Post;
@@ -23,18 +24,26 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Instant;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 @Service
 public class AplicatieService {
 
     private static final Logger log = LoggerFactory.getLogger(AplicatieService.class);
+
+    private static final ObjectMapper PIPELINE_OBJECT_MAPPER = new ObjectMapper();
 
     private final AplicatieRepository aplicatieRepository;
     private final PostRepository postRepository;
@@ -195,6 +204,123 @@ public class AplicatieService {
                 .filter(app -> postAccessService.canAccessAplicatieDetail(utilizator, app.getPost(), app))
                 .map(AplicatieService::toDashboardDto)
                 .toList();
+    }
+
+    /**
+     * Listă paginată pentru secțiunea „Candidați” din dashboard: aceleași drepturi ca {@link #findDashboardFor},
+     * cu căutare (nume, email, post, departament), filtru post și filtru activi / respinși / toți.
+     */
+    @Transactional(readOnly = true)
+    public PageResponse<AplicatieDashboardDto> findDashboardForPaged(
+            Utilizator utilizator,
+            String q,
+            Long postId,
+            String listaStatus,
+            int page,
+            int size) {
+        String qNorm = q != null ? q.trim().toLowerCase(Locale.ROOT) : "";
+        ListaAplicantiFilter statusFilter = ListaAplicantiFilter.fromParam(listaStatus);
+
+        List<Aplicatie> filtered = aplicatieRepository.findAllWithPostGraph().stream()
+                .filter(app -> postAccessService.canAccessAplicatieDetail(utilizator, app.getPost(), app))
+                .filter(app -> postId == null || postId.equals(app.getPost().getId()))
+                .filter(app -> matchesDashboardQuery(qNorm, app))
+                .filter(app -> matchesListaStatusFilter(app, statusFilter))
+                .sorted(APLICATIE_DASHBOARD_SORT)
+                .toList();
+
+        long total = filtered.size();
+        int safeSize = Math.max(1, Math.min(100, size));
+        int safePage = Math.max(0, page);
+        int from = (int) Math.min((long) safePage * safeSize, total);
+        int to = (int) Math.min(from + safeSize, total);
+        List<AplicatieDashboardDto> content =
+                from >= to ? List.of() : filtered.subList(from, to).stream()
+                        .map(AplicatieService::toDashboardDto)
+                        .toList();
+        int totalPages = total == 0 ? 0 : (int) Math.ceil((double) total / safeSize);
+        return new PageResponse<>(content, total, safePage, safeSize, totalPages);
+    }
+
+    private enum ListaAplicantiFilter {
+        ALL,
+        ACTIVI,
+        RESPINSI;
+
+        static ListaAplicantiFilter fromParam(String raw) {
+            if (raw == null || raw.isBlank()) {
+                return ALL;
+            }
+            return switch (raw.trim().toLowerCase(Locale.ROOT)) {
+                case "activi" -> ACTIVI;
+                case "respinsi" -> RESPINSI;
+                default -> ALL;
+            };
+        }
+    }
+
+    private static final Comparator<Aplicatie> APLICATIE_DASHBOARD_SORT =
+            Comparator.comparing((Aplicatie a) -> lowerOrEmpty(a.getNumeCandidat()))
+                    .thenComparing(a -> lowerOrEmpty(a.getEmail()))
+                    .thenComparing(a -> lowerOrEmpty(a.getPost().getNume()))
+                    .thenComparing(Aplicatie::getId, Comparator.reverseOrder());
+
+    private static String lowerOrEmpty(String s) {
+        return s == null ? "" : s.toLowerCase(Locale.ROOT);
+    }
+
+    private static boolean matchesDashboardQuery(String qNorm, Aplicatie a) {
+        if (qNorm.isEmpty()) {
+            return true;
+        }
+        Post p = a.getPost();
+        String dep = p.getDepartament() != null && p.getDepartament().getNume() != null
+                ? p.getDepartament().getNume().toLowerCase(Locale.ROOT)
+                : "";
+        return containsLower(a.getNumeCandidat(), qNorm)
+                || containsLower(a.getEmail(), qNorm)
+                || containsLower(p.getNume(), qNorm)
+                || containsLower(p.getSubdomeniu(), qNorm)
+                || (!dep.isEmpty() && dep.contains(qNorm));
+    }
+
+    private static boolean containsLower(String field, String qNorm) {
+        return field != null && field.toLowerCase(Locale.ROOT).contains(qNorm);
+    }
+
+    private static boolean matchesListaStatusFilter(Aplicatie a, ListaAplicantiFilter filter) {
+        boolean respins = pipelineIndicaRespins(a.getPipelineState());
+        return switch (filter) {
+            case ALL -> true;
+            case ACTIVI -> !respins;
+            case RESPINSI -> respins;
+        };
+    }
+
+    /**
+     * Aliniat cu UI: candidat respins dacă există o etapă cu status {@code respins} în JSON-ul pipeline.
+     */
+    private static boolean pipelineIndicaRespins(String pipelineStateJson) {
+        if (pipelineStateJson == null || pipelineStateJson.isBlank()) {
+            return false;
+        }
+        try {
+            JsonNode root = PIPELINE_OBJECT_MAPPER.readTree(pipelineStateJson);
+            JsonNode status = root.get("status");
+            if (status == null || !status.isObject()) {
+                return false;
+            }
+            Iterator<Map.Entry<String, JsonNode>> it = status.fields();
+            while (it.hasNext()) {
+                JsonNode v = it.next().getValue();
+                if (v != null && v.isTextual() && "respins".equalsIgnoreCase(v.asText())) {
+                    return true;
+                }
+            }
+        } catch (Exception ignored) {
+            // JSON invalid: tratat ca ne-respins
+        }
+        return false;
     }
 
     @Transactional(readOnly = true)

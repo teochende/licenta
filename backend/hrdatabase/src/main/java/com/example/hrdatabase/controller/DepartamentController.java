@@ -53,7 +53,15 @@ public class DepartamentController {
     }
 
     @GetMapping
-    public List<Departament> list() {
+    public Object list(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            @RequestParam(required = false) String q) {
+        if (page != null && size != null) {
+            int p = Math.max(0, page);
+            int s = Math.min(100, Math.max(1, size));
+            return departamentService.findPaged(q, p, s);
+        }
         return departamentService.findAll();
     }
 }

@@ -53,7 +53,18 @@ public class AplicatieController {
     }
 
     @GetMapping("/dashboard")
-    public List<AplicatieDashboardDto> listDashboard(@AuthenticationPrincipal Utilizator utilizator) {
+    public Object listDashboard(
+            @AuthenticationPrincipal Utilizator utilizator,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) Long postId,
+            @RequestParam(required = false) String listaStatus) {
+        if (page != null && size != null) {
+            int p = Math.max(0, page);
+            int s = Math.min(100, Math.max(1, size));
+            return aplicatieService.findDashboardForPaged(utilizator, q, postId, listaStatus, p, s);
+        }
         return aplicatieService.findDashboardFor(utilizator);
     }
 

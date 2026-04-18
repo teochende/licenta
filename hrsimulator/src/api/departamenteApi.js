@@ -1,7 +1,18 @@
 import { apiFetch } from './client'
 
-export function getDepartamente(token) {
-  return apiFetch('/api/departamente', { token })
+function appendDepartamenteQuery(params) {
+  if (!params || typeof params !== 'object') return ''
+  const qs = new URLSearchParams()
+  if (params.page != null) qs.set('page', String(params.page))
+  if (params.size != null) qs.set('size', String(params.size))
+  if (params.q != null && String(params.q).trim() !== '') qs.set('q', String(params.q).trim())
+  const s = qs.toString()
+  return s ? `?${s}` : ''
+}
+
+/** Fără `page`/`size` → lista completă; cu paginare → `{ content, totalElements, page, size, totalPages }`. */
+export function getDepartamente(token, params) {
+  return apiFetch(`/api/departamente${appendDepartamenteQuery(params)}`, { token })
 }
 
 export function createDepartament(token, body) {

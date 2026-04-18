@@ -54,8 +54,23 @@ export function openCvFromBlob(cvNumeFisier, blob, filename) {
   return 'open'
 }
 
-export function getAplicatiiDashboard(token) {
-  return apiFetch('/api/aplicatii/dashboard', { token })
+function appendDashboardQuery(params) {
+  if (!params || typeof params !== 'object') return ''
+  const qs = new URLSearchParams()
+  if (params.page != null) qs.set('page', String(params.page))
+  if (params.size != null) qs.set('size', String(params.size))
+  if (params.q != null && String(params.q).trim() !== '') qs.set('q', String(params.q).trim())
+  if (params.postId != null && params.postId !== '') qs.set('postId', String(params.postId))
+  if (params.listaStatus != null && String(params.listaStatus).trim() !== '') {
+    qs.set('listaStatus', String(params.listaStatus).trim())
+  }
+  const s = qs.toString()
+  return s ? `?${s}` : ''
+}
+
+/** Fără `page`/`size` → lista completă; cu paginare → `{ content, totalElements, page, size, totalPages }`. */
+export function getAplicatiiDashboard(token, params) {
+  return apiFetch(`/api/aplicatii/dashboard${appendDashboardQuery(params)}`, { token })
 }
 
 export function patchAplicatiePipeline(token, aplicatieId, pipelineStateJson) {

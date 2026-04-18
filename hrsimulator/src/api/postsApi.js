@@ -4,8 +4,23 @@ export function getPosturiDisponibile() {
   return apiFetch('/api/posturi/disponibile')
 }
 
-export function getPosturi(token) {
-  return apiFetch('/api/posturi', { token })
+function appendPosturiQuery(params) {
+  if (!params || typeof params !== 'object') return ''
+  const qs = new URLSearchParams()
+  if (params.page != null) qs.set('page', String(params.page))
+  if (params.size != null) qs.set('size', String(params.size))
+  if (params.q != null && String(params.q).trim() !== '') qs.set('q', String(params.q).trim())
+  if (params.enabled === true || params.enabled === false) qs.set('enabled', String(params.enabled))
+  if (params.departamentId != null && params.departamentId !== '') {
+    qs.set('departamentId', String(params.departamentId))
+  }
+  const s = qs.toString()
+  return s ? `?${s}` : ''
+}
+
+/** Fără `page`/`size` → lista completă (dashboard); cu paginare → `{ content, totalElements, page, size, totalPages }`. */
+export function getPosturi(token, params) {
+  return apiFetch(`/api/posturi${appendPosturiQuery(params)}`, { token })
 }
 
 export function createPost(token, body) {

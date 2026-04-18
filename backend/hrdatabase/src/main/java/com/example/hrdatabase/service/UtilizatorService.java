@@ -2,6 +2,7 @@ package com.example.hrdatabase.service;
 
 import com.example.hrdatabase.dto.request.RegisterPublicRequestDTO;
 import com.example.hrdatabase.dto.request.UtilizatorRequestDTO;
+import com.example.hrdatabase.dto.response.PageResponse;
 import com.example.hrdatabase.dto.response.UtilizatorResponseDTO;
 import com.example.hrdatabase.dto.request.UtilizatorUpdateRequestDTO;
 import com.example.hrdatabase.entity.Departament;
@@ -10,14 +11,21 @@ import com.example.hrdatabase.entity.Utilizator;
 import com.example.hrdatabase.mapper.UtilizatorMapper;
 import com.example.hrdatabase.repository.DepartamentRepository;
 import com.example.hrdatabase.repository.UtilizatorRepository;
+import com.example.hrdatabase.repository.UtilizatorSpecifications;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -166,6 +174,25 @@ public class UtilizatorService {
         return utilizatorRepository.findAll().stream()
                 .map(UtilizatorMapper::toResponse)
                 .toList();
+    }
+
+    /**
+     * Listă paginată pentru administrare: căutare în nume/email, filtre opționale după rol și departament.
+     */
+    @Transactional(readOnly = true)
+    public PageResponse<UtilizatorResponseDTO> findPaged(String q, Rol rol, Long departamentId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.unsorted());
+        Specification<Utilizator> spec = UtilizatorSpecifications.filtered(q, rol, departamentId);
+        Page<Utilizator> result = utilizatorRepository.findAll(spec, pageable);
+        List<UtilizatorResponseDTO> content = result.getContent().stream()
+                .map(UtilizatorMapper::toResponse)
+                .toList();
+        return new PageResponse<>(
+                content,
+                result.getTotalElements(),
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalPages());
     }
 
     private static boolean callerHasAdminRole() {

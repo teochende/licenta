@@ -3,6 +3,7 @@ package com.example.hrdatabase.service;
 import com.example.hrdatabase.dto.request.PostCreateRequest;
 import com.example.hrdatabase.dto.request.PostDashboardOrderRequest;
 import com.example.hrdatabase.dto.request.PostPatchRequest;
+import com.example.hrdatabase.dto.response.PageResponse;
 import com.example.hrdatabase.dto.response.PostViewDto;
 import com.example.hrdatabase.entity.Departament;
 import com.example.hrdatabase.entity.Post;
@@ -293,6 +294,52 @@ public class PostService {
                 .filter(p -> postAccessService.canViewPost(utilizator, p))
                 .map(this::toViewForListing)
                 .toList();
+    }
+
+    /**
+     * Aceleași drepturi ca {@link #findPostDtosFor(Utilizator)}, cu căutare/filtrare și paginare în memorie
+     * (după filtrarea accesului), pentru ecrane de administrare.
+     */
+    @Transactional(readOnly = true)
+    public PageResponse<PostViewDto> findPostDtosForPaged(
+            Utilizator utilizator,
+            String q,
+            Boolean enabled,
+            Long departamentId,
+            int page,
+            int size) {
+        String qNorm = q != null ? q.trim().toLowerCase(Locale.ROOT) : "";
+        List<Post> filtered = postRepository.findAll().stream()
+                .filter(p -> postAccessService.canViewPost(utilizator, p))
+                .filter(p -> enabled == null || p.isEnabled() == enabled)
+                .filter(p -> departamentId == null
+                        || (p.getDepartament() != null && departamentId.equals(p.getDepartament().getId())))
+                .filter(p -> qNorm.isEmpty() || postMatchesAdminQuery(p, qNorm))
+                .toList();
+        long total = filtered.size();
+        int safeSize = Math.max(1, Math.min(100, size));
+        int safePage = Math.max(0, page);
+        int from = (int) Math.min((long) safePage * safeSize, total);
+        int to = (int) Math.min(from + safeSize, total);
+        List<PostViewDto> content =
+                from >= to ? List.of() : filtered.subList(from, to).stream().map(this::toViewForListing).toList();
+        int totalPages = total == 0 ? 0 : (int) Math.ceil((double) total / safeSize);
+        return new PageResponse<>(content, total, safePage, safeSize, totalPages);
+    }
+
+    private static boolean postMatchesAdminQuery(Post p, String qNorm) {
+        if (p.getNume() != null && p.getNume().toLowerCase(Locale.ROOT).contains(qNorm)) {
+            return true;
+        }
+        if (p.getSubdomeniu() != null && p.getSubdomeniu().toLowerCase(Locale.ROOT).contains(qNorm)) {
+            return true;
+        }
+        if (p.getNivel() != null && p.getNivel().toLowerCase(Locale.ROOT).contains(qNorm)) {
+            return true;
+        }
+        return p.getDepartament() != null
+                && p.getDepartament().getNume() != null
+                && p.getDepartament().getNume().toLowerCase(Locale.ROOT).contains(qNorm);
     }
 
     /**

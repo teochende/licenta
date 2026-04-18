@@ -264,7 +264,6 @@ function App() {
                             element={
                                 user.isAuthenticated && isMr ? (
                                     <AdministrarePosturi
-                                        posturi={posturi}
                                         recrutoriDto={recrutoriDto}
                                         intervievatoriDto={intervievatoriDto}
                                         token={user.token}

@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { getDepartamente } from '../api/departamenteApi'
 import { getRecrutori, getIntervievatoriTehnici } from '../api/hrMetaApi'
 import {
+    getPosturi,
     deletePost,
     patchPost,
     putPost,
@@ -13,8 +14,9 @@ import './administrare_posturi.css'
 import ModalEditJob from './ModalEditJob'
 import { validateJobDescriereSections } from '../utils/jobDescriereSections.jsx'
 
+const PAGE_SIZE_OPTIONS = [5, 10, 20]
+
 export default function AdministrarePosturi({
-    posturi,
     recrutoriDto = [],
     intervievatoriDto = [],
     token,
@@ -26,6 +28,25 @@ export default function AdministrarePosturi({
     const [departamente, setDepartamente] = useState([])
     /** Reîncărcăm local; după încărcare folosim răspunsul API chiar dacă lista e goală. */
     const [hrMeta, setHrMeta] = useState({ loaded: false, recrutori: [], intervievatori: [] })
+
+    const [posturiRows, setPosturiRows] = useState([])
+    const [postTotal, setPostTotal] = useState(0)
+    const [page, setPage] = useState(0)
+    const [pageSize, setPageSize] = useState(10)
+    const [qInput, setQInput] = useState('')
+    const [qDebounced, setQDebounced] = useState('')
+    const [enabledFilter, setEnabledFilter] = useState('')
+    const [departamentFilter, setDepartamentFilter] = useState('')
+    const [postsLoading, setPostsLoading] = useState(false)
+
+    useEffect(() => {
+        const t = setTimeout(() => setQDebounced(qInput.trim()), 350)
+        return () => clearTimeout(t)
+    }, [qInput])
+
+    useEffect(() => {
+        setPage(0)
+    }, [qDebounced, enabledFilter, departamentFilter])
 
     useEffect(() => {
         if (!token) {
@@ -48,17 +69,64 @@ export default function AdministrarePosturi({
         })
     }, [token])
 
+    const loadPosts = useCallback(async () => {
+        if (!token) {
+            setPosturiRows([])
+            setPostTotal(0)
+            return
+        }
+        setPostsLoading(true)
+        try {
+            let enabledParam
+            if (enabledFilter === 'true') enabledParam = true
+            else if (enabledFilter === 'false') enabledParam = false
+            const data = await getPosturi(token, {
+                page,
+                size: pageSize,
+                q: qDebounced || undefined,
+                enabled: enabledParam,
+                departamentId: departamentFilter || undefined,
+            })
+            if (data && Array.isArray(data.content)) {
+                setPosturiRows(data.content)
+                setPostTotal(Number(data.totalElements) || 0)
+            } else if (Array.isArray(data)) {
+                setPosturiRows(data)
+                setPostTotal(data.length)
+            } else {
+                setPosturiRows([])
+                setPostTotal(0)
+            }
+        } catch {
+            setPosturiRows([])
+            setPostTotal(0)
+        } finally {
+            setPostsLoading(false)
+        }
+    }, [token, page, pageSize, qDebounced, enabledFilter, departamentFilter])
+
+    useEffect(() => {
+        loadPosts()
+    }, [loadPosts])
+
     const recrutoriEfectivi = hrMeta.loaded ? hrMeta.recrutori : recrutoriDto
     const intervievatoriEfectivi = hrMeta.loaded ? hrMeta.intervievatori : intervievatoriDto
     const recrutoriNume = recrutoriEfectivi.map((r) => r.numeUtilizator)
     const intervievatoriNume = intervievatoriEfectivi.map((r) => r.numeUtilizator)
 
+    const totalPages = Math.max(1, Math.ceil(postTotal / pageSize) || 1)
+
+    const afterMutation = async () => {
+        await loadPosts()
+        await onRefreshPosturi?.()
+    }
+
     const toggleEnabled = async (id) => {
-        const p = posturi.find((x) => x.id === id)
+        const p = posturiRows.find((x) => x.id === id)
         if (!p || !token) return
         try {
             await patchPost(token, id, { enabled: !p.enabled })
-            await onRefreshPosturi?.()
+            await afterMutation()
         } catch (e) {
             alert(e?.message || 'Eroare.')
         }
@@ -77,7 +145,7 @@ export default function AdministrarePosturi({
         if (!window.confirm('Sigur ștergeți acest post? Se vor șterge și aplicările asociate.')) return
         try {
             await deletePost(token, id)
-            await onRefreshPosturi?.()
+            await afterMutation()
             if (editingId === id) setEditingId(null)
         } catch (e) {
             alert(e?.message || 'Eroare la ștergere.')
@@ -124,14 +192,14 @@ export default function AdministrarePosturi({
             } else if (jobActualizat.descriereFisierFile) {
                 await uploadPostDescriereFisier(token, idPost, jobActualizat.descriereFisierFile)
             }
-            await onRefreshPosturi?.()
+            await afterMutation()
             inchideModal()
         } catch (e) {
             alert(e?.message || 'Eroare la salvare.')
         }
     }
 
-    const jobEditat = editingId != null ? posturi.find((p) => p.id === editingId) : null
+    const jobEditat = editingId != null ? posturiRows.find((p) => p.id === editingId) : null
 
     const toolbar = (
         <div className={embeddedInAdmin ? 'toolbar-administrare toolbar-administrare--embedded' : 'toolbar-administrare'}>
@@ -160,6 +228,66 @@ export default function AdministrarePosturi({
     return (
         <div className={embeddedInAdmin ? 'administrare-posturi administrare-posturi--embedded' : 'administrare-posturi'}>
             {heading}
+
+            <div className="posturi-admin-toolbar" role="search">
+                <label className="posturi-admin-toolbar__field">
+                    <span className="posturi-admin-toolbar__label">Căutare</span>
+                    <input
+                        type="search"
+                        placeholder="Nume, subdomeniu, nivel, domeniu…"
+                        value={qInput}
+                        onChange={(ev) => setQInput(ev.target.value)}
+                        aria-label="Căutare posturi"
+                    />
+                </label>
+                <label className="posturi-admin-toolbar__field">
+                    <span className="posturi-admin-toolbar__label">Stare</span>
+                    <select
+                        value={enabledFilter}
+                        onChange={(ev) => setEnabledFilter(ev.target.value)}
+                        aria-label="Filtru activ"
+                    >
+                        <option value="">Toate</option>
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </label>
+                <label className="posturi-admin-toolbar__field">
+                    <span className="posturi-admin-toolbar__label">Departament</span>
+                    <select
+                        value={departamentFilter}
+                        onChange={(ev) => setDepartamentFilter(ev.target.value)}
+                        aria-label="Filtru departament"
+                    >
+                        <option value="">Toate</option>
+                        {departamente.map((d) => (
+                            <option key={d.id} value={d.id}>
+                                {d.nume}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+                <label className="posturi-admin-toolbar__field posturi-admin-toolbar__field--narrow">
+                    <span className="posturi-admin-toolbar__label">Pe pagină</span>
+                    <select
+                        value={pageSize}
+                        onChange={(ev) => {
+                            setPageSize(Number(ev.target.value))
+                            setPage(0)
+                        }}
+                        aria-label="Mărime pagină"
+                    >
+                        {PAGE_SIZE_OPTIONS.map((n) => (
+                            <option key={n} value={n}>
+                                {n}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+            </div>
+
+            {postsLoading && <p className="posturi-admin-loading">Se încarcă lista…</p>}
+
             <div className="jobs-table-wrap">
                 <table className="jobs-table">
                     <thead>
@@ -177,60 +305,92 @@ export default function AdministrarePosturi({
                         </tr>
                     </thead>
                     <tbody>
-                        {posturi.map((post) => (
-                            <tr key={post.id} className={post.enabled ? 'row-enabled' : 'row-disabled'}>
-                                <td>{post.id}</td>
-                                <td>{post.domeniu}</td>
-                                <td>{post.subdomeniu}</td>
-                                <td>{post.nume}</td>
-                                <td>{post.nivel}</td>
-                                <td className="jobs-table-descriere">
-                                    <span className="jobs-table-descriere-text">
-                                        {(post.descriere || '').length > 80
-                                            ? `${(post.descriere || '').slice(0, 80)}…`
-                                            : post.descriere || '—'}
-                                    </span>
-                                    {post.descriereFisierStocat && (
-                                        <span className="jobs-table-badge-fisier" title={post.descriereFisierNume || 'Fișier'}>
-                                            PDF/DOCX
-                                        </span>
-                                    )}
+                        {!postsLoading && posturiRows.length === 0 ? (
+                            <tr>
+                                <td colSpan={allowDeletePost ? 10 : 9} className="posturi-admin-empty">
+                                    Nu există posturi afișate.
                                 </td>
-                                <td>{(post.assignedRecrutori || []).join(', ') || '—'}</td>
-                                <td>{(post.assignedIntervievatori || []).join(', ') || '—'}</td>
-                                <td>
-                                    <div className="actiuni-celula">
-                                        <button
-                                            type="button"
-                                            className="toggle-btn edit-btn"
-                                            onClick={() => deschideEditare(post)}
-                                        >
-                                            Editare
-                                        </button>
-                                        <button
-                                            className={`toggle-btn ${post.enabled ? 'on' : 'off'}`}
-                                            onClick={() => toggleEnabled(post.id)}
-                                            title={post.enabled ? 'Dezactivează postul' : 'Activează postul'}
-                                        >
-                                            {post.enabled ? 'Dezactivează' : 'Activează'}
-                                        </button>
-                                    </div>
-                                </td>
-                                {allowDeletePost && (
-                                    <td>
-                                        <button
-                                            type="button"
-                                            className="toggle-btn delete-post-btn"
-                                            onClick={() => stergePost(post.id)}
-                                        >
-                                            Șterge
-                                        </button>
-                                    </td>
-                                )}
                             </tr>
-                        ))}
+                        ) : (
+                            posturiRows.map((post) => (
+                                <tr key={post.id} className={post.enabled ? 'row-enabled' : 'row-disabled'}>
+                                    <td>{post.id}</td>
+                                    <td>{post.domeniu}</td>
+                                    <td>{post.subdomeniu}</td>
+                                    <td>{post.nume}</td>
+                                    <td>{post.nivel}</td>
+                                    <td className="jobs-table-descriere">
+                                        <span className="jobs-table-descriere-text">
+                                            {(post.descriere || '').length > 80
+                                                ? `${(post.descriere || '').slice(0, 80)}…`
+                                                : post.descriere || '—'}
+                                        </span>
+                                        {post.descriereFisierStocat && (
+                                            <span className="jobs-table-badge-fisier" title={post.descriereFisierNume || 'Fișier'}>
+                                                PDF/DOCX
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td>{(post.assignedRecrutori || []).join(', ') || '—'}</td>
+                                    <td>{(post.assignedIntervievatori || []).join(', ') || '—'}</td>
+                                    <td>
+                                        <div className="actiuni-celula">
+                                            <button
+                                                type="button"
+                                                className="toggle-btn edit-btn"
+                                                onClick={() => deschideEditare(post)}
+                                            >
+                                                Editare
+                                            </button>
+                                            <button
+                                                className={`toggle-btn ${post.enabled ? 'on' : 'off'}`}
+                                                onClick={() => toggleEnabled(post.id)}
+                                                title={post.enabled ? 'Dezactivează postul' : 'Activează postul'}
+                                            >
+                                                {post.enabled ? 'Dezactivează' : 'Activează'}
+                                            </button>
+                                        </div>
+                                    </td>
+                                    {allowDeletePost && (
+                                        <td>
+                                            <button
+                                                type="button"
+                                                className="toggle-btn delete-post-btn"
+                                                onClick={() => stergePost(post.id)}
+                                            >
+                                                Șterge
+                                            </button>
+                                        </td>
+                                    )}
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
+            </div>
+
+            <div className="posturi-admin-pager" aria-label="Paginare posturi">
+                <span className="posturi-admin-pager__meta">
+                    {postTotal} post{postTotal === 1 ? '' : 'uri'} · pagina {page + 1} din {totalPages}
+                </span>
+                <div className="posturi-admin-pager__btns">
+                    <button
+                        type="button"
+                        className="toggle-btn"
+                        disabled={page <= 0 || postsLoading}
+                        onClick={() => setPage((p) => Math.max(0, p - 1))}
+                    >
+                        Înapoi
+                    </button>
+                    <button
+                        type="button"
+                        className="toggle-btn"
+                        disabled={page + 1 >= totalPages || postsLoading}
+                        onClick={() => setPage((p) => p + 1)}
+                    >
+                        Înainte
+                    </button>
+                </div>
             </div>
 
             <ModalEditJob

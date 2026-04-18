@@ -5,9 +5,16 @@ import com.example.hrdatabase.dto.request.DepartamentUpdateRequest;
 import com.example.hrdatabase.entity.Departament;
 import com.example.hrdatabase.entity.Rol;
 import com.example.hrdatabase.entity.Utilizator;
+import com.example.hrdatabase.dto.response.PageResponse;
 import com.example.hrdatabase.repository.DepartamentRepository;
+import com.example.hrdatabase.repository.DepartamentSpecifications;
 import com.example.hrdatabase.repository.PostRepository;
 import com.example.hrdatabase.repository.UtilizatorRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -93,5 +100,13 @@ public class DepartamentService {
 
     public List<Departament> findAll() {
         return departamentRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<Departament> findPaged(String q, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+        Specification<Departament> spec = DepartamentSpecifications.numeContains(q);
+        Page<Departament> result = departamentRepository.findAll(spec, pageable);
+        return PageResponse.fromPage(result);
     }
 }

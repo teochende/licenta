@@ -31,7 +31,18 @@ public class PostController {
     }
 
     @GetMapping
-    public List<PostViewDto> listForCurrentUser(@AuthenticationPrincipal Utilizator utilizator) {
+    public Object listForCurrentUser(
+            @AuthenticationPrincipal Utilizator utilizator,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) Boolean enabled,
+            @RequestParam(required = false) Long departamentId) {
+        if (page != null && size != null) {
+            int p = Math.max(0, page);
+            int s = Math.min(100, Math.max(1, size));
+            return postService.findPostDtosForPaged(utilizator, q, enabled, departamentId, p, s);
+        }
         return postService.findPostDtosFor(utilizator);
     }
 

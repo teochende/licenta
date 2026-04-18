@@ -230,6 +230,78 @@
     border-bottom: 1px solid var(--admin-border);
 }
 
+.admin-card__title--inline {
+    margin: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+    flex: 0 1 auto;
+    align-self: center;
+}
+
+.admin-user-create-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--admin-border);
+    margin-bottom: 0;
+}
+
+.admin-card--user-create-open .admin-user-create-head {
+    margin-bottom: 1rem;
+}
+
+.admin-user-create-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.35rem;
+    height: 2.35rem;
+    padding: 0;
+    flex-shrink: 0;
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--admin-text);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-user-create-toggle:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+}
+
+.admin-user-create-toggle:focus-visible {
+    outline: none;
+    border-color: var(--admin-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* Chevron tip „dropdown” (fără text vizibil) */
+.admin-user-create-toggle__chevron {
+    display: block;
+    width: 0.45rem;
+    height: 0.45rem;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg);
+    margin-top: -0.2rem;
+    opacity: 0.85;
+    transition: transform 0.2s ease, margin 0.2s ease;
+}
+
+.admin-user-create-toggle--open .admin-user-create-toggle__chevron {
+    transform: rotate(-135deg);
+    margin-top: 0.12rem;
+}
+
+.admin-user-create-form {
+    padding-top: 0.15rem;
+}
+
 /* Formular utilizator nou */
 .admin-form-grid {
     display: grid;
@@ -710,4 +782,87 @@
     max-width: none;
     width: 100%;
     margin-bottom: 0;
+}
+
+.admin-list-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    align-items: flex-end;
+    margin: 1rem 0;
+    padding: 0.75rem 1rem;
+    background: var(--admin-surface, #fff);
+    border: 1px solid var(--admin-border, #e2e8f0);
+    border-radius: var(--admin-radius, 12px);
+    box-shadow: var(--admin-shadow, 0 1px 3px rgba(15, 23, 42, 0.08));
+}
+
+.admin-list-toolbar__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 9rem;
+}
+
+.admin-list-toolbar__field--narrow {
+    min-width: 5.5rem;
+}
+
+.admin-list-toolbar__label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--admin-muted, #64748b);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.admin-list-toolbar input,
+.admin-list-toolbar select {
+    padding: 0.45rem 0.55rem;
+    border: 1px solid var(--admin-border, #e2e8f0);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background: #fff;
+    color: var(--admin-text, #0f172a);
+}
+
+.admin-pager {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin: 1rem 0 0;
+    padding: 0.65rem 0.85rem;
+    background: var(--admin-surface, #fff);
+    border: 1px solid var(--admin-border, #e2e8f0);
+    border-radius: 10px;
+}
+
+.admin-pager__meta {
+    font-size: 0.9rem;
+    color: var(--admin-muted, #64748b);
+}
+
+.admin-pager__btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* Conturi GUEST (în așteptare) — primele în listă; evidențiere pentru admin */
+.admin-table-row--guest {
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.12) 0%, transparent 100%);
+}
+
+.admin-table-row--guest:hover td {
+    background: rgba(245, 158, 11, 0.06);
+}
+
+.admin-badge--guest {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: #fff !important;
+    font-weight: 600;
+    border: 1px solid rgba(180, 83, 9, 0.5);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
 }
