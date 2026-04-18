@@ -14,6 +14,13 @@
   font-size: 14px;
 }
 
+.form-hint-descriere-structura {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #4b5563;
+}
+
 .formular-adaugare-post .form-camp input[type="text"],
 .formular-adaugare-post .form-camp textarea {
   width: 100%;

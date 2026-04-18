@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getDepartamente } from '../api/departamenteApi'
 import { createPost } from '../api/postsApi'
+import { validateJobDescriereSections, JobDescriereSectiuniHint } from '../utils/jobDescriereSections.jsx'
 import './AdaugarePost.css'
 
 export default function AdaugarePost({ token, onCreated }) {
@@ -30,13 +31,23 @@ export default function AdaugarePost({ token, onCreated }) {
     const handleSubmit = async (e) => {
         e.preventDefault()
         setErr('')
+        const descTrim = descriere.trim()
+        if (descTrim !== '') {
+            const { ok, missing } = validateJobDescriereSections(descTrim)
+            if (!ok) {
+                setErr(
+                    `Descrierea trebuie să conțină toate secțiunile obligatorii. Lipsesc: ${missing.join(', ')}.`
+                )
+                return
+            }
+        }
         try {
             await createPost(token, {
                 departamentId: Number(departamentId),
                 subdomeniu: subdomeniu.trim(),
                 nume: nume.trim(),
                 nivel: nivel.trim(),
-                descriere: descriere.trim(),
+                descriere: descTrim,
                 enabled,
                 recrutoriIds: [],
                 intervievatoriIds: [],
@@ -101,11 +112,13 @@ export default function AdaugarePost({ token, onCreated }) {
                 </div>
                 <div className="form-camp">
                     <label htmlFor="adaugare-descriere">Descriere</label>
+                    <JobDescriereSectiuniHint className="form-hint-descriere-structura" />
                     <textarea
                         id="adaugare-descriere"
                         rows={4}
                         value={descriere}
                         onChange={(e) => setDescriere(e.target.value)}
+                        placeholder="Opțional la creare — puteți adăuga ulterior text sau fișier din administrare."
                     />
                 </div>
                 <div className="form-camp form-checkbox">

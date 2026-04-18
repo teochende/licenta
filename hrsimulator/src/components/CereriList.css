@@ -63,6 +63,10 @@
   margin-bottom: 1rem;
 }
 
+.cereri-edit-structura-hint {
+  margin: 0 0 8px;
+}
+
 .cereri-edit-field label,
 .cereri-edit-field .label {
   display: block;

@@ -323,6 +323,13 @@
   margin: 0 0 0.75rem 0;
 }
 
+.job-card-modal-hint-descriere {
+  margin: -0.35rem 0 0.65rem;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #4b5563;
+}
+
 .job-card-modal-textarea {
   width: 100%;
   padding: 8px;

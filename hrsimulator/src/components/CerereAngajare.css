@@ -72,6 +72,10 @@
   margin: 0.35rem 0 0.75rem;
 }
 
+.cerere-descriere-structura-hint {
+  margin: 0 0 0.65rem;
+}
+
 .checkbox-list {
   display: flex;
   flex-direction: column;

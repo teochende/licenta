@@ -17,6 +17,7 @@ import com.example.hrdatabase.repository.CerereAngajareRepository;
 import com.example.hrdatabase.repository.DepartamentRepository;
 import com.example.hrdatabase.repository.PostRepository;
 import com.example.hrdatabase.repository.UtilizatorRepository;
+import com.example.hrdatabase.validation.PostDescriereSectionValidator;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.security.access.AccessDeniedException;
@@ -26,6 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -41,18 +43,21 @@ public class CerereAngajareService {
     private final UtilizatorRepository utilizatorRepository;
     private final PostRepository postRepository;
     private final CerereDescriereFileStorageService fileStorageService;
+    private final DocumentTextExtractor documentTextExtractor;
 
     public CerereAngajareService(
             CerereAngajareRepository cerereAngajareRepository,
             DepartamentRepository departamentRepository,
             UtilizatorRepository utilizatorRepository,
             PostRepository postRepository,
-            CerereDescriereFileStorageService fileStorageService) {
+            CerereDescriereFileStorageService fileStorageService,
+            DocumentTextExtractor documentTextExtractor) {
         this.cerereAngajareRepository = cerereAngajareRepository;
         this.departamentRepository = departamentRepository;
         this.utilizatorRepository = utilizatorRepository;
         this.postRepository = postRepository;
         this.fileStorageService = fileStorageService;
+        this.documentTextExtractor = documentTextExtractor;
     }
 
     @Transactional
@@ -70,6 +75,10 @@ public class CerereAngajareService {
         c.setSubdomeniu(trimToNull(request.subdomeniu()));
         c.setDescriereMod(DescriereCerereMod.MANUAL);
         c.setDescriere(request.descriere());
+        String d = request.descriere() != null ? request.descriere().trim() : "";
+        if (!d.isEmpty()) {
+            PostDescriereSectionValidator.assertComplete(d);
+        }
         c.setNrPozitii(request.nrPozitii() != null ? request.nrPozitii() : 1);
         c.setDepartament(departament);
         c.setStatus(request.status() != null ? request.status() : "pending");
@@ -143,6 +152,7 @@ public class CerereAngajareService {
         if (desc.isEmpty()) {
             throw new IllegalArgumentException("Pentru descriere manuală, completați câmpul descriere.");
         }
+        PostDescriereSectionValidator.assertComplete(desc);
 
         CerereAngajare c = new CerereAngajare();
         c.setNumePost(request.numePost().trim());
@@ -202,6 +212,7 @@ public class CerereAngajareService {
             if (t.isEmpty()) {
                 throw new IllegalArgumentException("Introduceți descrierea manuală sau alegeți modul fișier.");
             }
+            PostDescriereSectionValidator.assertComplete(t);
             c.setDescriere(t);
             c.setDescriereFisierNume(null);
             c.setDescriereFisierPath(null);
@@ -209,11 +220,12 @@ public class CerereAngajareService {
             if (file == null || file.isEmpty()) {
                 throw new IllegalArgumentException("Încărcați un fișier .pdf sau .docx pentru descriere.");
             }
+            String note = descriereText != null ? descriereText.trim() : "";
+            assertCerereDescriereCompletaDinFisierSiNote(file, note);
             String originalName = file.getOriginalFilename() != null ? file.getOriginalFilename() : "descriere.pdf";
             String stored = fileStorageService.store(file);
             c.setDescriereFisierNume(originalName);
             c.setDescriereFisierPath(stored);
-            String note = descriereText != null ? descriereText.trim() : "";
             c.setDescriere(note.isEmpty() ? null : note);
         }
 
@@ -310,9 +322,16 @@ public class CerereAngajareService {
                 if (t.isEmpty()) {
                     throw new IllegalArgumentException("Descrierea nu poate fi goală.");
                 }
+                PostDescriereSectionValidator.assertComplete(t);
                 c.setDescriere(t);
             } else {
                 c.setDescriere(trimToNull(req.descriere()));
+                try {
+                    assertCerereDescriereCompletaFisierPeDisc(c);
+                } catch (IOException e) {
+                    throw new IllegalArgumentException(
+                            "Nu s-a putut valida descrierea din fișier: " + e.getMessage());
+                }
             }
         }
         if (req.intervievatoriTehniciIds() != null) {
@@ -377,6 +396,44 @@ public class CerereAngajareService {
         }
         String t = s.trim();
         return t.isEmpty() ? null : t;
+    }
+
+    private void assertCerereDescriereCompletaDinFisierSiNote(MultipartFile file, String noteTrimmed)
+            throws IOException {
+        byte[] bytes = file.getBytes();
+        String name = file.getOriginalFilename() != null ? file.getOriginalFilename() : "descriere.pdf";
+        String extracted = documentTextExtractor.extractFromBytes(bytes, name);
+        if (extracted == null || extracted.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Nu s-a putut extrage text din fișier. Folosiți un PDF/DOCX cu text selectabil care conține toate secțiunile obligatorii.");
+        }
+        String merged = extracted;
+        if (noteTrimmed != null && !noteTrimmed.isBlank()) {
+            merged = extracted + "\n" + noteTrimmed;
+        }
+        PostDescriereSectionValidator.assertComplete(merged);
+    }
+
+    private void assertCerereDescriereCompletaFisierPeDisc(CerereAngajare c) throws IOException {
+        if (c.getDescriereFisierPath() == null || c.getDescriereFisierPath().isBlank()) {
+            throw new IllegalArgumentException("Cererea nu are fișier de descriere stocat.");
+        }
+        Path path = fileStorageService.resolveStoredPath(c.getDescriereFisierPath());
+        if (!Files.exists(path)) {
+            throw new IllegalArgumentException("Fișierul de descriere nu mai este disponibil pe server.");
+        }
+        byte[] bytes = Files.readAllBytes(path);
+        String name = c.getDescriereFisierNume() != null ? c.getDescriereFisierNume() : path.getFileName().toString();
+        String extracted = documentTextExtractor.extractFromBytes(bytes, name);
+        if (extracted == null || extracted.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Nu s-a putut extrage text din fișierul de descriere. Reîncărcați un PDF/DOCX complet.");
+        }
+        String merged = extracted;
+        if (c.getDescriere() != null && !c.getDescriere().isBlank()) {
+            merged = extracted + "\n" + c.getDescriere().trim();
+        }
+        PostDescriereSectionValidator.assertComplete(merged);
     }
 
     private static DescriereCerereMod parseDescriereMod(String raw) {

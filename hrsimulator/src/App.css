@@ -216,6 +216,11 @@
   position: relative;
 }
 
+.job-descriere strong {
+  font-weight: 700;
+  color: #0f172a;
+}
+
 /* Preview estetic: 4 linii max (fără să lipească rândurile între ele) */
 .job-descriere:not(.job-descriere--expanded) {
   display: -webkit-box;

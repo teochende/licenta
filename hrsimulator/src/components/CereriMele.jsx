@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getCereriMele, downloadCerereDescriereFisier, updateCerere } from '../api/cereriApi'
 import { getIntervievatoriTehnici, getRecrutori } from '../api/hrMetaApi'
+import { validateJobDescriereSections, JobDescriereSectiuniHint } from '../utils/jobDescriereSections.jsx'
 import './CereriList.css'
 
 function previewText(text, max = 280) {
@@ -108,6 +109,13 @@ export default function CereriMele({ token, isAdmin = false }) {
         if (editing.descriereMod === 'MANUAL' && !String(editing.descriere).trim()) {
             setEditErr('Completați descrierea.')
             return
+        }
+        if (editing.descriereMod === 'MANUAL') {
+            const { ok, missing } = validateJobDescriereSections(String(editing.descriere).trim())
+            if (!ok) {
+                setEditErr(`Descrierea trebuie să conțină toate secțiunile obligatorii. Lipsesc: ${missing.join(', ')}.`)
+                return
+            }
         }
         setEditErr('')
         setEditSaving(true)
@@ -233,6 +241,10 @@ export default function CereriMele({ token, isAdmin = false }) {
                                 <label>
                                     {editing.descriereMod === 'MANUAL' ? 'Descriere' : 'Note (fișier separat)'}
                                 </label>
+                                <JobDescriereSectiuniHint
+                                    className="cereri-edit-structura-hint"
+                                    compact={editing.descriereMod !== 'MANUAL'}
+                                />
                                 <textarea
                                     rows={editing.descriereMod === 'MANUAL' ? 5 : 3}
                                     value={editing.descriere}

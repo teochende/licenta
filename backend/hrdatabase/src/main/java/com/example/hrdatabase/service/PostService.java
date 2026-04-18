@@ -14,6 +14,7 @@ import com.example.hrdatabase.repository.CerereAngajareRepository;
 import com.example.hrdatabase.repository.DepartamentRepository;
 import com.example.hrdatabase.repository.PostRepository;
 import com.example.hrdatabase.repository.UtilizatorRepository;
+import com.example.hrdatabase.validation.PostDescriereSectionValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
@@ -93,6 +94,7 @@ public class PostService {
         Integer maxO = postRepository.findMaxOrdineDashboardByDepartamentId(departament.getId());
         post.setOrdineDashboard(maxO != null && maxO >= 0 ? maxO + 1 : 0);
 
+        assertDescriereSectiuniObligatorii(post);
         return PostMapper.toView(postRepository.save(post));
     }
 
@@ -114,6 +116,7 @@ public class PostService {
         Set<Utilizator> intervievatori = loadUtilizatori(request.intervievatoriIds());
         assertRolSet(intervievatori, Rol.INTERVIEVATOR_TEHNIC, "Intervievator tehnic");
         post.setIntervievatori(intervievatori);
+        assertDescriereSectiuniObligatorii(post);
         return PostMapper.toView(postRepository.save(post));
     }
 
@@ -142,6 +145,7 @@ public class PostService {
         post.setDescriereFisierPath(stored);
         String nume = file.getOriginalFilename();
         post.setDescriereFisierNume(nume != null && !nume.isBlank() ? nume : "descriere");
+        assertDescriereSectiuniObligatorii(post);
         return PostMapper.toView(postRepository.save(post));
     }
 
@@ -156,6 +160,7 @@ public class PostService {
         }
         post.setDescriereFisierPath(null);
         post.setDescriereFisierNume(null);
+        assertDescriereSectiuniObligatorii(post);
         return PostMapper.toView(postRepository.save(post));
     }
 
@@ -429,6 +434,7 @@ public class PostService {
                 throw new AccessDeniedException("Nu puteți modifica descrierea acestui post.");
             }
             post.setDescriere(request.descriere());
+            assertDescriereSectiuniObligatorii(post);
         }
         if (request.enabled() != null) {
             if (!postAccessService.canToggleEnabled(utilizator)) {
@@ -495,5 +501,16 @@ public class PostService {
             throw new IllegalArgumentException("prioritate trebuie să fie critic, mare, medie sau mica.");
         }
         return s;
+    }
+
+    /**
+     * Dacă există text public de afișat (câmp text sau extras din fișier), trebuie să includă toate secțiunile standard.
+     */
+    private void assertDescriereSectiuniObligatorii(Post post) {
+        String afisare = buildDescriereAfisareFaraKeywords(post);
+        if (afisare == null || afisare.isBlank()) {
+            return;
+        }
+        PostDescriereSectionValidator.assertComplete(afisare);
     }
 }

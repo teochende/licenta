@@ -2,6 +2,7 @@ import { useState } from 'react'
 import CVReview from './CVReview'
 import CvFisierLink from './CvFisierLink'
 import { formatDataAplicare } from '../utils/dateFormat'
+import { JobDescriereSectiuniHint } from '../utils/jobDescriereSections.jsx'
 import './JobCard.css'
 
 const OPTIUNI_PRIORITATE = [
@@ -151,6 +152,7 @@ export default function JobCard({
                 <div className="job-card-modal-overlay" onClick={() => setEditDescriereOpen(false)}>
                     <div className="job-card-modal-descriere" onClick={(e) => e.stopPropagation()}>
                         <h4>Editează descrierea jobului</h4>
+                        <JobDescriereSectiuniHint className="job-card-modal-hint-descriere" compact />
                         <textarea
                             rows={4}
                             value={draftDescriere}

@@ -1,5 +1,6 @@
 import {useNavigate} from "react-router-dom";
 import { useState } from "react"
+import { renderDescriereWithSectionBold } from '../utils/jobDescriereSections.jsx'
 export default function JobDisponibil( {informatiiPost} ) {
     // informatii post va fi primit ca props de la componenta Acasa, care la randul sau il primeste din jsonPosturiDisponibile
     const navigate = useNavigate()
@@ -27,7 +28,7 @@ export default function JobDisponibil( {informatiiPost} ) {
                     <div
                         className={`job-descriere ${descriereExtpandata ? 'job-descriere--expanded' : 'job-descriere--collapsed'}`}
                     >
-                        {descriere}
+                        {renderDescriereWithSectionBold(descriere)}
                         {!descriereExtpandata && areDescriereLunga ? (
                             <button
                                 type="button"

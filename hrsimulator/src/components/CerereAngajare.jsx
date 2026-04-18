@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import LoginContext from '../context/login_context'
 import { getIntervievatoriTehnici, getRecrutori } from '../api/hrMetaApi'
 import { createCerere } from '../api/cereriApi'
+import { validateJobDescriereSections, JobDescriereSectiuniHint } from '../utils/jobDescriereSections.jsx'
 import './CerereAngajare.css'
 
 export default function CerereAngajare({ token }) {
@@ -60,6 +61,15 @@ export default function CerereAngajare({ token }) {
                 return
             }
         }
+        if (descriereMod === 'MANUAL') {
+            const { ok, missing } = validateJobDescriereSections(descriere.trim())
+            if (!ok) {
+                setErr(
+                    `Descrierea trebuie să conțină toate secțiunile obligatorii. Lipsesc: ${missing.join(', ')}. Completați textul sau reîncărcați un document care le include pe toate.`
+                )
+                return
+            }
+        }
         try {
             await createCerere(token, {
                 numePost: numePost.trim(),
@@ -83,7 +93,8 @@ export default function CerereAngajare({ token }) {
             <h1>Cerere de angajare</h1>
             <p className="cerere-info">
                 Completați cererea pentru a semnala necesitatea de recrutare. Domeniul este departamentul dumneavoastră;
-                puteți indica un subdomeniu (ex. tehnologie sau rol). Descrierea poate fi text sau fișier PDF/DOCX.
+                puteți indica un subdomeniu (ex. tehnologie sau rol). Descrierea poate fi text sau fișier PDF/DOCX; în
+                ambele cazuri trebuie să respecte structura obligatorie (verificată la trimitere).
             </p>
             {err && <p style={{ color: 'crimson' }}>{err}</p>}
             <form className="formular-cerere" onSubmit={handleSubmit}>
@@ -138,13 +149,14 @@ export default function CerereAngajare({ token }) {
                             Încarcă fișier (.pdf / .docx)
                         </label>
                     </div>
+                    <JobDescriereSectiuniHint className="cerere-descriere-structura-hint" />
                     {descriereMod === 'MANUAL' ? (
                         <textarea
                             id="cerere-descriere"
                             rows={6}
                             value={descriere}
                             onChange={(e) => setDescriere(e.target.value)}
-                            placeholder="Descrierea detaliată a postului…"
+                            placeholder="Includeți în text toate secțiunile obligatorii (Job title, Location, …)."
                             required
                         />
                     ) : (
@@ -156,7 +168,10 @@ export default function CerereAngajare({ token }) {
                                 onChange={(e) => setFisier(e.target.files?.[0] ?? null)}
                                 className="input-file"
                             />
-                            <p className="hint-file">Max. 10 MB. Formate acceptate: PDF, DOCX.</p>
+                            <p className="hint-file">
+                                Max. 10 MB. PDF, DOCX cu text selectabil. Serverul extrage textul și verifică că există
+                                toate secțiunile; dacă nu, cererea este respinsă și puteți reîncărca un document complet.
+                            </p>
                             <label htmlFor="cerere-note-fisier">Note suplimentare (opțional)</label>
                             <textarea
                                 id="cerere-note-fisier"

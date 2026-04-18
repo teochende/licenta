@@ -11,6 +11,7 @@ import {
 } from '../api/postsApi'
 import './administrare_posturi.css'
 import ModalEditJob from './ModalEditJob'
+import { validateJobDescriereSections } from '../utils/jobDescriereSections.jsx'
 
 export default function AdministrarePosturi({
     posturi,
@@ -96,6 +97,17 @@ export default function AdministrarePosturi({
         const intIds = (Array.isArray(numeIntervAlesi) ? numeIntervAlesi : [])
             .map((n) => intervievatoriEfectivi.find((r) => norm(r.numeUtilizator) === norm(n))?.id)
             .filter((x) => x != null)
+        const textDesc =
+            jobActualizat.descriere != null ? String(jobActualizat.descriere).trim() : ''
+        if (textDesc !== '') {
+            const { ok, missing } = validateJobDescriereSections(textDesc)
+            if (!ok) {
+                window.alert(
+                    `Descrierea (text) trebuie să conțină toate secțiunile obligatorii. Lipsesc: ${missing.join(', ')}.`
+                )
+                return
+            }
+        }
         try {
             await putPost(token, idPost, {
                 departamentId: Number(jobActualizat.departamentId),

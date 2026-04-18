@@ -26,6 +26,7 @@ import ContInAsteptare from './components/ContInAsteptare'
 import PaginaInexistenta from './components/PaginaInexistenta'
 import AplicareJob from './components/aplicare_job'
 import Dashboard from './components/Dashboard'
+import { validateJobDescriereSections } from './utils/jobDescriereSections.jsx'
 import CerereAngajare from './components/CerereAngajare'
 import CereriList from './components/CereriList'
 import CereriMele from './components/CereriMele'
@@ -165,6 +166,16 @@ function App() {
     }
 
     const saveDescriereJob = async (jobId, descriere) => {
+        const t = descriere != null ? String(descriere).trim() : ''
+        if (t !== '') {
+            const { ok, missing } = validateJobDescriereSections(t)
+            if (!ok) {
+                window.alert(
+                    `Descrierea trebuie să conțină toate secțiunile obligatorii (Job title, Location, Company overview, Responsibilities, Requirements, Nice to have, Education, Experience, What we offer). Lipsesc: ${missing.join(', ')}.`
+                )
+                return
+            }
+        }
         await postsApi.patchPost(user.token, jobId, { descriere })
         await refreshPosturi()
     }

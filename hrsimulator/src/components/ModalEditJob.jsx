@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { validateJobDescriereSections, JobDescriereSectiuniHint } from '../utils/jobDescriereSections.jsx'
 import './ModalEditJob.css'
 
 export default function ModalEditJob({
@@ -75,6 +76,16 @@ export default function ModalEditJob({
     const handleSubmit = (e) => {
         e.preventDefault()
         if (!formData) return
+        const textDesc = (formData.descriere != null ? String(formData.descriere) : '').trim()
+        if (textDesc !== '') {
+            const { ok, missing } = validateJobDescriereSections(textDesc)
+            if (!ok) {
+                window.alert(
+                    `Descrierea (text) trebuie să conțină toate secțiunile obligatorii. Lipsesc: ${missing.join(', ')}.`
+                )
+                return
+            }
+        }
         onSave({
             ...formData,
             id: Number(formData.id),
@@ -173,16 +184,18 @@ export default function ModalEditJob({
                     </div>
                     <div className="modal-edit-camp">
                         <label htmlFor="edit-descriere">Descriere (text)</label>
+                        <JobDescriereSectiuniHint className="modal-edit-hint" />
                         <textarea
                             id="edit-descriere"
                             rows={4}
                             value={formData.descriere ?? ''}
                             onChange={(e) => handleChange('descriere', e.target.value)}
-                            placeholder="Opțional — puteți completa text și/sau un fișier pdf/docx mai jos."
+                            placeholder="Opțional dacă atașați PDF/DOCX — altfel completați aici cu toate secțiunile obligatorii."
                         />
                     </div>
                     <div className="modal-edit-camp modal-edit-fisier-descriere">
                         <label htmlFor="edit-descriere-fisier">Descriere ca fișier (PDF sau DOCX)</label>
+                        <JobDescriereSectiuniHint className="modal-edit-hint" compact />
                         <input
                             ref={fisierInputRef}
                             id="edit-descriere-fisier"
