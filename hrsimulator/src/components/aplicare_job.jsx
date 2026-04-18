@@ -69,18 +69,21 @@ export default function AplicareJob() {
 
     if (!jobSelectat) {
         return (
-            <>
-                <h2>Aplicare pentru job</h2>
-                <p>Nu a fost selectat niciun post.</p>
-                <Link to="/">Inapoi la posturi</Link>
-            </>
+            <div className="pagina-aplicare-job pagina-aplicare-job--gol">
+                <h2 className="pagina-aplicare-job__titlu">Aplicare pentru job</h2>
+                <p className="pagina-aplicare-job__gol-text">Nu a fost selectat niciun post.</p>
+                <Link to="/" className="pagina-aplicare-job__link-inapoi">
+                    Înapoi la posturi
+                </Link>
+            </div>
         )
     }
 
     return (
-        <>
-            <h2>Aplicare pentru job</h2>
-            <div className="optiuneJob">
+        <div className="pagina-aplicare-job">
+            <h2 className="pagina-aplicare-job__titlu">Aplicare pentru job</h2>
+
+            <div className="optiuneJob aplicare-job-rezumat">
                 <div className="informatiiJob">
                     <h3>{jobSelectat.nume}</h3>
                     <p>
@@ -90,62 +93,90 @@ export default function AplicareJob() {
             </div>
 
             <form onSubmit={handleSubmit} className="formularAplicare" encType="multipart/form-data">
-                <div className="campAplicarePrimul">
-                    <label htmlFor="nume-candidat">Nume</label>
-                    <br />
-                    <input
-                        type="text"
-                        id="nume-candidat"
-                        value={nume}
-                        onChange={(event) => setNume(event.target.value)}
-                        required
-                    />
-                </div>
-                <div className="campAplicare">
-                    <label htmlFor="email-candidat">Email</label>
-                    <br />
-                    <input
-                        type="email"
-                        id="email-candidat"
-                        value={email}
-                        onChange={(event) => setEmail(event.target.value)}
-                        required
-                    />
-                </div>
-
-                <div className="campAplicare">
-                    <label htmlFor="cv-candidat">CV (PDF, DOC/DOCX sau TXT)</label>
-                    <br />
-                    <input
-                        ref={inputCvRef}
-                        type="file"
-                        id="cv-candidat"
-                        accept=".pdf,.docx,.doc,.txt"
-                        onChange={handleCvChange}
-                    />
-                    {cv && <span style={{ marginLeft: '0.5rem' }}>Fișier selectat: {cv.name}</span>}
-                    {cvError && <div style={{ color: 'red' }}>{cvError}</div>}
-                </div>
-
-                <div className="campAplicare campAplicareToggle">
-                    <label>
+                <section className="aplicare-sec" aria-labelledby="aplicare-sec-date">
+                    <h3 id="aplicare-sec-date" className="aplicare-sec__titlu">
+                        Date personale
+                    </h3>
+                    <p className="aplicare-sec__intro">Completează datele de contact. Câmpurile marcate cu * sunt obligatorii.</p>
+                    <div className="campAplicarePrimul">
+                        <label htmlFor="nume-candidat">
+                            Nume <span className="aplicare-req" aria-hidden="true">*</span>
+                        </label>
+                        <br />
                         <input
-                            type="checkbox"
-                            checked={aiCvReview}
-                            onChange={(e) => setAiCvReview(e.target.checked)}
-                        />{' '}
-                        AI CV Review
-                    </label>
-                    <div className="hintToggle">
-                        Implicit este review manual. Bifați doar dacă doriți activarea fluxului AI pentru această aplicare.
+                            type="text"
+                            id="nume-candidat"
+                            value={nume}
+                            onChange={(event) => setNume(event.target.value)}
+                            required
+                            autoComplete="name"
+                        />
                     </div>
-                </div>
+                    <div className="campAplicare">
+                        <label htmlFor="email-candidat">
+                            Email <span className="aplicare-req" aria-hidden="true">*</span>
+                        </label>
+                        <br />
+                        <input
+                            type="email"
+                            id="email-candidat"
+                            value={email}
+                            onChange={(event) => setEmail(event.target.value)}
+                            required
+                            autoComplete="email"
+                        />
+                    </div>
+                </section>
 
-                <button className="butonTrimiteAplicare" type="submit" disabled={sending}>
-                    {sending ? 'Se trimite…' : 'Trimite aplicare'}
-                </button>
+                <section className="aplicare-sec" aria-labelledby="aplicare-sec-cv">
+                    <h3 id="aplicare-sec-cv" className="aplicare-sec__titlu">
+                        CV și documente
+                    </h3>
+                    <p className="aplicare-sec__intro">Încarcă un singur fișier (PDF, Word sau text simplu).</p>
+                    <div className="campAplicare">
+                        <label htmlFor="cv-candidat">
+                            Fișier CV <span className="aplicare-req" aria-hidden="true">*</span>
+                        </label>
+                        <br />
+                        <input
+                            ref={inputCvRef}
+                            type="file"
+                            id="cv-candidat"
+                            accept=".pdf,.docx,.doc,.txt"
+                            onChange={handleCvChange}
+                        />
+                        {cv && <span className="aplicare-cv-filename">Fișier selectat: {cv.name}</span>}
+                        {cvError && <div className="aplicare-alert">{cvError}</div>}
+                    </div>
+                </section>
+
+                <section className="aplicare-sec aplicare-sec--opțiuni" aria-labelledby="aplicare-sec-opt">
+                    <h3 id="aplicare-sec-opt" className="aplicare-sec__titlu">
+                        Opțiuni
+                    </h3>
+                    <div className="campAplicare campAplicareToggle">
+                        <label>
+                            <input
+                                type="checkbox"
+                                checked={aiCvReview}
+                                onChange={(e) => setAiCvReview(e.target.checked)}
+                            />{' '}
+                            AI CV Review
+                        </label>
+                        <div className="hintToggle">
+                            Implicit este review manual. Bifați doar dacă doriți activarea fluxului AI pentru această
+                            aplicare.
+                        </div>
+                    </div>
+                </section>
+
+                <div className="aplicare-form-footer">
+                    <button className="butonTrimiteAplicare" type="submit" disabled={sending}>
+                        {sending ? 'Se trimite…' : 'Trimite aplicare'}
+                    </button>
+                </div>
             </form>
-            {doneMsg && <p style={{ color: 'green' }}>{doneMsg}</p>}
-        </>
+            {doneMsg && <p className="aplicare-success">{doneMsg}</p>}
+        </div>
     )
 }

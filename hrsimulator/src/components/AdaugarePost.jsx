@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getDepartamente } from '../api/departamenteApi'
-import { createPost } from '../api/postsApi'
+import { createPost, uploadPostDescriereFisier } from '../api/postsApi'
 import { validateJobDescriereSections, JobDescriereSectiuniHint } from '../utils/jobDescriereSections.jsx'
 import './AdaugarePost.css'
 
@@ -15,6 +15,8 @@ export default function AdaugarePost({ token, onCreated }) {
     const [descriere, setDescriere] = useState('')
     const [enabled, setEnabled] = useState(true)
     const [err, setErr] = useState('')
+    const [descriereFisier, setDescriereFisier] = useState(null)
+    const descriereFisierRef = useRef(null)
 
     useEffect(() => {
         if (!token) return
@@ -27,6 +29,27 @@ export default function AdaugarePost({ token, onCreated }) {
             })
             .catch(() => setDepartamente([]))
     }, [token])
+
+    const handleDescriereFisierChange = (event) => {
+        const file = event.target.files?.[0]
+        if (!file) {
+            setDescriereFisier(null)
+            return
+        }
+        const allowedTypes = [
+            'application/pdf',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ]
+        const nameOk = /\.(pdf|docx)$/i.test(file.name)
+        if (!allowedTypes.includes(file.type) && !nameOk) {
+            setErr('Pentru descrierea ca fișier sunt permise doar PDF sau DOCX.')
+            setDescriereFisier(null)
+            event.target.value = ''
+            return
+        }
+        setErr('')
+        setDescriereFisier(file)
+    }
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -42,7 +65,7 @@ export default function AdaugarePost({ token, onCreated }) {
             }
         }
         try {
-            await createPost(token, {
+            const created = await createPost(token, {
                 departamentId: Number(departamentId),
                 subdomeniu: subdomeniu.trim(),
                 nume: nume.trim(),
@@ -52,8 +75,27 @@ export default function AdaugarePost({ token, onCreated }) {
                 recrutoriIds: [],
                 intervievatoriIds: [],
             })
+            const postId = created?.id
+            if (descriereFisier && postId != null) {
+                try {
+                    await uploadPostDescriereFisier(token, postId, descriereFisier)
+                } catch (uploadEx) {
+                    const msg =
+                        uploadEx?.message ||
+                        'Încărcarea fișierului de descriere a eșuat. Reîncărcați fișierul din editarea postului.'
+                    sessionStorage.setItem(
+                        'postAdaugat_flashAtentie',
+                        `Postul a fost creat, dar descrierea din fișier nu s-a putut salva: ${msg}`
+                    )
+                    onCreated?.()
+                    navigate('/administrare-posturi')
+                    return
+                }
+            }
             onCreated?.()
             navigate('/administrare-posturi')
+            setDescriereFisier(null)
+            if (descriereFisierRef.current) descriereFisierRef.current.value = ''
         } catch (ex) {
             setErr(ex?.message || 'Nu s-a putut crea postul.')
         }
@@ -111,15 +153,28 @@ export default function AdaugarePost({ token, onCreated }) {
                     />
                 </div>
                 <div className="form-camp">
-                    <label htmlFor="adaugare-descriere">Descriere</label>
+                    <label htmlFor="adaugare-descriere">Descriere (text)</label>
                     <JobDescriereSectiuniHint className="form-hint-descriere-structura" />
                     <textarea
                         id="adaugare-descriere"
                         rows={4}
                         value={descriere}
                         onChange={(e) => setDescriere(e.target.value)}
-                        placeholder="Opțional la creare — puteți adăuga ulterior text sau fișier din administrare."
+                        placeholder="Opțional: completați secțiunile obligatorii dacă introduceți text. Puteți combina cu un fișier PDF/DOCX mai jos."
                     />
+                    <label htmlFor="adaugare-descriere-fisier" className="form-label-fisier-descriere">
+                        Descriere ca fișier (PDF sau DOCX)
+                    </label>
+                    <input
+                        ref={descriereFisierRef}
+                        id="adaugare-descriere-fisier"
+                        type="file"
+                        accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        onChange={handleDescriereFisierChange}
+                    />
+                    {descriereFisier && (
+                        <span className="form-fisier-descriere-nume">Selectat: {descriereFisier.name}</span>
+                    )}
                 </div>
                 <div className="form-camp form-checkbox">
                     <label>

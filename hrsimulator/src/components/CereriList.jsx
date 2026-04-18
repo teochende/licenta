@@ -157,10 +157,15 @@ export default function CereriList({
                     {cereriPending.map((c) => (
                         <li key={c.id} className="cerere-item">
                             <div className="cerere-item-content">
-                                <strong>{c.numePost}</strong>
+                                <div className="cerere-item-header">
+                                    <strong className="cerere-titlu-post">{c.numePost}</strong>
+                                    <span className="cerere-status-badge" data-status="pending">
+                                        În așteptare
+                                    </span>
+                                </div>
                                 <span className="cerere-meta">
                                     Domeniu: {c.departament}
-                                    {c.subdomeniu ? ` · Subdomeniu: ${c.subdomeniu}` : ''} | Poziții: {c.nrPozitii}
+                                    {c.subdomeniu ? ` · Subdomeniu: ${c.subdomeniu}` : ''} · Poziții: {c.nrPozitii}
                                 </span>
                                 <span className="cerere-mod">
                                     Descriere:{' '}

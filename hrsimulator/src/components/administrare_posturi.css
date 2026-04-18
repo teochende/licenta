@@ -27,6 +27,42 @@
 
 /* Simple styles for AdministrarePosturi table */
 
+.posturi-admin-flash {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.65rem 1rem;
+    margin: 0 0 1rem;
+    padding: 0.65rem 1rem;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    border-radius: 8px;
+}
+
+.posturi-admin-flash--warning {
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    color: #92400e;
+}
+
+.posturi-admin-flash-dismiss {
+    flex-shrink: 0;
+    padding: 0.35rem 0.65rem;
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid rgba(146, 64, 14, 0.35);
+    border-radius: 6px;
+    background: #fff;
+    color: #92400e;
+}
+
+.posturi-admin-flash-dismiss:hover {
+    background: #fef3c7;
+}
+
 .posturi-admin-toolbar {
     display: flex;
     flex-wrap: wrap;
@@ -100,88 +136,203 @@
     display: flex;
     gap: 0.5rem;
 }
-.jobs-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1rem;
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 14px;
-}
-.jobs-table th,
-.jobs-table td {
-  border: 1px solid #e1e4e8;
-  padding: 8px 10px;
-  text-align: left;
-}
-.jobs-table thead th {
-  background: #f5f7fa;
-  color: #333;
-  font-weight: 600;
-}
-.jobs-table tbody tr:nth-child(even) {
-  background: #fbfcfd;
-}
-.row-disabled {
-  opacity: 0.6;
-  color: #666;
-}
-.toggle-btn {
-  padding: 6px 10px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 600;
-}
-.toggle-btn.on {
-  background: #e74c3c;
-  color: #fff;
-}
-.toggle-btn.off {
-  background: #2ecc71;
-  color: #fff;
-}
-.toggle-btn:hover {
-  filter: brightness(0.95);
+
+/* ——— Tabel posturi ——— */
+.jobs-table-wrap {
+  overflow-x: auto;
+  margin-top: 0.5rem;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
 }
 
+.jobs-table {
+  width: 100%;
+  margin: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+  font: inherit;
+  font-size: 0.875rem;
+  color: #0f172a;
+}
+
+.jobs-table thead th {
+  padding: 0.7rem 0.85rem;
+  text-align: left;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.055em;
+  color: #475569;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.jobs-table tbody td {
+  padding: 0.7rem 0.85rem;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background-color 0.16s ease;
+}
+
+.jobs-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.jobs-table tbody tr:nth-child(even) {
+  background: rgba(248, 250, 252, 0.65);
+}
+
+.jobs-table tbody tr:hover td {
+  background: rgba(239, 246, 255, 0.75);
+}
+
+.row-disabled {
+  opacity: 0.78;
+}
+
+.row-disabled td {
+  color: #64748b;
+}
+
+/* Butoane acțiuni în tabel */
 .actiuni-celula {
   display: flex;
-  gap: 8px;
   flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.85rem;
+  min-height: 2.15rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease, background-color 0.16s ease;
+}
+
+.toggle-btn:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Activează — verde + icon check */
+.actiuni-celula .toggle-btn.off {
+  color: #fff;
+  background: linear-gradient(135deg, #34d399 0%, #10b981 45%, #059669 100%);
+  box-shadow: 0 2px 10px rgba(5, 150, 105, 0.35);
+}
+
+.actiuni-celula .toggle-btn.off::before {
+  content: '';
+  width: 0.95rem;
+  height: 0.95rem;
+  flex-shrink: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+
+.actiuni-celula .toggle-btn.off:hover {
+  filter: brightness(1.06);
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.42);
+  transform: translateY(-1px);
+}
+
+.actiuni-celula .toggle-btn.off:active {
+  transform: translateY(0);
+  filter: brightness(0.97);
+}
+
+/* Dezactivează — portocaliu-roșu + icon „oprire” */
+.actiuni-celula .toggle-btn.on {
+  color: #fff;
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 40%, #ea580c 100%);
+  box-shadow: 0 2px 10px rgba(234, 88, 12, 0.32);
+}
+
+.actiuni-celula .toggle-btn.on::before {
+  content: '';
+  width: 0.95rem;
+  height: 0.95rem;
+  flex-shrink: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cline x1='8' y1='12' x2='16' y2='12'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+
+.actiuni-celula .toggle-btn.on:hover {
+  filter: brightness(1.05);
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.4);
+  transform: translateY(-1px);
+}
+
+.actiuni-celula .toggle-btn.on:active {
+  transform: translateY(0);
+  filter: brightness(0.96);
 }
 
 .toggle-btn.edit-btn {
-  background: #3498db;
   color: #fff;
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #2563eb 100%);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.28);
 }
 
+.toggle-btn.edit-btn:hover {
+  filter: brightness(1.05);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+  transform: translateY(-1px);
+}
+
+.toggle-btn.edit-btn:active {
+  transform: translateY(0);
+}
+
+.toggle-btn.delete-post-btn {
+  color: #b91c1c !important;
+  background: #fff1f2 !important;
+  border: 1px solid #fecdd3 !important;
+  box-shadow: 0 1px 3px rgba(185, 28, 28, 0.08);
+}
+
+.toggle-btn.delete-post-btn:hover {
+  background: #ffe4e6 !important;
+  filter: none;
+  transform: translateY(-1px);
+}
+
+/* Paginare — neutru, separat de toggle on/off */
+.posturi-admin-pager .toggle-btn {
+  color: #334155;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.posturi-admin-pager .toggle-btn:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  filter: none;
+  transform: none;
+}
+
+.posturi-admin-pager .toggle-btn:focus-visible,
 .toggle-btn:focus-visible,
 .btn-adaugare-post:focus-visible {
   outline: 2px solid #2563eb;
   outline-offset: 2px;
-}
-
-.jobs-table-wrap {
-  overflow-x: auto;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
-}
-
-.jobs-table {
-  margin-top: 0;
-}
-
-.jobs-table thead th {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #475569;
-}
-
-.jobs-table tbody tr:hover {
-  background: #f8fafc;
 }
 
 /* Varianta încorporată în panoul Admin */

@@ -1,127 +1,453 @@
+/* =============================================================================
+   Cerere de angajare — formular MD / admin, temă albastru–verde (ca aplicare_job)
+   ============================================================================= */
+
 .cerere-angajare {
-  max-width: 640px;
+  --ca-blue: #3b82f6;
+  --ca-blue-mid: #2563eb;
+  --ca-blue-dark: #1d4ed8;
+  --ca-green: #10b981;
+  --ca-green-mid: #059669;
+  --ca-green-deep: #047857;
+  --ca-slate-900: #0f172a;
+  --ca-slate-700: #334155;
+  --ca-slate-600: #475569;
+  --ca-slate-500: #64748b;
+  --ca-slate-200: #e2e8f0;
+  --ca-slate-100: #f1f5f9;
+  --ca-white: #ffffff;
+  --ca-danger-bg: #fef2f2;
+  --ca-danger-text: #b91c1c;
+  --ca-danger-border: #fecaca;
+  --ca-radius-lg: 16px;
+  --ca-radius-md: 12px;
+  --ca-radius-sm: 9px;
+  --ca-shadow: 0 8px 30px rgba(15, 23, 42, 0.07);
+  --ca-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --ca-ease: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 0.35rem 0 2.75rem;
+  color: var(--ca-slate-900);
 }
 
 .cerere-angajare h1 {
-  margin-bottom: 0.5rem;
+  margin: 0 0 0.65rem;
+  font-size: clamp(1.28rem, 2.8vw, 1.58rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  color: var(--ca-slate-900);
+  padding-bottom: 0.55rem;
+  border-bottom: 3px solid transparent;
+  border-image: linear-gradient(90deg, var(--ca-blue-mid), var(--ca-green-mid)) 1;
 }
 
 .cerere-info {
-  color: #6c757d;
-  font-size: 0.95rem;
-  margin-bottom: 1.5rem;
+  margin: 0 0 1.25rem;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--ca-slate-600);
+  max-width: 36rem;
+}
+
+.cerere-angajare-err {
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--ca-danger-text);
+  background: var(--ca-danger-bg);
+  border: 1px solid var(--ca-danger-border);
+  border-radius: var(--ca-radius-sm);
+  border-left: 3px solid #ef4444;
+}
+
+.cerere-req {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+/* Card formular */
+.formular-cerere {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: var(--ca-radius-lg);
+  background: linear-gradient(
+    168deg,
+    #ffffff 0%,
+    rgba(239, 246, 255, 0.45) 42%,
+    rgba(236, 253, 245, 0.2) 100%
+  );
+  box-shadow: var(--ca-shadow);
+  overflow: hidden;
+}
+
+.cerere-form-sec {
+  padding: 1.15rem 1.35rem 1.25rem;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.92);
+}
+
+.cerere-form-sec:last-of-type {
+  border-bottom: none;
+}
+
+.cerere-form-sec__titlu {
+  margin: 0 0 0.85rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ca-blue-mid);
+  line-height: 1.3;
+}
+
+.cerere-form-sec__intro {
+  margin: -0.35rem 0 1rem;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--ca-slate-500);
+  max-width: 32em;
+}
+
+.cerere-form-sec--hr {
+  background: rgba(239, 246, 255, 0.38);
 }
 
 .formular-cerere .form-camp {
   margin-bottom: 1rem;
 }
 
+.formular-cerere .form-camp:last-child {
+  margin-bottom: 0;
+}
+
 .formular-cerere .form-camp label,
 .formular-cerere .form-camp .label {
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 0.4rem;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 0.8125rem;
+  color: var(--ca-slate-700);
+  letter-spacing: 0.01em;
 }
 
-.formular-cerere .form-camp input[type="text"],
-.formular-cerere .form-camp input[type="number"],
+.formular-cerere .form-camp input[type='text'],
+.formular-cerere .form-camp input[type='number'],
 .formular-cerere .form-camp textarea {
   width: 100%;
-  padding: 8px 10px;
-  border: 1px solid #dee2e6;
-  border-radius: 4px;
-  font-size: 14px;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--ca-slate-200);
+  border-radius: var(--ca-radius-sm);
+  font: inherit;
+  font-size: 0.9375rem;
+  color: var(--ca-slate-900);
+  background: var(--ca-white);
   box-sizing: border-box;
+  box-shadow: var(--ca-shadow-sm);
+  transition: border-color var(--ca-ease), box-shadow var(--ca-ease);
 }
 
 .formular-cerere .form-camp textarea {
   resize: vertical;
-  min-height: 80px;
+  min-height: 7rem;
+  line-height: 1.5;
 }
 
-.input-readonly {
-  background: #f1f3f5;
-  color: #495057;
+.formular-cerere .form-camp input:hover,
+.formular-cerere .form-camp textarea:hover {
+  border-color: rgba(59, 130, 246, 0.38);
+}
+
+.formular-cerere .form-camp input:focus,
+.formular-cerere .form-camp textarea:focus {
+  outline: none;
+  border-color: var(--ca-blue);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.formular-cerere .form-camp input::placeholder,
+.formular-cerere .form-camp textarea::placeholder {
+  color: #94a3b8;
+}
+
+.formular-cerere .input-readonly {
+  background: linear-gradient(180deg, rgba(241, 245, 249, 0.95) 0%, rgba(248, 250, 252, 0.98) 100%);
+  color: var(--ca-slate-700);
   cursor: default;
+  border-style: dashed;
+  border-color: rgba(148, 163, 184, 0.45);
 }
 
+/* Mod descriere — card-uri radio */
 .descriere-mod-uri {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.65rem;
   margin-bottom: 0.75rem;
 }
 
 .radio-inline {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-weight: 500;
+  gap: 0.5rem;
+  padding: 0.55rem 0.85rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--ca-slate-800);
+  cursor: pointer;
+  border-radius: var(--ca-radius-sm);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(255, 255, 255, 0.85);
+  transition: border-color var(--ca-ease), background-color var(--ca-ease), box-shadow var(--ca-ease);
+}
+
+.radio-inline:hover {
+  border-color: rgba(59, 130, 246, 0.45);
+  background: rgba(239, 246, 255, 0.65);
+}
+
+.radio-inline:has(input:checked) {
+  border-color: rgba(5, 150, 105, 0.45);
+  background: linear-gradient(135deg, rgba(236, 253, 245, 0.75) 0%, rgba(239, 246, 255, 0.55) 100%);
+  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2);
+}
+
+.radio-inline input[type='radio'] {
+  accent-color: var(--ca-green-mid);
+  width: 1.05rem;
+  height: 1.05rem;
   cursor: pointer;
 }
 
-.input-file {
-  margin-top: 4px;
-  font-size: 14px;
-}
-
-.hint-file {
-  font-size: 13px;
-  color: #6c757d;
-  margin: 0.35rem 0 0.75rem;
+.radio-inline:focus-within {
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.38);
 }
 
 .cerere-descriere-structura-hint {
   margin: 0 0 0.65rem;
 }
 
+/* Fișier */
+.formular-cerere input[type='file'].input-file,
+.formular-cerere .input-file[type='file'] {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-height: 3.1rem;
+  margin-top: 0.35rem;
+  padding: 0.55rem 0.65rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--ca-slate-600);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(241, 245, 249, 0.94) 100%);
+  border: 1px dashed rgba(59, 130, 246, 0.38);
+  border-radius: var(--ca-radius-md);
+  cursor: pointer;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  transition: border-color var(--ca-ease), box-shadow var(--ca-ease);
+}
+
+.formular-cerere input[type='file'].input-file::file-selector-button,
+.formular-cerere input[type='file'].input-file::-webkit-file-upload-button {
+  margin: 0 0.65rem 0 0;
+  padding: 0.48rem 1rem 0.48rem 2.1rem;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  background-color: var(--ca-blue-mid);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/%3E%3Cpolyline points='17 8 12 3 7 8'/%3E%3Cline x1='12' y1='3' x2='12' y2='15'/%3E%3C/svg%3E"),
+    linear-gradient(135deg, #5eead4 0%, var(--ca-blue) 40%, var(--ca-blue-dark) 100%);
+  background-repeat: no-repeat, no-repeat;
+  background-position: 0.6rem 50%, 0 0;
+  background-size: 0.85rem, auto;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.26);
+  transition: filter var(--ca-ease), box-shadow var(--ca-ease);
+}
+
+.formular-cerere input[type='file'].input-file:hover {
+  border-color: rgba(16, 185, 129, 0.48);
+}
+
+.formular-cerere input[type='file'].input-file:hover::file-selector-button,
+.formular-cerere input[type='file'].input-file:hover::-webkit-file-upload-button {
+  filter: brightness(1.06);
+}
+
+.formular-cerere input[type='file'].input-file:focus {
+  outline: none;
+  border-color: rgba(5, 150, 105, 0.48);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.16);
+}
+
+.hint-file {
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--ca-slate-500);
+  margin: 0.45rem 0 0.75rem;
+  padding: 0.5rem 0.65rem;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: var(--ca-radius-sm);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+/* Checkbox-uri */
 .checkbox-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.35rem;
 }
 
 .checkbox-label {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-weight: normal;
+  gap: 0.55rem;
+  padding: 0.45rem 0.55rem;
+  margin: 0;
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--ca-slate-800);
+  cursor: pointer;
+  border-radius: var(--ca-radius-sm);
+  transition: background-color var(--ca-ease);
+}
+
+.checkbox-label:hover {
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.checkbox-label input[type='checkbox'] {
+  width: 1.08rem;
+  height: 1.08rem;
+  accent-color: var(--ca-green-mid);
   cursor: pointer;
 }
 
-.departament-info {
-  font-size: 14px;
-  color: #495057;
+.checkbox-label input[type='checkbox']:focus-visible {
+  outline: 2px solid var(--ca-blue);
+  outline-offset: 2px;
 }
 
-.form-butonuri {
+/* Footer acțiuni */
+.cerere-form-footer {
   display: flex;
-  gap: 10px;
-  margin-top: 1.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid #dee2e6;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 1.15rem 1.35rem 1.35rem;
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.55) 0%, rgba(255, 255, 255, 0.97) 100%);
+  border-top: 1px solid rgba(226, 232, 240, 0.95);
 }
 
 .formular-cerere .btn {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 1.15rem;
+  min-height: 2.65rem;
+  font: inherit;
+  font-size: 0.875rem;
   font-weight: 600;
-  font-size: 14px;
+  letter-spacing: 0.02em;
+  border-radius: var(--ca-radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform var(--ca-ease), box-shadow var(--ca-ease), filter var(--ca-ease), background-color var(--ca-ease),
+    border-color var(--ca-ease);
 }
 
-.btn-anulare {
-  background: #95a5a6;
+.formular-cerere .btn:focus-visible {
+  outline: 2px solid var(--ca-blue-mid);
+  outline-offset: 2px;
+}
+
+.formular-cerere .btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.formular-cerere .btn-anulare {
+  color: var(--ca-slate-700);
+  background: var(--ca-slate-100);
+  border-color: var(--ca-slate-200);
+}
+
+.formular-cerere .btn-anulare:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+.formular-cerere .btn-trimite {
   color: #fff;
+  background: linear-gradient(135deg, var(--ca-blue) 0%, var(--ca-blue-mid) 42%, var(--ca-green-mid) 100%);
+  border-color: rgba(5, 150, 105, 0.25);
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.28), 0 2px 8px rgba(5, 150, 105, 0.12);
+  padding-inline: 1.25rem;
 }
 
-.btn-trimite {
-  background: #0d6efd;
-  color: #fff;
+.formular-cerere .btn-trimite:hover {
+  filter: brightness(1.05);
+  box-shadow: 0 6px 22px rgba(37, 99, 235, 0.32), 0 3px 10px rgba(5, 150, 105, 0.18);
 }
 
-.formular-cerere .btn:hover {
-  filter: brightness(0.95);
+@media (max-width: 520px) {
+  .cerere-angajare {
+    padding-inline: 0.2rem;
+  }
+
+  .cerere-form-sec {
+    padding: 1rem 1rem 1.1rem;
+  }
+
+  .cerere-form-footer {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    padding: 1rem 1rem 1.2rem;
+  }
+
+  .formular-cerere .btn {
+    width: 100%;
+  }
+
+  .descriere-mod-uri {
+    flex-direction: column;
+  }
+
+  .formular-cerere input[type='file'].input-file,
+  .formular-cerere .input-file[type='file'] {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .formular-cerere input[type='file'].input-file::file-selector-button,
+  .formular-cerere input[type='file'].input-file::-webkit-file-upload-button {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 0.35rem;
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .formular-cerere .btn,
+  .radio-inline,
+  .formular-cerere .form-camp input,
+  .formular-cerere .form-camp textarea,
+  .checkbox-label,
+  .formular-cerere input[type='file'].input-file {
+    transition: none;
+  }
 }

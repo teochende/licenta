@@ -10,6 +10,14 @@ function previewText(text, max = 280) {
     return s.length <= max ? s : `${s.slice(0, max)}…`
 }
 
+/** Etichete UI pentru status (valorile din backend rămân neschimbate). */
+function labelStatusCerere(status) {
+    const s = String(status || '').toLowerCase()
+    if (s === 'pending') return 'În așteptare'
+    if (s === 'deschis') return 'Post deschis'
+    return status || '—'
+}
+
 /**
  * Manager departament: cereri pentru departamentul său. Administrator: toate cererile din sistem.
  */
@@ -145,7 +153,7 @@ export default function CereriMele({ token, isAdmin = false }) {
                     ? 'Lista tuturor cererilor din toate departamentele. Puteți edita cererile în așteptare sau descărca fișierele de descriere.'
                     : 'Cererile pentru departamentul dumneavoastră (inclusiv create de administrator). Puteți edita cererile în așteptare sau descărca fișierele de descriere.'}
             </p>
-            {err && <p style={{ color: 'crimson' }}>{err}</p>}
+            {err && <p className="cereri-inline-err">{err}</p>}
             {dlErr && <p className="cereri-dl-err">{dlErr}</p>}
             {cereri.length === 0 && !err ? (
                 <p className="cereri-gol">Nu aveți cereri înregistrate.</p>
@@ -154,10 +162,18 @@ export default function CereriMele({ token, isAdmin = false }) {
                     {cereri.map((c) => (
                         <li key={c.id} className="cerere-item cerere-item-mele">
                             <div className="cerere-item-content">
-                                <strong>{c.numePost}</strong>
+                                <div className="cerere-item-header">
+                                    <strong className="cerere-titlu-post">{c.numePost}</strong>
+                                    <span
+                                        className="cerere-status-badge"
+                                        data-status={String(c.status || '').toLowerCase()}
+                                    >
+                                        {labelStatusCerere(c.status)}
+                                    </span>
+                                </div>
                                 <span className="cerere-meta">
-                                    Status: <strong>{c.status}</strong> · Domeniu: {c.departament}
-                                    {c.subdomeniu ? ` · Subdomeniu: ${c.subdomeniu}` : ''} | Poziții: {c.nrPozitii}
+                                    Domeniu: {c.departament}
+                                    {c.subdomeniu ? ` · Subdomeniu: ${c.subdomeniu}` : ''} · Poziții: {c.nrPozitii}
                                 </span>
                                 <span className="cerere-mod">
                                     Descriere:{' '}

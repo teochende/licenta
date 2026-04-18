@@ -111,6 +111,53 @@
   border-left: 3px solid var(--ap-blue-mid);
 }
 
+.form-label-fisier-descriere {
+  display: block;
+  margin: 0.85rem 0 0.35rem;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ap-slate-600);
+}
+
+.formular-adaugare-post .form-camp input[type='file'] {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.875rem;
+  color: var(--ap-slate-600);
+  background: rgba(241, 245, 249, 0.9);
+  border: 1px dashed rgba(59, 130, 246, 0.35);
+  border-radius: var(--ap-radius-sm);
+  cursor: pointer;
+  transition: border-color var(--ap-transition), background-color var(--ap-transition);
+}
+
+.formular-adaugare-post .form-camp input[type='file']:hover {
+  border-color: rgba(16, 185, 129, 0.45);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.formular-adaugare-post .form-camp input[type='file']:focus {
+  outline: none;
+  border-color: var(--ap-blue);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.form-fisier-descriere-nume {
+  display: inline-block;
+  margin-top: 0.4rem;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.8125rem;
+  color: var(--ap-slate-600);
+  background: rgba(241, 245, 249, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 6px;
+  word-break: break-word;
+}
+
 .formular-adaugare-post .form-camp input[type='text'],
 .formular-adaugare-post .form-camp textarea,
 .formular-adaugare-post .form-camp select {

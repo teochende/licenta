@@ -1,62 +1,402 @@
+/* =============================================================================
+   Listă cereri de angajare (CereriList + CereriMele) — admin / HR, temă albastru-verde
+   ============================================================================= */
+
 .cereri-list {
-  max-width: 720px;
+  --cl-blue: #3b82f6;
+  --cl-blue-mid: #2563eb;
+  --cl-blue-dark: #1d4ed8;
+  --cl-green: #10b981;
+  --cl-green-mid: #059669;
+  --cl-green-deep: #047857;
+  --cl-slate-900: #0f172a;
+  --cl-slate-700: #334155;
+  --cl-slate-600: #475569;
+  --cl-slate-500: #64748b;
+  --cl-slate-200: #e2e8f0;
+  --cl-slate-100: #f1f5f9;
+  --cl-white: #ffffff;
+  --cl-amber-bg: #fffbeb;
+  --cl-amber-text: #b45309;
+  --cl-amber-border: #fcd34d;
+  --cl-red-bg: #fef2f2;
+  --cl-red-text: #b91c1c;
+  --cl-red-border: #fecaca;
+  --cl-radius-lg: 16px;
+  --cl-radius-md: 12px;
+  --cl-radius-sm: 9px;
+  --cl-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+  --cl-shadow-hover: 0 10px 36px rgba(37, 99, 235, 0.1);
+  --cl-ease: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 0.25rem 0 2.5rem;
+  color: var(--cl-slate-900);
 }
 
 .cereri-list h1 {
-  margin-bottom: 0.5rem;
+  margin: 0 0 0.65rem;
+  font-size: clamp(1.35rem, 2.5vw, 1.65rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--cl-slate-900);
+  line-height: 1.2;
+  padding-bottom: 0.55rem;
+  border-bottom: 3px solid transparent;
+  border-image: linear-gradient(90deg, var(--cl-blue-mid), var(--cl-green-mid)) 1;
 }
 
 .cereri-descriere {
-  color: #6c757d;
-  margin-bottom: 1.5rem;
+  margin: 0 0 1.5rem;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--cl-slate-600);
+  max-width: 42rem;
 }
 
 .cereri-gol {
-  color: #6c757d;
+  margin: 0;
+  padding: 1.25rem 1.1rem;
+  font-size: 0.9375rem;
+  color: var(--cl-slate-500);
+  background: linear-gradient(135deg, rgba(239, 246, 255, 0.5) 0%, rgba(236, 253, 245, 0.35) 100%);
+  border: 1px dashed rgba(148, 163, 184, 0.45);
+  border-radius: var(--cl-radius-md);
+}
+
+.cereri-inline-err,
+.cereri-dl-err {
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--cl-red-text);
+  background: var(--cl-red-bg);
+  border: 1px solid var(--cl-red-border);
+  border-radius: var(--cl-radius-sm);
+  border-left: 3px solid #ef4444;
 }
 
 .cereri-ul {
   list-style: none;
   padding: 0;
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
+/* Card cerere */
 .cerere-item {
   display: flex;
+  flex-direction: row;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-  padding: 1rem;
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
-  margin-bottom: 0.75rem;
-  background: #fff;
+  align-items: stretch;
+  gap: 1.15rem;
+  padding: 1.15rem 1.25rem;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: var(--cl-radius-lg);
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(239, 246, 255, 0.35) 45%,
+    rgba(236, 253, 245, 0.12) 100%
+  );
+  box-shadow: var(--cl-shadow);
+  transition: border-color var(--cl-ease), box-shadow var(--cl-ease), transform var(--cl-ease);
 }
 
+.cerere-item:hover {
+  border-color: rgba(59, 130, 246, 0.28);
+  box-shadow: var(--cl-shadow-hover);
+  transform: translateY(-1px);
+}
+
+.cerere-item-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.cerere-item-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 0.15rem;
+}
+
+.cerere-titlu-post {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--cl-slate-900);
+  line-height: 1.3;
+  margin: 0;
+  padding: 0.1rem 0 0;
+}
+
+/* Badge status */
+.cerere-status-badge {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0.28rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  line-height: 1.2;
+}
+
+.cerere-status-badge[data-status='pending'] {
+  color: var(--cl-amber-text);
+  background: var(--cl-amber-bg);
+  border-color: var(--cl-amber-border);
+}
+
+.cerere-status-badge[data-status='deschis'],
+.cerere-status-badge[data-status='approved'] {
+  color: var(--cl-green-deep);
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+}
+
+.cerere-status-badge[data-status='rejected'],
+.cerere-status-badge[data-status='respins'] {
+  color: var(--cl-red-text);
+  background: var(--cl-red-bg);
+  border-color: var(--cl-red-border);
+}
+
+.cerere-status-badge[data-status=''] {
+  color: var(--cl-slate-600);
+  background: var(--cl-slate-100);
+  border-color: var(--cl-slate-200);
+}
+
+/* Orice alt status necunoscut */
+.cerere-status-badge:not([data-status='pending']):not([data-status='deschis']):not([data-status='approved']):not(
+    [data-status='rejected']
+  ):not([data-status='respins']):not([data-status='']) {
+  color: var(--cl-slate-700);
+  background: #f8fafc;
+  border-color: var(--cl-slate-200);
+}
+
+.cerere-meta {
+  font-size: 0.875rem;
+  color: var(--cl-slate-600);
+  line-height: 1.45;
+}
+
+.cerere-mod {
+  font-size: 0.8125rem;
+  color: var(--cl-slate-700);
+  display: block;
+  margin-top: 0.15rem;
+}
+
+.cerere-descriere-scurta {
+  font-size: 0.875rem;
+  margin: 0.35rem 0 0;
+  padding: 0.55rem 0.7rem;
+  color: var(--cl-slate-700);
+  line-height: 1.5;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: var(--cl-radius-sm);
+}
+
+.cerere-note {
+  font-size: 0.8125rem;
+  color: var(--cl-slate-500);
+  margin: 0.25rem 0 0;
+  line-height: 1.5;
+}
+
+.cerere-fisier-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 0.4rem;
+}
+
+.cerere-fisier-nume {
+  font-size: 0.875rem;
+  color: var(--cl-slate-700);
+}
+
+.cerere-interv {
+  font-size: 0.8125rem;
+  color: var(--cl-slate-500);
+  display: block;
+  margin-top: 0.2rem;
+  line-height: 1.45;
+}
+
+.cerere-recr {
+  margin-top: 0.15rem;
+}
+
+/* Acțiuni — coloană butoane */
 .cerere-actions {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  justify-content: flex-start;
+  gap: 0.5rem;
   flex-shrink: 0;
+  min-width: 9.5rem;
 }
 
-.btn-edit {
-  padding: 6px 12px;
-  background: #6c757d;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+.cerere-actions .btn {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Bază butoane */
+.cereri-list .btn {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.52rem 0.95rem;
+  min-height: 2.35rem;
+  font: inherit;
+  font-size: 0.8125rem;
   font-weight: 600;
-  font-size: 0.875rem;
+  letter-spacing: 0.02em;
+  border-radius: var(--cl-radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color var(--cl-ease), border-color var(--cl-ease), color var(--cl-ease),
+    box-shadow var(--cl-ease), transform var(--cl-ease), filter var(--cl-ease);
 }
 
-.btn-edit:hover {
-  filter: brightness(0.95);
+.cereri-list .btn:focus-visible {
+  outline: 2px solid var(--cl-blue-mid);
+  outline-offset: 2px;
+}
+
+.cereri-list .btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* Neutru / descărcare — albastru */
+.cereri-list .btn-download {
+  color: #fff;
+  background: linear-gradient(135deg, var(--cl-blue) 0%, var(--cl-blue-mid) 100%);
+  border-color: rgba(37, 99, 235, 0.35);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.22);
+}
+
+.cereri-list .btn-download:hover {
+  filter: brightness(1.06);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.28);
+}
+
+/* Secundar / editare — outline albastru */
+.cereri-list .btn-edit {
+  color: var(--cl-blue-mid);
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(59, 130, 246, 0.45);
+}
+
+.cereri-list .btn-edit:hover {
+  background: rgba(239, 246, 255, 0.95);
+  border-color: var(--cl-blue);
+  color: var(--cl-blue-dark);
+}
+
+/* Acțiune pozitivă — verde (deschide post, confirmă) */
+.cereri-list .btn-deschide,
+.cereri-list .btn-confirma {
+  color: #fff;
+  background: linear-gradient(135deg, var(--cl-green) 0%, var(--cl-green-mid) 55%, var(--cl-blue-mid) 130%);
+  border-color: rgba(5, 150, 105, 0.35);
+  box-shadow: 0 2px 10px rgba(5, 150, 105, 0.25), 0 1px 4px rgba(37, 99, 235, 0.12);
+}
+
+.cereri-list .btn-deschide:hover,
+.cereri-list .btn-confirma:hover:not(:disabled) {
+  filter: brightness(1.05);
+  box-shadow: 0 4px 16px rgba(5, 150, 105, 0.32);
+}
+
+.cereri-list .btn-confirma:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+  box-shadow: none;
+}
+
+/* Anulare — neutru gri */
+.cereri-list .btn-anulare {
+  color: var(--cl-slate-700);
+  background: var(--cl-slate-100);
+  border-color: var(--cl-slate-200);
+}
+
+.cereri-list .btn-anulare:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+/* Modal */
+.cereri-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(5px);
+}
+
+.cereri-modal {
+  box-sizing: border-box;
+  background: linear-gradient(180deg, #fff 0%, rgba(248, 250, 252, 0.98) 100%);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: var(--cl-radius-lg);
+  padding: 1.35rem 1.4rem;
+  max-width: 400px;
+  width: 100%;
+  max-height: min(90vh, 720px);
+  overflow-y: auto;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
 }
 
 .cereri-modal-wide {
-  max-width: 480px;
+  max-width: 32rem;
+}
+
+.cereri-modal h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--cl-slate-900);
+  letter-spacing: -0.02em;
+}
+
+.cereri-modal-info {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--cl-slate-600);
+  margin: 0 0 1rem;
 }
 
 .cereri-edit-field {
@@ -71,178 +411,121 @@
 .cereri-edit-field .label {
   display: block;
   font-weight: 600;
-  font-size: 0.875rem;
-  margin-bottom: 4px;
+  font-size: 0.8125rem;
+  margin-bottom: 0.35rem;
+  color: var(--cl-slate-700);
 }
 
 .cereri-edit-field input[type='text'],
 .cereri-edit-field input[type='number'],
 .cereri-edit-field textarea {
   width: 100%;
-  padding: 8px 10px;
-  border: 1px solid #dee2e6;
-  border-radius: 4px;
-  font-size: 14px;
-  box-sizing: border-box;
-}
-
-.cerere-recr {
-  display: block;
-  margin-top: 0.25rem;
-}
-
-.cerere-item-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.cerere-item-content strong {
-  display: block;
-  margin-bottom: 0.25rem;
-}
-
-.cerere-meta {
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--cl-slate-200);
+  border-radius: var(--cl-radius-sm);
   font-size: 0.875rem;
-  color: #6c757d;
+  font: inherit;
+  color: var(--cl-slate-900);
+  background: var(--cl-white);
+  box-sizing: border-box;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: border-color var(--cl-ease), box-shadow var(--cl-ease);
 }
 
-.cerere-mod {
-  font-size: 0.85rem;
-  color: #495057;
-  display: block;
-  margin-top: 0.35rem;
+.cereri-edit-field input:hover,
+.cereri-edit-field textarea:hover {
+  border-color: rgba(59, 130, 246, 0.35);
 }
 
-.cereri-dl-err {
-  color: crimson;
-  font-size: 0.9rem;
-}
-
-.cerere-fisier-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.35rem;
-}
-
-.cerere-fisier-nume {
-  font-size: 0.9rem;
-  color: #495057;
-}
-
-.cerere-note {
-  font-size: 0.85rem;
-  color: #6c757d;
-  margin: 0.35rem 0 0 0;
-}
-
-.btn-download {
-  padding: 4px 10px;
-  background: #6c757d;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.btn-download:hover {
-  filter: brightness(0.95);
-}
-
-.cerere-descriere-scurta {
-  font-size: 0.9rem;
-  margin: 0.5rem 0 0 0;
-  color: #495057;
-}
-
-.cerere-interv {
-  font-size: 0.85rem;
-  color: #6c757d;
-  display: block;
-  margin-top: 0.25rem;
-}
-
-.btn-deschide {
-  padding: 6px 12px;
-  background: #0d6efd;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
-.btn-deschide:hover {
-  filter: brightness(0.95);
-}
-
-.cereri-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.cereri-modal {
-  background: #fff;
-  border-radius: 8px;
-  padding: 1.5rem;
-  max-width: 400px;
-  width: 90%;
-}
-
-.cereri-modal h3 {
-  margin-top: 0;
-  margin-bottom: 0.5rem;
-}
-
-.cereri-modal-info {
-  font-size: 0.9rem;
-  color: #6c757d;
-  margin-bottom: 1rem;
+.cereri-edit-field input:focus,
+.cereri-edit-field textarea:focus {
+  outline: none;
+  border-color: var(--cl-blue);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
 }
 
 .cereri-modal .checkbox-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.35rem;
   margin-bottom: 1rem;
 }
 
 .cereri-modal .checkbox-label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.55rem;
   cursor: pointer;
+  padding: 0.45rem 0.55rem;
+  border-radius: var(--cl-radius-sm);
+  font-size: 0.875rem;
+  color: var(--cl-slate-800);
+  transition: background-color var(--cl-ease);
+}
+
+.cereri-modal .checkbox-label:hover {
+  background: rgba(239, 246, 255, 0.65);
+}
+
+.cereri-modal .checkbox-label input {
+  accent-color: var(--cl-green-mid);
+  width: 1.05rem;
+  height: 1.05rem;
 }
 
 .cereri-modal-btns {
   display: flex;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 0.55rem;
   justify-content: flex-end;
+  margin-top: 0.25rem;
 }
 
-.cereri-modal .btn {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 600;
+.cereri-modal-btns .btn {
+  min-width: 6.5rem;
 }
 
-.btn-anulare {
-  background: #95a5a6;
-  color: #fff;
+@media (max-width: 640px) {
+  .cerere-item {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1rem 1rem;
+  }
+
+  .cerere-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    min-width: 0;
+    width: 100%;
+    padding-top: 0.35rem;
+    border-top: 1px solid rgba(226, 232, 240, 0.9);
+    margin-top: 0.15rem;
+  }
+
+  .cerere-actions .btn {
+    flex: 1 1 calc(50% - 0.28rem);
+    min-width: 7rem;
+  }
+
+  .cereri-modal-btns {
+    flex-direction: column-reverse;
+  }
+
+  .cereri-modal-btns .btn {
+    width: 100%;
+  }
 }
 
-.btn-confirma {
-  background: #28a745;
-  color: #fff;
+@media (prefers-reduced-motion: reduce) {
+  .cerere-item,
+  .cereri-list .btn,
+  .cereri-edit-field input,
+  .cereri-edit-field textarea,
+  .cereri-modal .checkbox-label {
+    transition: none;
+  }
+
+  .cerere-item:hover {
+    transform: none;
+  }
 }

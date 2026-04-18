@@ -38,6 +38,16 @@ export default function AdministrarePosturi({
     const [enabledFilter, setEnabledFilter] = useState('')
     const [departamentFilter, setDepartamentFilter] = useState('')
     const [postsLoading, setPostsLoading] = useState(false)
+    const [flashAtentie, setFlashAtentie] = useState('')
+
+    useEffect(() => {
+        const k = 'postAdaugat_flashAtentie'
+        const m = sessionStorage.getItem(k)
+        if (m) {
+            sessionStorage.removeItem(k)
+            setFlashAtentie(m)
+        }
+    }, [])
 
     useEffect(() => {
         const t = setTimeout(() => setQDebounced(qInput.trim()), 350)
@@ -228,6 +238,15 @@ export default function AdministrarePosturi({
     return (
         <div className={embeddedInAdmin ? 'administrare-posturi administrare-posturi--embedded' : 'administrare-posturi'}>
             {heading}
+
+            {flashAtentie ? (
+                <div className="posturi-admin-flash posturi-admin-flash--warning" role="status">
+                    <span>{flashAtentie}</span>
+                    <button type="button" className="posturi-admin-flash-dismiss" onClick={() => setFlashAtentie('')}>
+                        Închide
+                    </button>
+                </div>
+            ) : null}
 
             <div className="posturi-admin-toolbar" role="search">
                 <label className="posturi-admin-toolbar__field">
