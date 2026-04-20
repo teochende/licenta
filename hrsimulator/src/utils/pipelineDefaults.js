@@ -250,15 +250,20 @@ export function parsePipelineStateJson(json) {
   return null
 }
 
-export function buildDefaultPipelineState(seedNum) {
+/**
+ * @param {number|string} seedNum
+ * @param {{ aiCvReview?: boolean }} [options] — dacă aplicarea a fost trimisă cu Review CV AI activat
+ */
+export function buildDefaultPipelineState(seedNum, options = {}) {
+  const aiFromApply = Boolean(options.aiCvReview)
   const seed = Number(String(seedNum).replaceAll(/[^0-9]/g, '').slice(-6) || 1)
   const zileInUrma = (days) => new Date(Date.now() + days * 24 * 60 * 60 * 1000)
   const formatDataOra = (d) =>
     `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 
   return {
-    // implicit: review manual; AI doar dacă este activat explicit
-    reviewAi: false,
+    // Aliniat cu backend: dacă candidatul a bifat AI la aplicare, reviewAi reflectă fluxul AI
+    reviewAi: aiFromApply,
     reviewEnglezaAutomat: true,
     unlockedUpTo: 1,
     details: {

@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CV Matcher MVP</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 24px auto;
+      padding: 0 16px;
+      color: #1f2937;
+    }
+    .card {
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    h1, h2 {
+      margin-top: 0;
+    }
+    label {
+      display: block;
+      margin-top: 12px;
+      font-weight: 600;
+    }
+    input, textarea, button {
+      width: 100%;
+      margin-top: 6px;
+      padding: 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      box-sizing: border-box;
+    }
+    button {
+      cursor: pointer;
+      background: #2563eb;
+      color: white;
+      font-weight: 600;
+      margin-top: 14px;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+    .muted {
+      color: #6b7280;
+      font-size: 13px;
+    }
+    ul {
+      margin-top: 6px;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h1>CV vs Job Match Analyzer</h1>
+  <p class="muted">
+    Paste CV and job text (or upload files), then review and correct the AI score to improve future predictions.
+  </p>
+
+  <div class="card">
+    <h2>1) Analyze</h2>
+    <form id="analyzeForm">
+      <label for="cvText">CV text</label>
+      <textarea id="cvText" name="cv_text" rows="8" placeholder="Paste CV text here"></textarea>
+
+      <label for="cvFile">Or upload CV file (PDF or DOCX)</label>
+      <input id="cvFile" name="cv_file" type="file" accept=".pdf,.docx" />
+
+      <label for="jobText">Job description text</label>
+      <textarea id="jobText" name="job_text" rows="8" placeholder="Paste job description text here"></textarea>
+
+      <label for="jobFile">Or upload job description file (PDF, DOCX, TXT)</label>
+      <input id="jobFile" name="job_file" type="file" accept=".pdf,.docx,.txt" />
+
+      <button type="submit">Analyze Match</button>
+    </form>
+  </div>
+
+  <div class="card" id="resultsCard" style="display:none;">
+    <h2>2) AI Result</h2>
+    <p><strong>Match score:</strong> <span id="scoreValue">-</span>/100</p>
+    <p><strong>Recommendation:</strong> <span id="recommendationValue">-</span></p>
+
+    <div class="row">
+      <div>
+        <strong>Matching skills</strong>
+        <ul id="matchingSkills"></ul>
+      </div>
+      <div>
+        <strong>Missing skills</strong>
+        <ul id="missingSkills"></ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="feedbackCard" style="display:none;">
+    <h2>3) Human Feedback</h2>
+    <form id="feedbackForm">
+      <label for="humanScore">Override score (0-100)</label>
+      <input id="humanScore" type="number" min="0" max="100" required />
+
+      <label for="notes">Notes (optional)</label>
+      <textarea id="notes" rows="4" placeholder="Why did you adjust the score?"></textarea>
+
+      <button type="submit">Submit Feedback</button>
+    </form>
+    <p id="feedbackMessage"></p>
+  </div>
+
+  <script>
+    let latestAnalysis = null;
+
+    function renderList(listElement, values) {
+      listElement.innerHTML = "";
+      if (!values || values.length === 0) {
+        const li = document.createElement("li");
+        li.textContent = "-";
+        listElement.appendChild(li);
+        return;
+      }
+      values.forEach((value) => {
+        const li = document.createElement("li");
+        li.textContent = value;
+        listElement.appendChild(li);
+      });
+    }
+
+    document.getElementById("analyzeForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const formData = new FormData();
+      const cvFile = document.getElementById("cvFile").files[0];
+      const cvText = document.getElementById("cvText").value;
+      const jobFile = document.getElementById("jobFile").files[0];
+      const jobText = document.getElementById("jobText").value;
+
+      if (!cvFile && !cvText.trim()) {
+        alert("Please upload a CV file or paste CV text.");
+        return;
+      }
+      if (!jobFile && !jobText.trim()) {
+        alert("Please upload a job description file or paste job text.");
+        return;
+      }
+
+      if (cvText.trim()) {
+        formData.append("cv_text", cvText.trim());
+      }
+      if (cvFile) {
+        formData.append("cv_file", cvFile);
+      }
+      if (jobFile) {
+        formData.append("job_file", jobFile);
+      }
+      if (jobText.trim()) {
+        formData.append("job_text", jobText.trim());
+      }
+
+      try {
+        const response = await fetch("/analyze", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.detail || "Analyze failed");
+        }
+
+        latestAnalysis = data;
+        document.getElementById("resultsCard").style.display = "block";
+        document.getElementById("feedbackCard").style.display = "block";
+        document.getElementById("scoreValue").textContent = data.score;
+        document.getElementById("recommendationValue").textContent = data.recommendation;
+        document.getElementById("humanScore").value = data.score;
+        document.getElementById("feedbackMessage").textContent = "";
+
+        renderList(document.getElementById("matchingSkills"), data.matching_skills);
+        renderList(document.getElementById("missingSkills"), data.missing_skills);
+      } catch (error) {
+        alert(error.message);
+      }
+    });
+
+    document.getElementById("feedbackForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!latestAnalysis) {
+        alert("Run analysis before submitting feedback.");
+        return;
+      }
+
+      const payload = {
+        cv_text: latestAnalysis.cv_text,
+        job_text: latestAnalysis.job_text,
+        ai_score: Number(latestAnalysis.score),
+        human_score: Number(document.getElementById("humanScore").value),
+        notes: document.getElementById("notes").value || null,
+      };
+
+      try {
+        const response = await fetch("/feedback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.detail || "Feedback failed");
+        }
+        document.getElementById("feedbackMessage").textContent =
+          `Saved feedback #${data.feedback_id}. Difference: ${data.difference.toFixed(2)}`;
+      } catch (error) {
+        document.getElementById("feedbackMessage").textContent = error.message;
+      }
+    });
+  </script>
+</body>
+</html>

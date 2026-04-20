@@ -161,11 +161,11 @@ export default function AplicareJob() {
                                 checked={aiCvReview}
                                 onChange={(e) => setAiCvReview(e.target.checked)}
                             />{' '}
-                            AI CV Review
+                            Review CV AI
                         </label>
                         <div className="hintToggle">
-                            Implicit este review manual. Bifați doar dacă doriți activarea fluxului AI pentru această
-                            aplicare.
+                            Dacă bifați, la trimitere backend-ul trimite CV-ul și descrierea jobului către modulul AI;
+                            scorul și observațiile apar automat în dashboard la această aplicare.
                         </div>
                     </div>
                 </section>

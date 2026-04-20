@@ -90,6 +90,15 @@ export function patchAplicatieVizibilitateIntervievatoriTehnic(token, aplicatieI
   })
 }
 
+/** Dashboard: pornește/oprește Review CV AI; la true rulează modulul AI pe server. */
+export function patchAplicatieAiCvReview(token, aplicatieId, aiCvReview) {
+  return apiFetch(`/api/aplicatii/${aplicatieId}/ai-cv-review`, {
+    method: 'PATCH',
+    token,
+    body: { aiCvReview },
+  })
+}
+
 export function recalcAplicatiiMatchScore(token, { onlyMissing = true } = {}) {
   const qs = `onlyMissing=${onlyMissing ? 'true' : 'false'}`
   return apiFetch(`/api/admin/aplicatii/recalc-match-score?${qs}`, {

@@ -13,6 +13,8 @@ public record AplicatieDashboardDto(
         String cvContinut,
         boolean aiCvReview,
         Integer cvJobMatchScore,
+        String aiCvObservatii,
+        String aiCvConcluzii,
         boolean vizibilIntervievatoriTehnic,
         String pipelineStateJson
 ) {

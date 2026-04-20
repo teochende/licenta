@@ -3,6 +3,7 @@ package com.example.hrdatabase.service;
 import com.example.hrdatabase.dto.request.AplicatieCreateRequest;
 import com.example.hrdatabase.dto.request.AplicatiePipelinePatchRequest;
 import com.example.hrdatabase.dto.request.AplicatieVizibilitateItPatchRequest;
+import com.example.hrdatabase.dto.ai.AiCvAnalyzeResponse;
 import com.example.hrdatabase.dto.response.AplicatieDashboardDto;
 import com.example.hrdatabase.dto.response.PageResponse;
 import com.example.hrdatabase.dto.response.RecalcMatchScoreResultDto;
@@ -36,6 +37,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -52,6 +54,7 @@ public class AplicatieService {
     private final PostDescriereFileStorageService postDescriereFileStorageService;
     private final DocumentTextExtractor documentTextExtractor;
     private final CvJobMatchService cvJobMatchService;
+    private final AiCvReviewClientService aiCvReviewClientService;
 
     public AplicatieService(
             AplicatieRepository aplicatieRepository,
@@ -60,7 +63,8 @@ public class AplicatieService {
             AplicatieCvFileStorageService aplicatieCvFileStorageService,
             PostDescriereFileStorageService postDescriereFileStorageService,
             DocumentTextExtractor documentTextExtractor,
-            CvJobMatchService cvJobMatchService) {
+            CvJobMatchService cvJobMatchService,
+            AiCvReviewClientService aiCvReviewClientService) {
         this.aplicatieRepository = aplicatieRepository;
         this.postRepository = postRepository;
         this.postAccessService = postAccessService;
@@ -68,6 +72,7 @@ public class AplicatieService {
         this.postDescriereFileStorageService = postDescriereFileStorageService;
         this.documentTextExtractor = documentTextExtractor;
         this.cvJobMatchService = cvJobMatchService;
+        this.aiCvReviewClientService = aiCvReviewClientService;
     }
 
     @Transactional
@@ -98,8 +103,14 @@ public class AplicatieService {
             a.setCvJobMatchScore(score);
         } else {
             a.setCvJobMatchScore(null);
+            a.setAiCvObservatii(null);
+            a.setAiCvConcluzii(null);
         }
-        return aplicatieRepository.save(a);
+        Aplicatie saved = aplicatieRepository.save(a);
+        if (ai) {
+            return runAiCvReviewAfterSave(saved, post);
+        }
+        return saved;
     }
 
     @Transactional
@@ -136,8 +147,77 @@ public class AplicatieService {
             a.setCvJobMatchScore(score);
         } else {
             a.setCvJobMatchScore(null);
+            a.setAiCvObservatii(null);
+            a.setAiCvConcluzii(null);
+        }
+        Aplicatie saved = aplicatieRepository.save(a);
+        if (aiCvReview) {
+            return runAiCvReviewAfterSave(saved, post);
+        }
+        return saved;
+    }
+
+    /**
+     * După salvarea aplicării cu {@link Aplicatie#isAiCvReview()} {@code true}, apelează modulul AI și persistă scor + observații + concluzii.
+     */
+    private Aplicatie runAiCvReviewAfterSave(Aplicatie a, Post post) {
+        String jobText = buildJobTextForMatching(post);
+        Optional<AiCvAnalyzeResponse> opt = aiCvReviewClientService.analyze(a.getCvContinut(), jobText);
+        if (opt.isPresent()) {
+            AiCvAnalyzeResponse r = opt.get();
+            a.setCvJobMatchScore(AiCvReviewClientService.clampScore(r.score()));
+            a.setAiCvObservatii(AiCvReviewClientService.formatObservatii(r));
+            String rec = r.recommendation();
+            a.setAiCvConcluzii(rec != null && !rec.isBlank() ? rec : null);
+        } else {
+            a.setCvJobMatchScore(null);
+            a.setAiCvConcluzii(
+                    "Analiza AI nu a putut fi completată (serviciu indisponibil, text CV/job lipsă sau ai.cv.review.enabled=false). "
+                            + "Porniți modul_ai_cv_review (FastAPI) și verificați ai.cv.review.base-url în application.properties.");
         }
         return aplicatieRepository.save(a);
+    }
+
+    /**
+     * Dashboard: pornește sau oprește modul AI pentru o aplicare existentă (aceleași drepturi ca la pipeline).
+     */
+    @Transactional
+    public AplicatieDashboardDto updateAiCvReview(Long aplicatieId, boolean enabled, Utilizator utilizator) {
+        if (utilizator == null) {
+            throw new AccessDeniedException("Neautentificat");
+        }
+        Aplicatie a = aplicatieRepository.findByIdWithPostGraph(aplicatieId)
+                .orElseThrow(() -> new IllegalArgumentException("Aplicare inexistentă: " + aplicatieId));
+        if (!postAccessService.canAccessAplicatieDetail(utilizator, a.getPost(), a)) {
+            throw new AccessDeniedException("Nu aveți acces la această aplicare.");
+        }
+        Post post = a.getPost();
+        if (enabled) {
+            ensureCvTextIfPossible(a);
+            if (a.getCvContinut() == null || a.getCvContinut().isBlank()) {
+                throw new IllegalArgumentException(
+                        "Nu există text CV extras pentru această aplicare. Nu se poate rula analiza AI.");
+            }
+            a.setAiCvReview(true);
+            a.setCvJobMatchScore(null);
+            a.setAiCvObservatii(null);
+            a.setAiCvConcluzii(null);
+            aplicatieRepository.save(a);
+            Aplicatie afterAi = runAiCvReviewAfterSave(a, post);
+            return toDashboardDto(afterAi);
+        }
+        a.setAiCvReview(false);
+        a.setAiCvObservatii(null);
+        a.setAiCvConcluzii(null);
+        ensureCvTextIfPossible(a);
+        String jobText = buildJobTextForMatching(post);
+        Set<String> jobKw = cvJobMatchService.extractJobKeywordsFromKeywordLines(jobText);
+        logJobKeywords(post.getId(), jobKw);
+        logCvKeywords(a.getId(), jobKw, a.getCvContinut());
+        Integer score = cvJobMatchService.computeMatchScorePercentFromJobKeywords(jobKw, a.getCvContinut());
+        a.setCvJobMatchScore(score);
+        aplicatieRepository.save(a);
+        return toDashboardDto(a);
     }
 
     /**
@@ -573,6 +653,8 @@ public class AplicatieService {
                 a.getCvContinut(),
                 a.isAiCvReview(),
                 a.getCvJobMatchScore(),
+                a.getAiCvObservatii(),
+                a.getAiCvConcluzii(),
                 a.isVizibilIntervievatoriTehnic(),
                 a.getPipelineState());
     }

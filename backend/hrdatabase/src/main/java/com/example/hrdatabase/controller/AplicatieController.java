@@ -1,5 +1,6 @@
 package com.example.hrdatabase.controller;
 
+import com.example.hrdatabase.dto.request.AplicatieAiCvReviewPatchRequest;
 import com.example.hrdatabase.dto.request.AplicatieCreateRequest;
 import com.example.hrdatabase.dto.request.AplicatiePipelinePatchRequest;
 import com.example.hrdatabase.dto.request.AplicatieVizibilitateItPatchRequest;
@@ -90,5 +91,17 @@ public class AplicatieController {
             @Valid @RequestBody AplicatieVizibilitateItPatchRequest request,
             @AuthenticationPrincipal Utilizator utilizator) {
         aplicatieService.updateVizibilitateIntervievatoriTehnic(id, request, utilizator);
+    }
+
+    /**
+     * Dashboard: pornește sau oprește Review CV AI pentru o aplicare.
+     * La {@code aiCvReview=true} se trimite CV + descriere job către modulul AI și se salvează scorul și textele.
+     */
+    @PatchMapping("/{id}/ai-cv-review")
+    public AplicatieDashboardDto patchAiCvReview(
+            @PathVariable Long id,
+            @Valid @RequestBody AplicatieAiCvReviewPatchRequest request,
+            @AuthenticationPrincipal Utilizator utilizator) {
+        return aplicatieService.updateAiCvReview(id, Boolean.TRUE.equals(request.aiCvReview()), utilizator);
     }
 }

@@ -5,6 +5,7 @@ import CvFisierLink from './CvFisierLink'
 import { ROLURI } from '../context/login_context'
 import {
     getAplicatiiDashboard,
+    patchAplicatieAiCvReview,
     patchAplicatiePipeline,
     patchAplicatieVizibilitateIntervievatoriTehnic,
     recalcAplicatiiMatchScore,
@@ -169,6 +170,7 @@ export default function Dashboard({
     const [recalcOneId, setRecalcOneId] = useState(null)
     const [recalcMessage, setRecalcMessage] = useState('')
     const [vizibilItSavingId, setVizibilItSavingId] = useState(null)
+    const [aiCvReviewBusyId, setAiCvReviewBusyId] = useState(null)
 
     const poateRecalcScor =
         user?.rol === ROLURI.ADMIN || user?.rol === ROLURI.MANAGER_RECRUTARE
@@ -305,6 +307,19 @@ export default function Dashboard({
             alert(e?.message || 'Nu s-a putut salva vizibilitatea pentru intervievatori tehnici.')
         } finally {
             setVizibilItSavingId(null)
+        }
+    }
+
+    const handleToggleAiCvReview = async (aplicatieId, checked) => {
+        if (!authToken || aplicatieId == null) return
+        setAiCvReviewBusyId(aplicatieId)
+        try {
+            await patchAplicatieAiCvReview(authToken, aplicatieId, checked)
+            await reloadAplicatii()
+        } catch (e) {
+            alert(e?.message || 'Nu s-a putut actualiza Review CV AI (verificați modulul AI și drepturile de acces).')
+        } finally {
+            setAiCvReviewBusyId(null)
         }
     }
 
@@ -471,7 +486,7 @@ export default function Dashboard({
                 } else if (prev[key] != null) {
                     next[key] = prev[key]
                 } else {
-                    next[key] = buildDefaultPipelineState(aid)
+                    next[key] = buildDefaultPipelineState(aid, { aiCvReview: aplicatieRaw?.aiCvReview })
                 }
             }
             aplicantiVizibili.forEach(mergeFromEntry)
@@ -487,7 +502,7 @@ export default function Dashboard({
             if (aplicatieRaw?.pipelineStateJson) return
             if (pipelineDefaultSavedRef.current.has(aplicatieId)) return
             pipelineDefaultSavedRef.current.add(aplicatieId)
-            const def = buildDefaultPipelineState(aplicatieId)
+            const def = buildDefaultPipelineState(aplicatieId, { aiCvReview: aplicatieRaw?.aiCvReview })
             patchAplicatiePipeline(authToken, aplicatieId, JSON.stringify(def))
                 .then(() => reloadAplicatii())
                 .catch(() => {
@@ -518,24 +533,49 @@ export default function Dashboard({
             const isAcceptat = etapaStatus === STATUS_ETAPA.ACCEPTAT
             const isRespins = etapaStatus === STATUS_ETAPA.RESPINS
             const reasons = isAcceptat ? details.acceptReasons : isRespins ? details.rejectReasons : null
+            const aplicatieId = Number(String(aplicantKey).replace('app-', ''))
+            const aplicatieRaw = aplicatiiServer.find((a) => a.id === aplicatieId)
+            const reviewAiEfectiv = !!aplicatieRaw?.aiCvReview
+
             const label =
                 etapaKey === 'reviewCv'
-                    ? (st?.reviewAi ? 'Review CV AI' : 'Review CV HR')
+                    ? (reviewAiEfectiv ? 'Review CV AI' : 'Review CV HR')
                     : etapaKey === 'reviewEngleza'
                         ? (st?.reviewEnglezaAutomat ? 'Review CV engleză (automat)' : 'Review CV engleză (manual)')
                         : etapaKey === 'reviewTehnic'
                             ? 'Review CV tehnic'
                             : 'Review CV management'
 
-            const aplicatieId = Number(String(aplicantKey).replace('app-', ''))
-            const aplicatieRaw = aplicatiiServer.find((a) => a.id === aplicatieId)
-            const matchScore = etapaKey === 'reviewCv' && !st?.reviewAi ? aplicatieRaw?.cvJobMatchScore : null
+            const matchScore =
+                etapaKey === 'reviewCv' && aplicatieRaw?.cvJobMatchScore != null
+                    ? aplicatieRaw.cvJobMatchScore
+                    : null
+
+            const reviewCvExtraLines = []
+            if (etapaKey === 'reviewCv') {
+                if (matchScore != null) {
+                    reviewCvExtraLines.push(`Scor potrivire: ${matchScore}%`)
+                }
+                if (reviewAiEfectiv) {
+                    if (aplicatieRaw?.aiCvObservatii) {
+                        reviewCvExtraLines.push('Observații AI:')
+                        String(aplicatieRaw.aiCvObservatii)
+                            .split(/\n+/)
+                            .filter(Boolean)
+                            .forEach((p) => reviewCvExtraLines.push(p))
+                    }
+                    if (aplicatieRaw?.aiCvConcluzii) {
+                        reviewCvExtraLines.push('Concluzii AI:')
+                        reviewCvExtraLines.push(String(aplicatieRaw.aiCvConcluzii))
+                    }
+                }
+            }
 
             return finish({
                 title: label,
                 lines: [
                     `Status: ${pipelineStatusLabelRo(etapaStatus)}`,
-                    matchScore != null ? `Match Score: ${matchScore}%` : null,
+                    ...reviewCvExtraLines,
                     details.notes ? `Notițe: ${details.notes}` : null,
                     reasons ? `Motive ${isAcceptat ? 'acceptare' : 'respingere'}:` : null,
                     ...(Array.isArray(reasons) ? reasons.map((r) => `- ${r}`) : [])
@@ -743,14 +783,12 @@ export default function Dashboard({
     const renderAplicantCard = (entry, inRespinsZone) => {
         const { key, candidat, job, aplicatieId, aplicatieRaw } = entry
         const state = aplicantiState[key]
-        const reviewAi = state?.reviewAi ?? false
+        const reviewAiEfectiv = !!aplicatieRaw?.aiCvReview
         const reviewEnglezaAutomat = state?.reviewEnglezaAutomat ?? true
         const statusEtape = state?.status || {}
         const unlockedUpTo = Number.isFinite(state?.unlockedUpTo) ? state.unlockedUpTo : 0
         const matchScore =
-            !reviewAi && aplicatieRaw?.cvJobMatchScore != null
-                ? Number(aplicatieRaw.cvJobMatchScore)
-                : null
+            aplicatieRaw?.cvJobMatchScore != null ? Number(aplicatieRaw.cvJobMatchScore) : null
         return (
             <div
                 key={key}
@@ -774,7 +812,7 @@ export default function Dashboard({
                         </div>
                     </div>
                     <div className="aplicant-actiuni">
-                        {poateRecalcScor && aplicatieId != null ? (
+                        {poateRecalcScor && aplicatieId != null && !aplicatieRaw?.aiCvReview ? (
                             <button
                                 type="button"
                                 className="aplicant-btn-recalc"
@@ -807,12 +845,23 @@ export default function Dashboard({
                 </div>
 
                 <div className="aplicant-toggle-row">
-                    <label className="aplicant-toggle">
+                    <label
+                        className="aplicant-toggle"
+                        title={
+                            aiCvReviewBusyId === aplicatieId
+                                ? 'Se rulează analiza AI…'
+                                : 'Bifați pentru a trimite CV-ul și descrierea jobului la modulul AI; debifați pentru scor manual (cuvinte cheie).'
+                        }
+                    >
                         <input
                             type="checkbox"
-                            checked={reviewAi}
-                            onChange={() => toggleAplicant(key, 'reviewAi')}
+                            checked={reviewAiEfectiv}
+                            disabled={aiCvReviewBusyId === aplicatieId}
+                            onChange={(ev) => handleToggleAiCvReview(aplicatieId, ev.target.checked)}
                         />
+                        {aiCvReviewBusyId === aplicatieId ? (
+                            <span className="dashboard-btn-spinner dashboard-btn-spinner--sm" aria-hidden="true" />
+                        ) : null}
                         Review CV AI
                     </label>
                     <label className="aplicant-toggle">
@@ -862,8 +911,10 @@ export default function Dashboard({
                                         <div className={`pipeline-label pipeline-label--${status}`}>
                                             {et.key === 'reviewCv'
                                                 ? matchScore != null
-                                                    ? `Review manual\n${matchScore}%`
-                                                    : reviewAi
+                                                    ? reviewAiEfectiv
+                                                        ? `Review CV AI\n${matchScore}%`
+                                                        : `Review manual\n${matchScore}%`
+                                                    : reviewAiEfectiv
                                                       ? 'Review\nCV AI'
                                                       : 'Review\nCV HR'
                                                 : pipelineLabelFor(et.key)}
