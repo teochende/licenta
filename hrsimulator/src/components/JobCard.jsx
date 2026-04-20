@@ -34,6 +34,7 @@ export default function JobCard({
     candidatiAplicanti = [],
     authToken,
     onScrollToAplicantPipeline,
+    onCardClick,
 }) {
     const {
         pozitiiLibere = 0,
@@ -103,6 +104,16 @@ export default function JobCard({
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
+            onClick={(e) => {
+                // nu declanșăm selectarea cardului când se apasă pe controale interactive
+                if (e.target.closest('select') || e.target.closest('button') || e.target.closest('a') || e.target.closest('input') || e.target.closest('textarea')) {
+                    return
+                }
+                if (e.target.closest('.job-card-modal-overlay') || e.target.closest('.job-card-modal-descriere') || e.target.closest('.job-card-modal-lista-candidati')) {
+                    return
+                }
+                onCardClick?.(job)
+            }}
         >
             <div className="job-card-titlu-row">
                 <h3 className="job-card-titlu">{job.nume}</h3>

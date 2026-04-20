@@ -45,7 +45,7 @@ export default function Toolbar() {
                             </div>
                             <div className="articolMeniu">
                                 <Link to="/cererile-mele">
-                                    {user.rol === ROLURI.ADMIN ? 'Toate cererile' : 'Cererile mele'}
+                                    {user.rol === ROLURI.ADMIN ? 'Solicitări recrutare' : 'Cererile mele'}
                                 </Link>
                             </div>
                         </>
@@ -58,9 +58,11 @@ export default function Toolbar() {
 
                     {isMr && (
                         <>
-                            <div className="articolMeniu">
-                                <Link to="/cereri">Cereri</Link>
-                            </div>
+                            {isMrOnly ? (
+                                <div className="articolMeniu">
+                                    <Link to="/cereri">Cereri</Link>
+                                </div>
+                            ) : null}
                             {isMrOnly ? <MeniuAdministrarePosturi /> : null}
                         </>
                     )}

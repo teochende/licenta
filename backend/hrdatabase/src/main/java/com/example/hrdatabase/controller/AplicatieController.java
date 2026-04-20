@@ -66,6 +66,9 @@ public class AplicatieController {
             int s = Math.min(100, Math.max(1, size));
             return aplicatieService.findDashboardForPaged(utilizator, q, postId, listaStatus, p, s);
         }
+        if ((q != null && !q.isBlank()) || postId != null || (listaStatus != null && !listaStatus.isBlank())) {
+            return aplicatieService.findDashboardForFiltered(utilizator, q, postId, listaStatus);
+        }
         return aplicatieService.findDashboardFor(utilizator);
     }
 

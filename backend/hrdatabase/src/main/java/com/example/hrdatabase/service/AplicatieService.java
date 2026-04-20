@@ -291,6 +291,21 @@ public class AplicatieService {
     public List<AplicatieDashboardDto> findDashboardFor(Utilizator utilizator) {
         return aplicatieRepository.findAllWithPostGraph().stream()
                 .filter(app -> postAccessService.canAccessAplicatieDetail(utilizator, app.getPost(), app))
+                .sorted(APLICATIE_DASHBOARD_SORT)
+                .map(AplicatieService::toDashboardDto)
+                .toList();
+    }
+
+    /**
+     * Variantă ne-paginată cu aceleași filtre ca {@link #findDashboardForPaged} (q, postId, status).
+     */
+    @Transactional(readOnly = true)
+    public List<AplicatieDashboardDto> findDashboardForFiltered(
+            Utilizator utilizator,
+            String q,
+            Long postId,
+            String listaStatus) {
+        return filterDashboardAplicatii(utilizator, q, postId, listaStatus).stream()
                 .map(AplicatieService::toDashboardDto)
                 .toList();
     }
@@ -307,16 +322,7 @@ public class AplicatieService {
             String listaStatus,
             int page,
             int size) {
-        String qNorm = q != null ? q.trim().toLowerCase(Locale.ROOT) : "";
-        ListaAplicantiFilter statusFilter = ListaAplicantiFilter.fromParam(listaStatus);
-
-        List<Aplicatie> filtered = aplicatieRepository.findAllWithPostGraph().stream()
-                .filter(app -> postAccessService.canAccessAplicatieDetail(utilizator, app.getPost(), app))
-                .filter(app -> postId == null || postId.equals(app.getPost().getId()))
-                .filter(app -> matchesDashboardQuery(qNorm, app))
-                .filter(app -> matchesListaStatusFilter(app, statusFilter))
-                .sorted(APLICATIE_DASHBOARD_SORT)
-                .toList();
+        List<Aplicatie> filtered = filterDashboardAplicatii(utilizator, q, postId, listaStatus);
 
         long total = filtered.size();
         int safeSize = Math.max(1, Math.min(100, size));
@@ -329,6 +335,22 @@ public class AplicatieService {
                         .toList();
         int totalPages = total == 0 ? 0 : (int) Math.ceil((double) total / safeSize);
         return new PageResponse<>(content, total, safePage, safeSize, totalPages);
+    }
+
+    private List<Aplicatie> filterDashboardAplicatii(
+            Utilizator utilizator,
+            String q,
+            Long postId,
+            String listaStatus) {
+        String qNorm = q != null ? q.trim().toLowerCase(Locale.ROOT) : "";
+        ListaAplicantiFilter statusFilter = ListaAplicantiFilter.fromParam(listaStatus);
+        return aplicatieRepository.findAllWithPostGraph().stream()
+                .filter(app -> postAccessService.canAccessAplicatieDetail(utilizator, app.getPost(), app))
+                .filter(app -> postId == null || postId.equals(app.getPost().getId()))
+                .filter(app -> matchesDashboardQuery(qNorm, app))
+                .filter(app -> matchesListaStatusFilter(app, statusFilter))
+                .sorted(APLICATIE_DASHBOARD_SORT)
+                .toList();
     }
 
     private enum ListaAplicantiFilter {

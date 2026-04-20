@@ -149,10 +149,10 @@ export default function CereriMele({ token, isAdmin = false }) {
 
     return (
         <div className="cereri-list">
-            <h1>{isAdmin ? 'Toate cererile de angajare' : 'Cererile departamentului'}</h1>
+            <h1>{isAdmin ? 'Solicitări recrutare' : 'Cererile departamentului'}</h1>
             <p className="cereri-descriere">
                 {isAdmin
-                    ? 'Lista tuturor cererilor din toate departamentele. Puteți edita cererile în așteptare sau descărca fișierele de descriere.'
+                    ? 'Lista tuturor solicitărilor de recrutare din toate departamentele. Puteți edita cererile în așteptare sau descărca fișierele de descriere.'
                     : 'Cererile pentru departamentul dumneavoastră (inclusiv create de administrator). Puteți edita cererile în așteptare sau descărca fișierele de descriere.'}
             </p>
             {!isAdmin ? (

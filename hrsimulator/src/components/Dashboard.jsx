@@ -667,6 +667,19 @@ export default function Dashboard({
         })
     }
 
+    const scrollToListaAplicatii = () => {
+        window.requestAnimationFrame(() => {
+            const el = document.getElementById('dashboard-aplicanti-section')
+            el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        })
+    }
+
+    const handleSelectJobFromCard = (job) => {
+        if (!job?.id) return
+        setListaPostFilter(String(job.id))
+        scrollToListaAplicatii()
+    }
+
     const toggleAplicant = (aplicantKey, field) => {
         setAplicantiState((prev) => {
             const cur = prev[aplicantKey]
@@ -1031,6 +1044,7 @@ export default function Dashboard({
                                     candidatiAplicanti={candidatiPentruJob}
                                     authToken={authToken}
                                     onScrollToAplicantPipeline={scrollToAplicantInLista}
+                                    onCardClick={handleSelectJobFromCard}
                                 />
                                 )
                             })}
@@ -1039,7 +1053,7 @@ export default function Dashboard({
                 ))
             )}
 
-            <section className="dashboard-aplicanti">
+            <section className="dashboard-aplicanti" id="dashboard-aplicanti-section">
                 <div className="dashboard-aplicanti-header">
                     <h2 className="dashboard-aplicanti-titlu">Candidați pentru joburile vizibile</h2>
                     <span className="dashboard-aplicanti-count" title="Total în lista curentă (după filtre)">
