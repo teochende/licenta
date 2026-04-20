@@ -40,9 +40,6 @@ export default function Toolbar() {
                     {isMd && (
                         <>
                             <div className="articolMeniu">
-                                <Link to="/cerere-angajare">Cerere angajare</Link>
-                            </div>
-                            <div className="articolMeniu">
                                 <Link to="/posturi-departament">Posturi departament</Link>
                             </div>
                             <div className="articolMeniu">

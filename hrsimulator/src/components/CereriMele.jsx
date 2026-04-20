@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { getCereriMele, downloadCerereDescriereFisier, updateCerere } from '../api/cereriApi'
 import { getIntervievatoriTehnici, getRecrutori } from '../api/hrMetaApi'
 import { validateJobDescriereSections, JobDescriereSectiuniHint } from '../utils/jobDescriereSections.jsx'
@@ -22,6 +23,7 @@ function labelStatusCerere(status) {
  * Manager departament: cereri pentru departamentul său. Administrator: toate cererile din sistem.
  */
 export default function CereriMele({ token, isAdmin = false }) {
+    const navigate = useNavigate()
     const [cereri, setCereri] = useState([])
     const [intervievatoriDto, setIntervievatoriDto] = useState([])
     const [recrutoriDto, setRecrutoriDto] = useState([])
@@ -153,6 +155,18 @@ export default function CereriMele({ token, isAdmin = false }) {
                     ? 'Lista tuturor cererilor din toate departamentele. Puteți edita cererile în așteptare sau descărca fișierele de descriere.'
                     : 'Cererile pentru departamentul dumneavoastră (inclusiv create de administrator). Puteți edita cererile în așteptare sau descărca fișierele de descriere.'}
             </p>
+            {!isAdmin ? (
+                <div className="cereri-top-actions">
+                    <button
+                        type="button"
+                        className="btn btn-confirma"
+                        onClick={() => navigate('/cerere-angajare')}
+                        title="Deschide formularul de cerere pentru angajare"
+                    >
+                        Solicită angajare pentru un post
+                    </button>
+                </div>
+            ) : null}
             {err && <p className="cereri-inline-err">{err}</p>}
             {dlErr && <p className="cereri-dl-err">{dlErr}</p>}
             {cereri.length === 0 && !err ? (
