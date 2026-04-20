@@ -163,6 +163,7 @@ export default function Dashboard({
     const [candidatDetaliiOpen, setCandidatDetaliiOpen] = useState(null)
     const [hoverEtapa, setHoverEtapa] = useState(null)
     const pipelineTooltipRef = useRef(null)
+    const [pipelineInfoModal, setPipelineInfoModal] = useState(null)
     const [pipelineDropdown, setPipelineDropdown] = useState(null)
     const pipelineDropdownRef = useRef(null)
     const [pipelineNoteModal, setPipelineNoteModal] = useState(null)
@@ -515,19 +516,21 @@ export default function Dashboard({
         const st = aplicantiState[aplicantKey]
         const etapaStatus = st?.status?.[etapaKey] ?? STATUS_ETAPA.NEUTRU
         const details = st?.details?.[etapaKey] || {}
-        const finish = (tip) => {
-            appendPipelineObservatiiToTooltipLines(details, tip.lines)
-            return tip
-        }
+        const pipelineNotesLines = []
+        appendPipelineObservatiiToTooltipLines(details, pipelineNotesLines)
 
         if (etapaKey === 'depusCv') {
-            return finish({
-                title: 'Depus CV',
-                lines: [
-                    `Data depunere: ${details.submittedAt || '—'}`,
-                    `Sursă: ${details.source || '—'}`
-                ]
-            })
+            const sections = [
+                {
+                    title: 'Detalii',
+                    lines: [
+                        `Data depunere: ${details.submittedAt || '—'}`,
+                        `Sursă: ${details.source || '—'}`,
+                    ],
+                },
+            ]
+            if (pipelineNotesLines.length) sections.push({ title: 'Observații', lines: pipelineNotesLines })
+            return { title: 'Depus CV', sections, lines: sections.flatMap((s) => [s.title, ...s.lines]) }
         }
         if (etapaKey === 'reviewCv' || etapaKey === 'reviewEngleza' || etapaKey === 'reviewTehnic' || etapaKey === 'reviewManagement') {
             const isAcceptat = etapaStatus === STATUS_ETAPA.ACCEPTAT
@@ -551,36 +554,30 @@ export default function Dashboard({
                     ? aplicatieRaw.cvJobMatchScore
                     : null
 
-            const reviewCvExtraLines = []
+            const sections = [
+                { title: 'Status', lines: [pipelineStatusLabelRo(etapaStatus)] },
+            ]
             if (etapaKey === 'reviewCv') {
-                if (matchScore != null) {
-                    reviewCvExtraLines.push(`Scor potrivire: ${matchScore}%`)
-                }
+                if (matchScore != null) sections.push({ title: 'Scor potrivire', lines: [`${matchScore}%`] })
                 if (reviewAiEfectiv) {
-                    if (aplicatieRaw?.aiCvObservatii) {
-                        reviewCvExtraLines.push('Observații AI:')
-                        String(aplicatieRaw.aiCvObservatii)
-                            .split(/\n+/)
-                            .filter(Boolean)
-                            .forEach((p) => reviewCvExtraLines.push(p))
-                    }
-                    if (aplicatieRaw?.aiCvConcluzii) {
-                        reviewCvExtraLines.push('Concluzii AI:')
-                        reviewCvExtraLines.push(String(aplicatieRaw.aiCvConcluzii))
-                    }
+                    const obs = aplicatieRaw?.aiCvObservatii ? String(aplicatieRaw.aiCvObservatii) : ''
+                    const concl = aplicatieRaw?.aiCvConcluzii ? String(aplicatieRaw.aiCvConcluzii) : ''
+                    const obsLines = obs
+                        .split(/\n+/)
+                        .map((s) => s.trim())
+                        .filter(Boolean)
+                    if (obsLines.length) sections.push({ title: 'Observații AI', lines: obsLines })
+                    if (concl.trim()) sections.push({ title: 'Concluzii AI', lines: [concl.trim()] })
                 }
             }
+            if (details.notes) sections.push({ title: 'Notițe', lines: [String(details.notes)] })
+            if (reasons) {
+                const rr = Array.isArray(reasons) ? reasons.map((r) => `- ${r}`) : [String(reasons)]
+                sections.push({ title: `Motive ${isAcceptat ? 'acceptare' : 'respingere'}`, lines: rr })
+            }
+            if (pipelineNotesLines.length) sections.push({ title: 'Observații (istoric)', lines: pipelineNotesLines })
 
-            return finish({
-                title: label,
-                lines: [
-                    `Status: ${pipelineStatusLabelRo(etapaStatus)}`,
-                    ...reviewCvExtraLines,
-                    details.notes ? `Notițe: ${details.notes}` : null,
-                    reasons ? `Motive ${isAcceptat ? 'acceptare' : 'respingere'}:` : null,
-                    ...(Array.isArray(reasons) ? reasons.map((r) => `- ${r}`) : [])
-                ].filter(Boolean)
-            })
+            return { title: label, sections, lines: sections.flatMap((s) => [s.title, ...s.lines]) }
         }
         if (etapaKey === 'interviuHr' || etapaKey === 'interviuTehnic' || etapaKey === 'interviuManagement') {
             const label =
@@ -589,26 +586,24 @@ export default function Dashboard({
                     : etapaKey === 'interviuTehnic'
                         ? 'Interviu tehnic'
                         : 'Interviu management'
-            return finish({
-                title: label,
-                lines: [
-                    `Status: ${pipelineStatusLabelRo(etapaStatus)}`,
-                    `Programare: ${details.scheduledAt || '—'}`,
-                    details.interviewerNotes ? `Notițe: ${details.interviewerNotes}` : null
-                ].filter(Boolean)
-            })
+            const sections = [
+                { title: 'Status', lines: [pipelineStatusLabelRo(etapaStatus)] },
+                { title: 'Programare', lines: [`${details.scheduledAt || '—'}`] },
+            ]
+            if (details.interviewerNotes) sections.push({ title: 'Notițe', lines: [String(details.interviewerNotes)] })
+            if (pipelineNotesLines.length) sections.push({ title: 'Observații (istoric)', lines: pipelineNotesLines })
+            return { title: label, sections, lines: sections.flatMap((s) => [s.title, ...s.lines]) }
         }
         if (etapaKey === 'oferta') {
-            return finish({
-                title: 'Ofertă',
-                lines: [
-                    `Status: ${pipelineStatusLabelRo(etapaStatus)}`,
-                    details.offerStatus ? `Ofertă: ${details.offerStatus}` : null,
-                    details.notes ? `Notițe: ${details.notes}` : null
-                ].filter(Boolean)
-            })
+            const sections = [{ title: 'Status', lines: [pipelineStatusLabelRo(etapaStatus)] }]
+            if (details.offerStatus) sections.push({ title: 'Ofertă', lines: [String(details.offerStatus)] })
+            if (details.notes) sections.push({ title: 'Notițe', lines: [String(details.notes)] })
+            if (pipelineNotesLines.length) sections.push({ title: 'Observații (istoric)', lines: pipelineNotesLines })
+            return { title: 'Ofertă', sections, lines: sections.flatMap((s) => [s.title, ...s.lines]) }
         }
-        return finish({ title: etapaKey, lines: [] })
+        const sections = [{ title: 'Status', lines: [pipelineStatusLabelRo(etapaStatus)] }]
+        if (pipelineNotesLines.length) sections.push({ title: 'Observații (istoric)', lines: pipelineNotesLines })
+        return { title: etapaKey, sections, lines: sections.flatMap((s) => [s.title, ...s.lines]) }
     }
 
     const onHoverEticheta = (aplicantKey, etapaKey, element) => {
@@ -624,6 +619,17 @@ export default function Dashboard({
     }
 
     const clearHoverEticheta = () => setHoverEtapa(null)
+
+    const openPipelineInfoModal = (aplicantKey, etapaKey) => {
+        const tip = getEtapaTooltip(aplicantKey, etapaKey)
+        setPipelineInfoModal({
+            aplicantKey,
+            etapaKey,
+            title: tip?.title || 'Detalii',
+            sections: Array.isArray(tip?.sections) ? tip.sections : [],
+            lines: Array.isArray(tip?.lines) ? tip.lines : [],
+        })
+    }
 
     useLayoutEffect(() => {
         if (!hoverEtapa?.aplicantKey || !hoverEtapa?.etapaKey) return
@@ -734,16 +740,17 @@ export default function Dashboard({
     }, [pipelineDropdown, closePipelineDropdown])
 
     useEffect(() => {
-        if (!pipelineDropdown && !pipelineNoteModal) return undefined
+        if (!pipelineDropdown && !pipelineNoteModal && !pipelineInfoModal) return undefined
         const onKey = (e) => {
             if (e.key === 'Escape') {
                 closePipelineDropdown()
                 setPipelineNoteModal(null)
+                setPipelineInfoModal(null)
             }
         }
         window.addEventListener('keydown', onKey)
         return () => window.removeEventListener('keydown', onKey)
-    }, [pipelineDropdown, pipelineNoteModal, closePipelineDropdown])
+    }, [pipelineDropdown, pipelineNoteModal, pipelineInfoModal, closePipelineDropdown])
 
     const pickPipelineStatusForModal = (status) => {
         if (!pipelineDropdown) return
@@ -907,6 +914,15 @@ export default function Dashboard({
                                         onMouseEnter={(e) => onHoverEticheta(key, et.key, e.currentTarget)}
                                         onMouseMove={(e) => onHoverEticheta(key, et.key, e.currentTarget)}
                                         onMouseLeave={clearHoverEticheta}
+                                        onClick={() => openPipelineInfoModal(key, et.key)}
+                                        role="button"
+                                        tabIndex={0}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault()
+                                                openPipelineInfoModal(key, et.key)
+                                            }
+                                        }}
                                     >
                                         <div className={`pipeline-label pipeline-label--${status}`}>
                                             {et.key === 'reviewCv'
@@ -1191,15 +1207,82 @@ export default function Dashboard({
                             >
                                 <div className="pipeline-tooltip-title">{tip.title}</div>
                                 <div className="pipeline-tooltip-body">
-                                    {tip.lines.map((ln, i) => (
-                                        <div key={i} className="pipeline-tooltip-line">
-                                            {ln}
-                                        </div>
-                                    ))}
+                                    {Array.isArray(tip.sections) && tip.sections.length ? (
+                                        tip.sections.map((sec, si) => (
+                                            <div key={si} className="pipeline-tooltip-section">
+                                                <div className="pipeline-tooltip-section-title">
+                                                    <strong>{sec.title}</strong>
+                                                </div>
+                                                <div className="pipeline-tooltip-section-body">
+                                                    {(sec.lines || []).map((ln, li) => (
+                                                        <div key={li} className="pipeline-tooltip-line">
+                                                            {ln}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        (tip.lines || []).map((ln, i) => (
+                                            <div key={i} className="pipeline-tooltip-line">
+                                                {ln}
+                                            </div>
+                                        ))
+                                    )}
                                 </div>
                             </div>
                         )
                     })(),
+                    document.body
+                )}
+
+            {typeof document !== 'undefined' &&
+                pipelineInfoModal &&
+                createPortal(
+                    <div className="pipeline-info-modal-overlay" onClick={() => setPipelineInfoModal(null)}>
+                        <div
+                            className="pipeline-info-modal"
+                            onClick={(e) => e.stopPropagation()}
+                            role="dialog"
+                            aria-modal="true"
+                        >
+                            <div className="pipeline-info-modal-header">
+                                <h3 className="pipeline-info-modal-title">{pipelineInfoModal.title}</h3>
+                                <button
+                                    type="button"
+                                    className="pipeline-info-modal-close"
+                                    onClick={() => setPipelineInfoModal(null)}
+                                    aria-label="Închide"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                            <div className="pipeline-info-modal-body">
+                                {Array.isArray(pipelineInfoModal.sections) && pipelineInfoModal.sections.length ? (
+                                    pipelineInfoModal.sections.map((sec, si) => (
+                                        <div key={si} className="pipeline-info-section">
+                                            <div className="pipeline-info-section-title">
+                                                <strong>{sec.title}</strong>
+                                            </div>
+                                            <div className="pipeline-info-section-body">
+                                                {(sec.lines || []).map((ln, li) => (
+                                                    <div key={li} className="pipeline-info-line">
+                                                        {ln}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    (pipelineInfoModal.lines || []).map((ln, i) => (
+                                        <div key={i} className="pipeline-info-line">
+                                            {ln}
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    </div>,
                     document.body
                 )}
 
