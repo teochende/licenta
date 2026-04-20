@@ -3,7 +3,6 @@ import * as utilizatoriApi from '../api/utilizatoriApi'
 import * as departamenteApi from '../api/departamenteApi'
 import { getRecrutori, getIntervievatoriTehnici, getRoluri } from '../api/hrMetaApi'
 import AdministrarePosturi from './administrare_posturi'
-import AdminCerereAngajare from './AdminCerereAngajare'
 import './AdminPanel.css'
 
 /** Aliniază {@code rolCod} din profil (lowercase) cu valorile enum din formular (ADMIN, …). */
@@ -405,19 +404,6 @@ export default function AdminPanel({ token }) {
                     <span className="admin-tab__label">
                         <span className="admin-tab__name">Posturi</span>
                         <span className="admin-tab__hint">Listă, editare, alocări, ștergere</span>
-                    </span>
-                </button>
-                <button
-                    type="button"
-                    className={`admin-tab ${tab === 'cerere-angajare' ? 'active' : ''}`}
-                    onClick={() => setTab('cerere-angajare')}
-                >
-                    <span className="admin-tab__icon" aria-hidden>
-                        📨
-                    </span>
-                    <span className="admin-tab__label">
-                        <span className="admin-tab__name">Cerere angajare</span>
-                        <span className="admin-tab__hint">Creare cerere, departament, echipe</span>
                     </span>
                 </button>
             </nav>
@@ -1060,13 +1046,6 @@ export default function AdminPanel({ token }) {
                 </section>
             )}
 
-            {tab === 'cerere-angajare' && (
-                <AdminCerereAngajare
-                    token={token}
-                    departamente={departamenteAll}
-                    onCreated={refreshCerereCreated}
-                />
-            )}
         </div>
     )
 }

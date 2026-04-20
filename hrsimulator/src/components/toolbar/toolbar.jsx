@@ -16,6 +16,7 @@ export default function Toolbar() {
     const isMr =
         user.isAuthenticated &&
         (user.rol === ROLURI.MANAGER_RECRUTARE || user.rol === ROLURI.ADMIN)
+    const isMrOnly = user.isAuthenticated && user.rol === ROLURI.MANAGER_RECRUTARE
 
     return (
         <nav className="mainToolbar" aria-label="Meniu principal">
@@ -60,7 +61,7 @@ export default function Toolbar() {
                             <div className="articolMeniu">
                                 <Link to="/cereri">Cereri</Link>
                             </div>
-                            <MeniuAdministrarePosturi />
+                            {isMrOnly ? <MeniuAdministrarePosturi /> : null}
                         </>
                     )}
 

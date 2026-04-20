@@ -181,6 +181,7 @@ function App() {
     }
 
     const isMd = user.rol === ROLURI.MANAGER_DEPARTAMENT || user.rol === ROLURI.ADMIN
+    const isMdOnly = user.rol === ROLURI.MANAGER_DEPARTAMENT
     const isMr = user.rol === ROLURI.MANAGER_RECRUTARE || user.rol === ROLURI.ADMIN
     const isGuest = user.isAuthenticated && user.rol === ROLURI.GUEST
 
@@ -197,7 +198,7 @@ function App() {
                         <Route
                             path="/cerere-angajare"
                             element={
-                                user.isAuthenticated && isMd ? (
+                                user.isAuthenticated && isMdOnly ? (
                                     <CerereAngajare token={user.token} />
                                 ) : (
                                     <PaginaInexistenta />
