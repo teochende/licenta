@@ -46,11 +46,15 @@ public class Aplicatie {
     private Boolean aiCvReview = Boolean.FALSE;
 
     /**
-     * Scor de potrivire CV ↔ job (0–100): keyword când {@link #aiCvReview} este {@code false};
-     * scor generat de modulul AI când {@link #aiCvReview} este {@code true}.
+     * Scor de potrivire CV ↔ job (0–100) calculat manual (keyword-based).
+     * Este calculat implicit pentru toate aplicările (indiferent dacă este activ și review AI).
      */
     @Column(name = "cv_job_match_score")
     private Integer cvJobMatchScore;
+
+    /** Scor AI (0–100) generat de modulul {@code modul_ai_cv_review} când {@link #aiCvReview} este {@code true}. */
+    @Column(name = "ai_cv_match_score")
+    private Integer aiCvMatchScore;
 
     /** Observații AI (competențe potrivite / lipsă), populat când {@link #aiCvReview} este {@code true}. */
     @Column(name = "ai_cv_observatii", columnDefinition = "text")
@@ -155,6 +159,14 @@ public class Aplicatie {
 
     public void setCvJobMatchScore(Integer cvJobMatchScore) {
         this.cvJobMatchScore = cvJobMatchScore;
+    }
+
+    public Integer getAiCvMatchScore() {
+        return aiCvMatchScore;
+    }
+
+    public void setAiCvMatchScore(Integer aiCvMatchScore) {
+        this.aiCvMatchScore = aiCvMatchScore;
     }
 
     public String getAiCvObservatii() {

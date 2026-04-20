@@ -94,15 +94,14 @@ public class AplicatieService {
         a.setCvContinut(stripNullChars(request.cvContinut()));
         boolean ai = Boolean.TRUE.equals(request.aiCvReview());
         a.setAiCvReview(ai);
+        String jobText = buildJobTextForMatching(post);
+        Set<String> jobKw = cvJobMatchService.extractJobKeywordsFromKeywordLines(jobText);
+        logJobKeywords(post.getId(), jobKw);
+        logCvKeywords(a.getId(), jobKw, a.getCvContinut());
+        Integer score = cvJobMatchService.computeMatchScorePercentFromJobKeywords(jobKw, a.getCvContinut());
+        a.setCvJobMatchScore(score);
         if (!ai) {
-            String jobText = buildJobTextForMatching(post);
-            Set<String> jobKw = cvJobMatchService.extractJobKeywordsFromKeywordLines(jobText);
-            logJobKeywords(post.getId(), jobKw);
-            logCvKeywords(a.getId(), jobKw, a.getCvContinut());
-            Integer score = cvJobMatchService.computeMatchScorePercentFromJobKeywords(jobKw, a.getCvContinut());
-            a.setCvJobMatchScore(score);
-        } else {
-            a.setCvJobMatchScore(null);
+            a.setAiCvMatchScore(null);
             a.setAiCvObservatii(null);
             a.setAiCvConcluzii(null);
         }
@@ -138,15 +137,14 @@ public class AplicatieService {
         a.setCvFisierPath(relative);
         a.setCvContinut(stripNullChars(buildCvContinutFromUpload(bytes, originalName)));
         a.setAiCvReview(aiCvReview);
+        String jobText = buildJobTextForMatching(post);
+        Set<String> jobKw = cvJobMatchService.extractJobKeywordsFromKeywordLines(jobText);
+        logJobKeywords(post.getId(), jobKw);
+        logCvKeywords(a.getId(), jobKw, a.getCvContinut());
+        Integer score = cvJobMatchService.computeMatchScorePercentFromJobKeywords(jobKw, a.getCvContinut());
+        a.setCvJobMatchScore(score);
         if (!aiCvReview) {
-            String jobText = buildJobTextForMatching(post);
-            Set<String> jobKw = cvJobMatchService.extractJobKeywordsFromKeywordLines(jobText);
-            logJobKeywords(post.getId(), jobKw);
-            logCvKeywords(a.getId(), jobKw, a.getCvContinut());
-            Integer score = cvJobMatchService.computeMatchScorePercentFromJobKeywords(jobKw, a.getCvContinut());
-            a.setCvJobMatchScore(score);
-        } else {
-            a.setCvJobMatchScore(null);
+            a.setAiCvMatchScore(null);
             a.setAiCvObservatii(null);
             a.setAiCvConcluzii(null);
         }
@@ -165,12 +163,12 @@ public class AplicatieService {
         Optional<AiCvAnalyzeResponse> opt = aiCvReviewClientService.analyze(a.getCvContinut(), jobText);
         if (opt.isPresent()) {
             AiCvAnalyzeResponse r = opt.get();
-            a.setCvJobMatchScore(AiCvReviewClientService.clampScore(r.score()));
+            a.setAiCvMatchScore(AiCvReviewClientService.clampScore(r.score()));
             a.setAiCvObservatii(AiCvReviewClientService.formatObservatii(r));
             String rec = r.recommendation();
             a.setAiCvConcluzii(rec != null && !rec.isBlank() ? rec : null);
         } else {
-            a.setCvJobMatchScore(null);
+            a.setAiCvMatchScore(null);
             a.setAiCvConcluzii(
                     "Analiza AI nu a putut fi completată (serviciu indisponibil, text CV/job lipsă sau ai.cv.review.enabled=false). "
                             + "Porniți modul_ai_cv_review (FastAPI) și verificați ai.cv.review.base-url în application.properties.");
@@ -199,7 +197,15 @@ public class AplicatieService {
                         "Nu există text CV extras pentru această aplicare. Nu se poate rula analiza AI.");
             }
             a.setAiCvReview(true);
-            a.setCvJobMatchScore(null);
+            if (a.getCvJobMatchScore() == null) {
+                String jobText = buildJobTextForMatching(post);
+                Set<String> jobKw = cvJobMatchService.extractJobKeywordsFromKeywordLines(jobText);
+                logJobKeywords(post.getId(), jobKw);
+                logCvKeywords(a.getId(), jobKw, a.getCvContinut());
+                Integer score = cvJobMatchService.computeMatchScorePercentFromJobKeywords(jobKw, a.getCvContinut());
+                a.setCvJobMatchScore(score);
+            }
+            a.setAiCvMatchScore(null);
             a.setAiCvObservatii(null);
             a.setAiCvConcluzii(null);
             aplicatieRepository.save(a);
@@ -207,15 +213,18 @@ public class AplicatieService {
             return toDashboardDto(afterAi);
         }
         a.setAiCvReview(false);
+        a.setAiCvMatchScore(null);
         a.setAiCvObservatii(null);
         a.setAiCvConcluzii(null);
-        ensureCvTextIfPossible(a);
-        String jobText = buildJobTextForMatching(post);
-        Set<String> jobKw = cvJobMatchService.extractJobKeywordsFromKeywordLines(jobText);
-        logJobKeywords(post.getId(), jobKw);
-        logCvKeywords(a.getId(), jobKw, a.getCvContinut());
-        Integer score = cvJobMatchService.computeMatchScorePercentFromJobKeywords(jobKw, a.getCvContinut());
-        a.setCvJobMatchScore(score);
+        if (a.getCvJobMatchScore() == null) {
+            ensureCvTextIfPossible(a);
+            String jobText = buildJobTextForMatching(post);
+            Set<String> jobKw = cvJobMatchService.extractJobKeywordsFromKeywordLines(jobText);
+            logJobKeywords(post.getId(), jobKw);
+            logCvKeywords(a.getId(), jobKw, a.getCvContinut());
+            Integer score = cvJobMatchService.computeMatchScorePercentFromJobKeywords(jobKw, a.getCvContinut());
+            a.setCvJobMatchScore(score);
+        }
         aplicatieRepository.save(a);
         return toDashboardDto(a);
     }
@@ -487,9 +496,6 @@ public class AplicatieService {
             throw new AccessDeniedException("Nu aveți acces la această aplicare.");
         }
         int processed = 1;
-        if (a.isAiCvReview()) {
-            return new RecalcMatchScoreResultDto(processed, 0, 1, 0);
-        }
         if (!force && a.getCvJobMatchScore() != null) {
             return new RecalcMatchScoreResultDto(processed, 0, 0, 0);
         }
@@ -518,7 +524,6 @@ public class AplicatieService {
         }
         int processed = 0;
         int updated = 0;
-        int skippedAi = 0;
         int skippedNoText = 0;
         List<Aplicatie> apps = aplicatieRepository.findAllWithPostGraph();
         for (Aplicatie a : apps) {
@@ -526,10 +531,6 @@ public class AplicatieService {
                 continue;
             }
             processed++;
-            if (a.isAiCvReview()) {
-                skippedAi++;
-                continue;
-            }
             if (onlyMissing && a.getCvJobMatchScore() != null) {
                 continue;
             }
@@ -547,7 +548,7 @@ public class AplicatieService {
             aplicatieRepository.save(a);
             updated++;
         }
-        return new RecalcMatchScoreResultDto(processed, updated, skippedAi, skippedNoText);
+        return new RecalcMatchScoreResultDto(processed, updated, 0, skippedNoText);
     }
 
     /**
@@ -653,6 +654,7 @@ public class AplicatieService {
                 a.getCvContinut(),
                 a.isAiCvReview(),
                 a.getCvJobMatchScore(),
+                a.getAiCvMatchScore(),
                 a.getAiCvObservatii(),
                 a.getAiCvConcluzii(),
                 a.isVizibilIntervievatoriTehnic(),

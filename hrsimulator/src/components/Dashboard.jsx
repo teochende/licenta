@@ -549,16 +549,21 @@ export default function Dashboard({
                             ? 'Review CV tehnic'
                             : 'Review CV management'
 
-            const matchScore =
+            const matchScoreManual =
                 etapaKey === 'reviewCv' && aplicatieRaw?.cvJobMatchScore != null
                     ? aplicatieRaw.cvJobMatchScore
+                    : null
+            const matchScoreAi =
+                etapaKey === 'reviewCv' && aplicatieRaw?.aiCvMatchScore != null
+                    ? aplicatieRaw.aiCvMatchScore
                     : null
 
             const sections = [
                 { title: 'Status', lines: [pipelineStatusLabelRo(etapaStatus)] },
             ]
             if (etapaKey === 'reviewCv') {
-                if (matchScore != null) sections.push({ title: 'Scor potrivire', lines: [`${matchScore}%`] })
+                if (matchScoreManual != null) sections.push({ title: 'Scor potrivire (manual)', lines: [`${matchScoreManual}%`] })
+                if (matchScoreAi != null) sections.push({ title: 'Scor potrivire (AI)', lines: [`${matchScoreAi}%`] })
                 if (reviewAiEfectiv) {
                     const obs = aplicatieRaw?.aiCvObservatii ? String(aplicatieRaw.aiCvObservatii) : ''
                     const concl = aplicatieRaw?.aiCvConcluzii ? String(aplicatieRaw.aiCvConcluzii) : ''
@@ -794,8 +799,10 @@ export default function Dashboard({
         const reviewEnglezaAutomat = state?.reviewEnglezaAutomat ?? true
         const statusEtape = state?.status || {}
         const unlockedUpTo = Number.isFinite(state?.unlockedUpTo) ? state.unlockedUpTo : 0
-        const matchScore =
+        const matchScoreManual =
             aplicatieRaw?.cvJobMatchScore != null ? Number(aplicatieRaw.cvJobMatchScore) : null
+        const matchScoreAi =
+            aplicatieRaw?.aiCvMatchScore != null ? Number(aplicatieRaw.aiCvMatchScore) : null
         return (
             <div
                 key={key}
@@ -926,10 +933,10 @@ export default function Dashboard({
                                     >
                                         <div className={`pipeline-label pipeline-label--${status}`}>
                                             {et.key === 'reviewCv'
-                                                ? matchScore != null
+                                                ? (matchScoreManual != null || matchScoreAi != null)
                                                     ? reviewAiEfectiv
-                                                        ? `Review CV AI\n${matchScore}%`
-                                                        : `Review manual\n${matchScore}%`
+                                                        ? `Manual ${matchScoreManual ?? '—'}%\nAI ${matchScoreAi ?? '—'}%`
+                                                        : `Review manual\n${matchScoreManual ?? '—'}%`
                                                     : reviewAiEfectiv
                                                       ? 'Review\nCV AI'
                                                       : 'Review\nCV HR'
