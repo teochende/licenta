@@ -86,6 +86,26 @@ function compareAplicantiEntries(a, b) {
     return String(a.job?.nume || '').localeCompare(String(b.job?.nume || ''))
 }
 
+/** Scor mai mare = încă „în lucru” pe pipeline (apare mai sus în listă). */
+function pipelineActivitateProcesareScore(st) {
+    if (!st?.status || typeof st.status !== 'object') return 0
+    let s = 0
+    for (const v of Object.values(st.status)) {
+        if (v === STATUS_ETAPA.IN_ASTEPTARE) s += 4
+        if (v === STATUS_ETAPA.HOLD) s += 2
+    }
+    return s
+}
+
+function compareInProcesarePrioritate(a, b, aplicantiState) {
+    const sa = aplicantiState[a.key]
+    const sb = aplicantiState[b.key]
+    const pa = pipelineActivitateProcesareScore(sa)
+    const pb = pipelineActivitateProcesareScore(sb)
+    if (pa !== pb) return pb - pa
+    return compareAplicantiEntries(a, b)
+}
+
 /** Intrare listă dashboard (card candidat) din răspuns API + job vizibil. */
 function entryFromAplicatie(a, jobsVizibileMap, jobIdsVizibile) {
     const jobId = a.postId
@@ -461,16 +481,29 @@ export default function Dashboard({
         return out
     }, [listaRowsRaw, jobsVizibileMap, jobIdsVizibile])
 
-    const { listaActivi, listaRespinsi } = useMemo(() => {
-        const activi = []
+    const { listaInProcesare, listaAdmisi, listaRespinsi } = useMemo(() => {
+        const inProcesare = []
+        const admisi = []
         const respinsi = []
         listaEntries.forEach((entry) => {
             const st = aplicantiState[entry.key]
-            if (pipelineAreCandidatRespins(st)) respinsi.push(entry)
-            else activi.push(entry)
+            if (pipelineAreCandidatRespins(st)) {
+                respinsi.push(entry)
+                return
+            }
+            const ofertaAdmis = st?.status?.oferta === STATUS_ETAPA.ACCEPTAT
+            const libere = pozitiiLibereLive(entry.job, aplicatiiServer)
+            if (ofertaAdmis && libere > 0) {
+                admisi.push(entry)
+            } else {
+                inProcesare.push(entry)
+            }
         })
-        return { listaActivi: activi, listaRespinsi: respinsi }
-    }, [listaEntries, aplicantiState])
+        inProcesare.sort((a, b) => compareInProcesarePrioritate(a, b, aplicantiState))
+        admisi.sort(compareAplicantiEntries)
+        respinsi.sort(compareAplicantiEntries)
+        return { listaInProcesare: inProcesare, listaAdmisi: admisi, listaRespinsi: respinsi }
+    }, [listaEntries, aplicantiState, aplicatiiServer])
 
     const listaTotalPages =
         listaTotal === 0 ? 0 : Math.ceil(listaTotal / listaPageSize)
@@ -816,7 +849,7 @@ export default function Dashboard({
         setPipelineNoteModal(null)
     }
 
-    const renderAplicantCard = (entry, inRespinsZone) => {
+    const renderAplicantCard = (entry, inRespinsZone, inAdmisZone = false) => {
         const { key, candidat, job, aplicatieId, aplicatieRaw } = entry
         const state = aplicantiState[key]
         const reviewAiEfectiv = !!aplicatieRaw?.aiCvReview
@@ -827,11 +860,15 @@ export default function Dashboard({
             aplicatieRaw?.cvJobMatchScore != null ? Number(aplicatieRaw.cvJobMatchScore) : null
         const matchScoreAi =
             aplicatieRaw?.aiCvMatchScore != null ? Number(aplicatieRaw.aiCvMatchScore) : null
+        const cardClass = ['aplicant-card']
+        if (inRespinsZone) cardClass.push('aplicant-card--respins')
+        else if (inAdmisZone) cardClass.push('aplicant-card--admis')
+
         return (
             <div
                 key={key}
                 id={aplicatieId != null ? `dashboard-aplicant-${aplicatieId}` : undefined}
-                className={inRespinsZone ? 'aplicant-card aplicant-card--respins' : 'aplicant-card'}
+                className={cardClass.join(' ')}
             >
                 <div className="aplicant-top">
                     <div className="aplicant-identitate">
@@ -1173,7 +1210,25 @@ export default function Dashboard({
                             <p className="dashboard-candidati-loading">Se încarcă lista…</p>
                         ) : null}
                         <div className="dashboard-aplicanti-lista">
-                            {listaActivi.map((entry) => renderAplicantCard(entry, false))}
+                            {listaInProcesare.map((entry) => renderAplicantCard(entry, false))}
+                            {listaAdmisi.length > 0 ? (
+                                <div
+                                    className="dashboard-aplicanti-zona-admisi"
+                                    role="separator"
+                                    aria-label="Candidați admiși (ofertă)"
+                                >
+                                    <div className="dashboard-aplicanti-zona-admisi__line" aria-hidden="true" />
+                                    <span className="dashboard-aplicanti-zona-admisi__titlu">
+                                        Admiși
+                                        <span className="dashboard-aplicanti-zona-admisi__count">
+                                            {' '}
+                                            ({listaAdmisi.length} pe această pagină)
+                                        </span>
+                                    </span>
+                                    <div className="dashboard-aplicanti-zona-admisi__line" aria-hidden="true" />
+                                </div>
+                            ) : null}
+                            {listaAdmisi.map((entry) => renderAplicantCard(entry, false, true))}
                             {listaRespinsi.length > 0 ? (
                                 <div
                                     className="dashboard-aplicanti-zona-respinse"
