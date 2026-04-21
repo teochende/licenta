@@ -9,6 +9,8 @@ public record PostPatchRequest(
         @JsonProperty("enabled") Boolean enabled,
         /** critic | mare | medie | mica */
         @JsonProperty("prioritate") String prioritate,
-        @JsonProperty("ordineDashboard") Integer ordineDashboard
+        @JsonProperty("ordineDashboard") Integer ordineDashboard,
+        /** Număr poziții planificate (minim 1). */
+        @JsonProperty("nrPozitii") Integer nrPozitii
 ) {
 }

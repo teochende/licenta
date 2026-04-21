@@ -250,6 +250,17 @@ export function parsePipelineStateJson(json) {
   return null
 }
 
+/** Aliniat cu backend: etapa „Ofertă” cu status Admis (valoarea `acceptat`). */
+export function isPipelineOfertaAdmisFromJson(json) {
+  if (!json || typeof json !== 'string') return false
+  try {
+    const o = JSON.parse(json)
+    return o?.status?.oferta === STATUS_ETAPA.ACCEPTAT
+  } catch {
+    return false
+  }
+}
+
 /**
  * @param {number|string} seedNum
  * @param {{ aiCvReview?: boolean }} [options] — dacă aplicarea a fost trimisă cu Review CV AI activat

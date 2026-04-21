@@ -12,6 +12,7 @@ import com.example.hrdatabase.entity.Rol;
 import com.example.hrdatabase.entity.Utilizator;
 import com.example.hrdatabase.mapper.PostMapper;
 import com.example.hrdatabase.repository.AplicatieRepository;
+import com.example.hrdatabase.util.PipelineJsonUtil;
 import com.example.hrdatabase.repository.CerereAngajareRepository;
 import com.example.hrdatabase.repository.DepartamentRepository;
 import com.example.hrdatabase.repository.PostRepository;
@@ -34,10 +35,13 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
@@ -87,6 +91,7 @@ public class PostService {
         post.setNume(request.nume());
         post.setNivel(request.nivel());
         post.setDescriere(request.descriere());
+        post.setNrPozitii(request.nrPozitii());
         post.setEnabled(request.enabled());
         Set<Utilizator> recrutori = loadUtilizatori(request.recrutoriIds());
         assertRolSet(recrutori, Rol.RECRUTOR, "Recrutor");
@@ -99,7 +104,7 @@ public class PostService {
         post.setOrdineDashboard(maxO != null && maxO >= 0 ? maxO + 1 : 0);
 
         assertDescriereSectiuniObligatorii(post);
-        return PostMapper.toView(postRepository.save(post));
+        return postViewDtoFromPost(postRepository.save(post));
     }
 
     @Transactional
@@ -113,6 +118,7 @@ public class PostService {
         post.setNume(request.nume());
         post.setNivel(request.nivel());
         post.setDescriere(request.descriere());
+        post.setNrPozitii(request.nrPozitii());
         post.setEnabled(request.enabled());
         Set<Utilizator> recrutori = loadUtilizatori(request.recrutoriIds());
         assertRolSet(recrutori, Rol.RECRUTOR, "Recrutor");
@@ -121,7 +127,7 @@ public class PostService {
         assertRolSet(intervievatori, Rol.INTERVIEVATOR_TEHNIC, "Intervievator tehnic");
         post.setIntervievatori(intervievatori);
         assertDescriereSectiuniObligatorii(post);
-        return PostMapper.toView(postRepository.save(post));
+        return postViewDtoFromPost(postRepository.save(post));
     }
 
     @Transactional
@@ -150,7 +156,7 @@ public class PostService {
         String nume = file.getOriginalFilename();
         post.setDescriereFisierNume(nume != null && !nume.isBlank() ? nume : "descriere");
         assertDescriereSectiuniObligatorii(post);
-        return PostMapper.toView(postRepository.save(post));
+        return postViewDtoFromPost(postRepository.save(post));
     }
 
     @Transactional
@@ -165,7 +171,7 @@ public class PostService {
         post.setDescriereFisierPath(null);
         post.setDescriereFisierNume(null);
         assertDescriereSectiuniObligatorii(post);
-        return PostMapper.toView(postRepository.save(post));
+        return postViewDtoFromPost(postRepository.save(post));
     }
 
     @Transactional(readOnly = true)
@@ -285,10 +291,9 @@ public class PostService {
 
     @Transactional(readOnly = true)
     public List<PostViewDto> findPublicEnabledDtos() {
-        return postRepository.findAll().stream()
-                .filter(Post::isEnabled)
-                .map(this::toViewForListing)
-                .toList();
+        List<Post> posts = postRepository.findAll().stream().filter(Post::isEnabled).toList();
+        Map<Long, Integer> ocupate = buildOcupateOfertaByPostId(posts.stream().map(Post::getId).toList());
+        return posts.stream().map(p -> toViewForListing(p, ocupate)).toList();
     }
 
     @Transactional(readOnly = true)
@@ -345,8 +350,9 @@ public class PostService {
         int safePage = Math.max(0, page);
         int from = (int) Math.min((long) safePage * safeSize, total);
         int to = (int) Math.min(from + safeSize, total);
-        List<PostViewDto> content =
-                from >= to ? List.of() : filtered.subList(from, to).stream().map(this::toViewForListing).toList();
+        List<Post> pagePosts = from >= to ? List.of() : filtered.subList(from, to);
+        Map<Long, Integer> ocupate = buildOcupateOfertaByPostId(pagePosts.stream().map(Post::getId).toList());
+        List<PostViewDto> content = pagePosts.stream().map(p -> toViewForListing(p, ocupate)).toList();
         int totalPages = total == 0 ? 0 : (int) Math.ceil((double) total / safeSize);
         return new PageResponse<>(content, total, safePage, safeSize, totalPages);
     }
@@ -364,10 +370,10 @@ public class PostService {
 
     @Transactional(readOnly = true)
     public List<PostViewDto> findPostDtosFor(Utilizator utilizator) {
-        return postRepository.findAll().stream()
-                .filter(p -> postAccessService.canViewPost(utilizator, p))
-                .map(this::toViewForListing)
-                .toList();
+        List<Post> posts =
+                postRepository.findAll().stream().filter(p -> postAccessService.canViewPost(utilizator, p)).toList();
+        Map<Long, Integer> ocupate = buildOcupateOfertaByPostId(posts.stream().map(Post::getId).toList());
+        return posts.stream().map(p -> toViewForListing(p, ocupate)).toList();
     }
 
     /**
@@ -395,8 +401,9 @@ public class PostService {
         int safePage = Math.max(0, page);
         int from = (int) Math.min((long) safePage * safeSize, total);
         int to = (int) Math.min(from + safeSize, total);
-        List<PostViewDto> content =
-                from >= to ? List.of() : filtered.subList(from, to).stream().map(this::toViewForListing).toList();
+        List<Post> pagePosts = from >= to ? List.of() : filtered.subList(from, to);
+        Map<Long, Integer> ocupate = buildOcupateOfertaByPostId(pagePosts.stream().map(Post::getId).toList());
+        List<PostViewDto> content = pagePosts.stream().map(p -> toViewForListing(p, ocupate)).toList();
         int totalPages = total == 0 ? 0 : (int) Math.ceil((double) total / safeSize);
         return new PageResponse<>(content, total, safePage, safeSize, totalPages);
     }
@@ -416,12 +423,41 @@ public class PostService {
                 && p.getDepartament().getNume().toLowerCase(Locale.ROOT).contains(qNorm);
     }
 
+    private PostViewDto postViewDtoFromPost(Post post) {
+        int occ = buildOcupateOfertaByPostId(List.of(post.getId())).getOrDefault(post.getId(), 0);
+        return PostMapper.toView(post, occ);
+    }
+
+    private Map<Long, Integer> buildOcupateOfertaByPostId(Collection<Long> postIds) {
+        if (postIds == null || postIds.isEmpty()) {
+            return Map.of();
+        }
+        List<Long> idList = new ArrayList<>(postIds);
+        Map<Long, Integer> out = new HashMap<>();
+        for (Long id : idList) {
+            out.put(id, 0);
+        }
+        List<Object[]> rows = aplicatieRepository.findPostIdAndPipelineStatesForPosts(idList);
+        for (Object[] row : rows) {
+            if (row == null || row.length < 2 || row[0] == null) {
+                continue;
+            }
+            long pid = ((Number) row[0]).longValue();
+            String json = row[1] instanceof String ? (String) row[1] : null;
+            if (PipelineJsonUtil.pipelineOfertaAdmis(json)) {
+                out.merge(pid, 1, Integer::sum);
+            }
+        }
+        return out;
+    }
+
     /**
      * Text descriere pentru afișare: descrierea introdusă ca text sau, dacă lipsește, text extras din fișierul PDF/DOCX.
      * Zona de keywords (linii care încep cu {@code =keywords=}) este exclusă din afișare.
      */
-    private PostViewDto toViewForListing(Post p) {
-        PostViewDto base = PostMapper.toView(p);
+    private PostViewDto toViewForListing(Post p, Map<Long, Integer> ocupateByPostId) {
+        int occ = ocupateByPostId.getOrDefault(p.getId(), 0);
+        PostViewDto base = PostMapper.toView(p, occ);
         String descriereAfisare = buildDescriereAfisareFaraKeywords(p);
         return new PostViewDto(
                 base.id(),
@@ -437,8 +473,9 @@ public class PostService {
                 base.prioritate(),
                 base.ordineDashboard(),
                 base.assignedRecrutori(),
-                base.assignedIntervievatori()
-        );
+                base.assignedIntervievatori(),
+                base.nrPozitii(),
+                base.pozitiiLibere());
     }
 
     private String buildDescriereAfisareFaraKeywords(Post post) {
@@ -536,13 +573,13 @@ public class PostService {
         Set<Utilizator> intervievatori = loadUtilizatori(intervievatoriIds != null ? intervievatoriIds : List.of());
         assertRolSet(intervievatori, Rol.INTERVIEVATOR_TEHNIC, "Intervievator tehnic");
         post.setIntervievatori(intervievatori);
-        return PostMapper.toView(postRepository.save(post));
+        return postViewDtoFromPost(postRepository.save(post));
     }
 
     @Transactional
     public PostViewDto patchPost(Long id, PostPatchRequest request, Utilizator utilizator) {
         if (request.descriere() == null && request.enabled() == null
-                && request.prioritate() == null && request.ordineDashboard() == null) {
+                && request.prioritate() == null && request.ordineDashboard() == null && request.nrPozitii() == null) {
             throw new IllegalArgumentException("Trimiteți cel puțin un câmp de modificat.");
         }
         Post post = postRepository.findByIdWithAssignments(id)
@@ -575,7 +612,13 @@ public class PostService {
             }
             post.setOrdineDashboard(request.ordineDashboard());
         }
-        return PostMapper.toView(postRepository.save(post));
+        if (request.nrPozitii() != null) {
+            if (!postAccessService.canEditPostDashboardFields(utilizator, post)) {
+                throw new AccessDeniedException("Nu puteți modifica numărul de poziții pentru acest post.");
+            }
+            post.setNrPozitii(request.nrPozitii());
+        }
+        return postViewDtoFromPost(postRepository.save(post));
     }
 
     @Transactional
@@ -610,7 +653,8 @@ public class PostService {
             toSave.add(p);
         }
         postRepository.saveAll(toSave);
-        return toSave.stream().map(PostMapper::toView).collect(Collectors.toList());
+        Map<Long, Integer> ocupate = buildOcupateOfertaByPostId(toSave.stream().map(Post::getId).toList());
+        return toSave.stream().map(p -> PostMapper.toView(p, ocupate.getOrDefault(p.getId(), 0))).collect(Collectors.toList());
     }
 
     private static String normalizePrioritate(String raw) {

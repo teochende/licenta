@@ -18,6 +18,10 @@ public record PostViewDto(
         String prioritate,
         int ordineDashboard,
         List<String> assignedRecrutori,
-        List<String> assignedIntervievatori
+        List<String> assignedIntervievatori,
+        /** Capacitate recrutare pentru post (poziții cerute). */
+        int nrPozitii,
+        /** {@code nrPozitii} minus aplicări cu etapa „ofertă” admisă ({@code acceptat}) în pipeline. */
+        int pozitiiLibere
 ) {
 }

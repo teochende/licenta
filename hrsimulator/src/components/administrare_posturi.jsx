@@ -193,6 +193,7 @@ export default function AdministrarePosturi({
                 nume: (jobActualizat.nume || '').trim(),
                 nivel: (jobActualizat.nivel || '').trim(),
                 descriere: jobActualizat.descriere != null ? String(jobActualizat.descriere) : '',
+                nrPozitii: Number(jobActualizat.nrPozitii) || 1,
                 enabled: !!jobActualizat.enabled,
                 recrutoriIds: recIds,
                 intervievatoriIds: intIds,
@@ -316,6 +317,7 @@ export default function AdministrarePosturi({
                             <th>Subdomeniu</th>
                             <th>Nume</th>
                             <th>Nivel</th>
+                            <th>Poziții</th>
                             <th>Descriere</th>
                             <th>Recruteri</th>
                             <th>Intervievatori</th>
@@ -326,7 +328,7 @@ export default function AdministrarePosturi({
                     <tbody>
                         {!postsLoading && posturiRows.length === 0 ? (
                             <tr>
-                                <td colSpan={allowDeletePost ? 10 : 9} className="posturi-admin-empty">
+                                <td colSpan={allowDeletePost ? 11 : 10} className="posturi-admin-empty">
                                     Nu există posturi afișate.
                                 </td>
                             </tr>
@@ -338,6 +340,11 @@ export default function AdministrarePosturi({
                                     <td>{post.subdomeniu}</td>
                                     <td>{post.nume}</td>
                                     <td>{post.nivel}</td>
+                                    <td>
+                                        <span title={`Total: ${post.nrPozitii ?? 1} · Libere: ${post.pozitiiLibere ?? 0}`}>
+                                            {post.pozitiiLibere ?? 0} / {post.nrPozitii ?? 1}
+                                        </span>
+                                    </td>
                                     <td className="jobs-table-descriere">
                                         <span className="jobs-table-descriere-text">
                                             {(post.descriere || '').length > 80

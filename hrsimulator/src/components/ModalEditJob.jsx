@@ -21,6 +21,7 @@ export default function ModalEditJob({
             setFormData({
                 ...job,
                 departamentId: job.departamentId ?? '',
+                nrPozitii: job.nrPozitii ?? 1,
                 assignedRecrutori: Array.isArray(job.assignedRecrutori) ? [...job.assignedRecrutori] : [],
                 assignedIntervievatori: Array.isArray(job.assignedIntervievatori)
                     ? [...job.assignedIntervievatori]
@@ -90,6 +91,7 @@ export default function ModalEditJob({
             ...formData,
             id: Number(formData.id),
             departamentId: Number(formData.departamentId),
+            nrPozitii: Number(formData.nrPozitii) || 1,
             assignedRecrutori: formData.assignedRecrutori || [],
             assignedIntervievatori: formData.assignedIntervievatori || [],
             descriereFisierFile: stergeDescriereFisier ? null : descriereFisierFile,
@@ -181,6 +183,21 @@ export default function ModalEditJob({
                             onChange={(e) => handleChange('nivel', e.target.value)}
                             required
                         />
+                    </div>
+                    <div className="modal-edit-camp">
+                        <label htmlFor="edit-nr-pozitii">Nr. poziții</label>
+                        <input
+                            id="edit-nr-pozitii"
+                            type="number"
+                            min={1}
+                            step={1}
+                            value={formData.nrPozitii ?? 1}
+                            onChange={(e) => handleChange('nrPozitii', e.target.value)}
+                            required
+                        />
+                        <p className="modal-edit-hint">
+                            Poziții libere se calculează automat din pipeline (Ofertă + Admis).
+                        </p>
                     </div>
                     <div className="modal-edit-camp">
                         <label htmlFor="edit-descriere">Descriere (text)</label>

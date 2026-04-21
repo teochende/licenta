@@ -23,6 +23,7 @@ import {
     appendPipelineObservatiiToTooltipLines,
     applyPipelineEtapaChange,
     appendPipelineObservationOnly,
+    isPipelineOfertaAdmisFromJson,
 } from '../utils/pipelineDefaults'
 import { formatDataAplicare } from '../utils/dateFormat'
 import './Dashboard.css'
@@ -124,12 +125,22 @@ function cvContinutPentruAfisare(a, fallbackLipsaText) {
     return fallbackLipsaText
 }
 
-const initialStatsForJob = (id) => ({
-    pozitiiLibere: Math.max(1, (id % 3) + 1),
-    totalCVuri: id % 5,
-    cvAcceptate: Math.floor((id % 5) / 2),
-    cvRespinse: Math.floor((id % 5) / 3)
+const initialCvStatsForJob = () => ({
+    cvAcceptate: 0,
+    cvRespinse: 0,
 })
+
+function nrOfertaAdmisPentruPost(aplicatii, postId) {
+    return aplicatii.filter(
+        (a) => a.postId === postId && isPipelineOfertaAdmisFromJson(a.pipelineStateJson)
+    ).length
+}
+
+function pozitiiLibereLive(job, aplicatii) {
+    const cap = job.nrPozitii != null && job.nrPozitii > 0 ? job.nrPozitii : 1
+    const ocupate = nrOfertaAdmisPentruPost(aplicatii, job.id)
+    return Math.max(0, cap - ocupate)
+}
 
 /** Lista de posturi vine din GET /api/posturi (filtrată pe server după rol și atribuiri). Nu o refiltrăm în client. */
 
@@ -347,7 +358,7 @@ export default function Dashboard({
             const next = { ...prev }
             posturiVizibile.forEach((p) => {
                 if (next[p.id] == null) {
-                    next[p.id] = initialStatsForJob(p.id)
+                    next[p.id] = initialCvStatsForJob()
                 }
             })
             return next
@@ -1018,7 +1029,8 @@ export default function Dashboard({
                                 const nrCandidatiAplicati = candidatiPentruJob.length
                                 const statsCuCandidati = {
                                     ...jobStats[job.id],
-                                    totalCVuri: nrCandidatiAplicati
+                                    totalCVuri: nrCandidatiAplicati,
+                                    pozitiiLibere: pozitiiLibereLive(job, aplicatiiServer),
                                 }
                                 const poateEditaDescriere = (user?.rol === ROLURI.RECRUTOR || user?.rol === ROLURI.INTERVIEVATOR_TEHNIC) && setPosturi
                                 return (

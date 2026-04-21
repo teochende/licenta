@@ -541,6 +541,8 @@ public class CerereAngajareService {
         post.setOrdineDashboard(maxO != null && maxO >= 0 ? maxO + 1 : 0);
         post.setRecrutori(recrutori);
         post.setIntervievatori(new HashSet<>(c.getIntervievatoriTehnici()));
+        int nrCerere = c.getNrPozitii() != null && c.getNrPozitii() > 0 ? c.getNrPozitii() : 1;
+        post.setNrPozitii(nrCerere);
 
         Post saved = postRepository.save(post);
         c.setPostDeschis(saved);
@@ -548,7 +550,7 @@ public class CerereAngajareService {
         cerereAngajareRepository.save(c);
 
         return postRepository.findByIdWithAssignments(saved.getId())
-                .map(PostMapper::toView)
+                .map(p -> PostMapper.toView(p, 0))
                 .orElseThrow(() -> new IllegalStateException("Post salvat dar negăsit: " + saved.getId()));
     }
 

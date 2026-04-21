@@ -8,7 +8,10 @@ public final class PostMapper {
     private PostMapper() {
     }
 
-    public static PostViewDto toView(Post p) {
+    /**
+     * @param ocupateOfertaAdmise număr de aplicări pe acest post cu {@code status.oferta == acceptat} în pipeline
+     */
+    public static PostViewDto toView(Post p, int ocupateOfertaAdmise) {
         String domeniu = p.getDepartament() != null ? p.getDepartament().getNume() : "";
         Long depId = p.getDepartament() != null ? p.getDepartament().getId() : null;
         String pr = p.getPrioritate() != null && !p.getPrioritate().isBlank() ? p.getPrioritate() : "mica";
@@ -16,6 +19,9 @@ public final class PostMapper {
         String dfPath = p.getDescriereFisierPath();
         boolean dfStocat = dfPath != null && !dfPath.isBlank();
         String dfNume = p.getDescriereFisierNume() != null ? p.getDescriereFisierNume() : "";
+        int nrPoz = p.getNrPozitii() != null && p.getNrPozitii() > 0 ? p.getNrPozitii() : 1;
+        int occ = Math.max(0, ocupateOfertaAdmise);
+        int pozLib = Math.max(0, nrPoz - occ);
         return new PostViewDto(
                 p.getId(),
                 depId,
@@ -30,7 +36,9 @@ public final class PostMapper {
                 pr,
                 od,
                 p.getRecrutori().stream().map(u -> u.getNumeUtilizator()).sorted().toList(),
-                p.getIntervievatori().stream().map(u -> u.getNumeUtilizator()).sorted().toList()
+                p.getIntervievatori().stream().map(u -> u.getNumeUtilizator()).sorted().toList(),
+                nrPoz,
+                pozLib
         );
     }
 }

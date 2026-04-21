@@ -2,6 +2,7 @@ package com.example.hrdatabase.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import org.hibernate.annotations.ColumnDefault;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -53,6 +54,10 @@ public class Post {
      */
     @Column(name = "ordine_dashboard")
     private Integer ordineDashboard = 0;
+
+    @Column(name = "nr_pozitii", nullable = false)
+    @ColumnDefault("1")
+    private Integer nrPozitii = 1;
 
     /** Recrutori atribuiți postului (ca în simulator: assignedRecruteri). */
     @ManyToMany
@@ -155,6 +160,14 @@ public class Post {
 
     public void setOrdineDashboard(Integer ordineDashboard) {
         this.ordineDashboard = ordineDashboard != null ? ordineDashboard : 0;
+    }
+
+    public Integer getNrPozitii() {
+        return nrPozitii;
+    }
+
+    public void setNrPozitii(Integer nrPozitii) {
+        this.nrPozitii = nrPozitii != null && nrPozitii > 0 ? nrPozitii : 1;
     }
 
     public Set<Utilizator> getRecrutori() {

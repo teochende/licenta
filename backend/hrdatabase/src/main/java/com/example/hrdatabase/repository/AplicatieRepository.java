@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -50,4 +51,7 @@ public interface AplicatieRepository extends JpaRepository<Aplicatie, Long> {
             LEFT JOIN FETCH p.departament
             """)
     List<Aplicatie> findAllWithPostGraph();
+
+    @Query("SELECT a.post.id, a.pipelineState FROM Aplicatie a WHERE a.post.id IN :postIds")
+    List<Object[]> findPostIdAndPipelineStatesForPosts(@Param("postIds") Collection<Long> postIds);
 }

@@ -9,6 +9,7 @@ export default function AdaugarePost({ token, onCreated }) {
     const navigate = useNavigate()
     const [departamente, setDepartamente] = useState([])
     const [departamentId, setDepartamentId] = useState('')
+    const [nrPozitii, setNrPozitii] = useState(1)
     const [subdomeniu, setSubdomeniu] = useState('')
     const [nume, setNume] = useState('')
     const [nivel, setNivel] = useState('')
@@ -71,6 +72,7 @@ export default function AdaugarePost({ token, onCreated }) {
                 nume: nume.trim(),
                 nivel: nivel.trim(),
                 descriere: descTrim,
+                nrPozitii: Number(nrPozitii) || 1,
                 enabled,
                 recrutoriIds: [],
                 intervievatoriIds: [],
@@ -128,6 +130,18 @@ export default function AdaugarePost({ token, onCreated }) {
                         type="text"
                         value={subdomeniu}
                         onChange={(e) => setSubdomeniu(e.target.value)}
+                        required
+                    />
+                </div>
+                <div className="form-camp">
+                    <label htmlFor="adaugare-nr-pozitii">Nr. poziții</label>
+                    <input
+                        id="adaugare-nr-pozitii"
+                        type="number"
+                        min={1}
+                        step={1}
+                        value={nrPozitii}
+                        onChange={(e) => setNrPozitii(e.target.value)}
                         required
                     />
                 </div>
