@@ -58,13 +58,15 @@ public class PostController {
             @RequestParam(required = false) Integer size,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) Boolean enabled,
-            @RequestParam(required = false) Long departamentId) {
+            @RequestParam(required = false) Long departamentId,
+            /** Dacă {@code true} → doar posturi finalizate (fără poziții libere). Implicit: posturi active. */
+            @RequestParam(required = false) Boolean finalizate) {
         if (page != null && size != null) {
             int p = Math.max(0, page);
             int s = Math.min(100, Math.max(1, size));
-            return postService.findPostDtosForPaged(utilizator, q, enabled, departamentId, p, s);
+            return postService.findPostDtosForPaged(utilizator, q, enabled, departamentId, Boolean.TRUE.equals(finalizate), p, s);
         }
-        return postService.findPostDtosFor(utilizator);
+        return postService.findPostDtosFor(utilizator, Boolean.TRUE.equals(finalizate));
     }
 
     @PostMapping

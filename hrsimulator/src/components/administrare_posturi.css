@@ -2,6 +2,21 @@
   margin-bottom: 1rem;
 }
 
+.administrare-posturi__links {
+  margin: 0.25rem 0 0.75rem;
+}
+
+.administrare-posturi__link-finalizate {
+  display: inline-block;
+  text-decoration: none;
+  color: #1f6feb;
+  font-weight: 700;
+}
+
+.administrare-posturi__link-finalizate:hover {
+  text-decoration: underline;
+}
+
 .btn-adaugare-post {
   display: inline-flex;
   align-items: center;

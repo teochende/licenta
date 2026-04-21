@@ -31,6 +31,7 @@ import CerereAngajare from './components/CerereAngajare'
 import CereriList from './components/CereriList'
 import CereriMele from './components/CereriMele'
 import PosturiDepartament from './components/PosturiDepartament'
+import RecrutariFinalizate from './components/RecrutariFinalizate'
 
 const defaultUser = {
     isAuthenticated: false,
@@ -59,7 +60,8 @@ function App() {
             return
         }
         try {
-            const data = await postsApi.getPosturi(user.token)
+            // Implicit: ascundem posturile finalizate (fără poziții libere) din dashboard și administrare.
+            const data = await postsApi.getPosturi(user.token, { finalizate: false })
             setPosturi(Array.isArray(data) ? data : [])
         } catch {
             setPosturi([])
@@ -280,6 +282,16 @@ function App() {
                             element={
                                 user.isAuthenticated && isMr ? (
                                     <AdaugarePost token={user.token} onCreated={refreshPosturi} />
+                                ) : (
+                                    <PaginaInexistenta />
+                                )
+                            }
+                        />
+                        <Route
+                            path="/recrutari-finalizate"
+                            element={
+                                user.isAuthenticated && isMr ? (
+                                    <RecrutariFinalizate token={user.token} />
                                 ) : (
                                     <PaginaInexistenta />
                                 )

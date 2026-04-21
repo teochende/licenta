@@ -33,6 +33,7 @@ function appendPosturiQuery(params) {
   if (params.size != null) qs.set('size', String(params.size))
   if (params.q != null && String(params.q).trim() !== '') qs.set('q', String(params.q).trim())
   if (params.enabled === true || params.enabled === false) qs.set('enabled', String(params.enabled))
+  if (params.finalizate === true || params.finalizate === false) qs.set('finalizate', String(params.finalizate))
   if (params.departamentId != null && params.departamentId !== '') {
     qs.set('departamentId', String(params.departamentId))
   }

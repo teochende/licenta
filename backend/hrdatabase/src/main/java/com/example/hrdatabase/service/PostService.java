@@ -293,7 +293,10 @@ public class PostService {
     public List<PostViewDto> findPublicEnabledDtos() {
         List<Post> posts = postRepository.findAll().stream().filter(Post::isEnabled).toList();
         Map<Long, Integer> ocupate = buildOcupateOfertaByPostId(posts.stream().map(Post::getId).toList());
-        return posts.stream().map(p -> toViewForListing(p, ocupate)).toList();
+        return posts.stream()
+                .filter(p -> !isFinalizat(p, ocupate.getOrDefault(p.getId(), 0)))
+                .map(p -> toViewForListing(p, ocupate))
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -352,7 +355,10 @@ public class PostService {
         int to = (int) Math.min(from + safeSize, total);
         List<Post> pagePosts = from >= to ? List.of() : filtered.subList(from, to);
         Map<Long, Integer> ocupate = buildOcupateOfertaByPostId(pagePosts.stream().map(Post::getId).toList());
-        List<PostViewDto> content = pagePosts.stream().map(p -> toViewForListing(p, ocupate)).toList();
+        List<PostViewDto> content = pagePosts.stream()
+                .filter(p -> !isFinalizat(p, ocupate.getOrDefault(p.getId(), 0)))
+                .map(p -> toViewForListing(p, ocupate))
+                .toList();
         int totalPages = total == 0 ? 0 : (int) Math.ceil((double) total / safeSize);
         return new PageResponse<>(content, total, safePage, safeSize, totalPages);
     }
@@ -369,11 +375,14 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
-    public List<PostViewDto> findPostDtosFor(Utilizator utilizator) {
+    public List<PostViewDto> findPostDtosFor(Utilizator utilizator, boolean finalizate) {
         List<Post> posts =
                 postRepository.findAll().stream().filter(p -> postAccessService.canViewPost(utilizator, p)).toList();
         Map<Long, Integer> ocupate = buildOcupateOfertaByPostId(posts.stream().map(Post::getId).toList());
-        return posts.stream().map(p -> toViewForListing(p, ocupate)).toList();
+        return posts.stream()
+                .filter(p -> finalizate == isFinalizat(p, ocupate.getOrDefault(p.getId(), 0)))
+                .map(p -> toViewForListing(p, ocupate))
+                .toList();
     }
 
     /**
@@ -386,6 +395,7 @@ public class PostService {
             String q,
             Boolean enabled,
             Long departamentId,
+            boolean finalizate,
             int page,
             int size) {
         String qNorm = q != null ? q.trim().toLowerCase(Locale.ROOT) : "";
@@ -403,9 +413,17 @@ public class PostService {
         int to = (int) Math.min(from + safeSize, total);
         List<Post> pagePosts = from >= to ? List.of() : filtered.subList(from, to);
         Map<Long, Integer> ocupate = buildOcupateOfertaByPostId(pagePosts.stream().map(Post::getId).toList());
-        List<PostViewDto> content = pagePosts.stream().map(p -> toViewForListing(p, ocupate)).toList();
+        List<PostViewDto> content = pagePosts.stream()
+                .filter(p -> finalizate == isFinalizat(p, ocupate.getOrDefault(p.getId(), 0)))
+                .map(p -> toViewForListing(p, ocupate))
+                .toList();
         int totalPages = total == 0 ? 0 : (int) Math.ceil((double) total / safeSize);
         return new PageResponse<>(content, total, safePage, safeSize, totalPages);
+    }
+
+    private static boolean isFinalizat(Post p, int ocupateOfertaAdmise) {
+        int cap = p != null && p.getNrPozitii() != null && p.getNrPozitii() > 0 ? p.getNrPozitii() : 1;
+        return Math.max(0, cap - Math.max(0, ocupateOfertaAdmise)) == 0;
     }
 
     private static boolean postMatchesAdminQuery(Post p, String qNorm) {

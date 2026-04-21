@@ -227,11 +227,21 @@ export default function AdministrarePosturi({
 
     const heading = embeddedInAdmin ? (
         <div className="administrare-posturi__intro">
+            <div className="administrare-posturi__links">
+                <Link to="/recrutari-finalizate" className="administrare-posturi__link-finalizate">
+                    Recrutări finalizate
+                </Link>
+            </div>
             {toolbar}
         </div>
     ) : (
         <>
             <h1>Administrare posturi</h1>
+            <div className="administrare-posturi__links">
+                <Link to="/recrutari-finalizate" className="administrare-posturi__link-finalizate">
+                    Recrutări finalizate
+                </Link>
+            </div>
             {toolbar}
         </>
     )
