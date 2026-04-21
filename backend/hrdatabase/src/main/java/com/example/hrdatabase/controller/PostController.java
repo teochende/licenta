@@ -4,6 +4,7 @@ import com.example.hrdatabase.dto.request.IntervievatoriAssignRequest;
 import com.example.hrdatabase.dto.request.PostCreateRequest;
 import com.example.hrdatabase.dto.request.PostDashboardOrderRequest;
 import com.example.hrdatabase.dto.request.PostPatchRequest;
+import com.example.hrdatabase.dto.request.PostReopenRequest;
 import com.example.hrdatabase.dto.response.PageResponse;
 import com.example.hrdatabase.dto.response.PosturiDisponibileMetaDto;
 import com.example.hrdatabase.dto.response.PostViewDto;
@@ -123,5 +124,18 @@ public class PostController {
                 id,
                 body != null ? body.intervievatoriIds() : null,
                 utilizator);
+    }
+
+    /**
+     * Redeschide un post finalizat (poziții libere 0): crește {@code nrPozitii} astfel încât să reapară în dashboard
+     * și resetează etapa „Ofertă” din pipeline pentru candidații marcați ca Admis, la „În procesare”.
+     */
+    @PostMapping("/{id}/redeschide")
+    @PreAuthorize("@perm.isAdmin()")
+    public PostViewDto redeschide(
+            @PathVariable Long id,
+            @RequestBody(required = false) PostReopenRequest body,
+            @AuthenticationPrincipal Utilizator utilizator) {
+        return postService.redeschidePostFinalizat(id, body != null ? body.nrPozitiiNou() : null, utilizator);
     }
 }

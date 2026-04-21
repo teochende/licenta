@@ -28,20 +28,9 @@ function extractObservatiiSections(state) {
   for (const et of ETAPE_RECRUTARE) {
     const d = details?.[et.key]
     if (!d || typeof d !== 'object') continue
-    const log = Array.isArray(d.statusNotesLog) ? d.statusNotesLog : []
     const last = d.statusNote != null && safeText(d.statusNote).trim() ? safeText(d.statusNote).trim() : ''
-    const hasAny = (last && last !== '(fără observații)') || log.some((e) => safeText(e?.note).trim() && safeText(e?.note).trim() !== '(fără observații)')
+    const hasAny = last && last !== '(fără observații)'
     if (!hasAny) continue
-
-    const entries = [...log]
-      .filter((e) => safeText(e?.note).trim() && safeText(e?.note).trim() !== '(fără observații)')
-      .map((e) => ({
-        at: toLocalTs(e?.at),
-        status: pipelineStatusLabelRo(e?.status ?? status?.[et.key]),
-        note: safeText(e?.note),
-      }))
-      .reverse()
-      .slice(0, 12)
 
     out.push({
       etapaKey: et.key,
@@ -49,7 +38,6 @@ function extractObservatiiSections(state) {
       lastAt: toLocalTs(d.statusNoteAt),
       lastStatus: pipelineStatusLabelRo(status?.[et.key]),
       lastNote: last && last !== '(fără observații)' ? last : '',
-      entries,
     })
   }
   return out
@@ -80,18 +68,6 @@ export default function ObservatiiCandidatDropdown({ pipelineStateJson, seedNum,
                 <span className="obs-dd__lastMeta">{s.lastAt}</span>
                 <div className="obs-dd__lastText">{s.lastNote}</div>
               </div>
-            ) : null}
-            {s.entries.length ? (
-              <ul className="obs-dd__list">
-                {s.entries.map((e, idx) => (
-                  <li key={idx} className="obs-dd__item">
-                    <span className="obs-dd__itemMeta">
-                      {e.at} · {e.status}
-                    </span>
-                    <span className="obs-dd__itemText">{e.note}</span>
-                  </li>
-                ))}
-              </ul>
             ) : null}
           </div>
         ))}

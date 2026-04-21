@@ -7,6 +7,17 @@
   user-select: none;
   font-weight: 700;
   color: #1f6feb;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(31, 111, 235, 0.18);
+  background: rgba(31, 111, 235, 0.06);
+}
+
+.obs-dd[open] .obs-dd__summary {
+  background: rgba(31, 111, 235, 0.1);
 }
 
 .obs-dd__body {
@@ -15,6 +26,7 @@
   border-radius: 12px;
   padding: 10px 12px;
   background: #fff;
+  box-shadow: 0 12px 26px rgba(0,0,0,0.08);
 }
 
 .obs-dd__section + .obs-dd__section {
@@ -36,6 +48,7 @@
   border-radius: 999px;
   border: 1px solid rgba(0,0,0,0.12);
   opacity: 0.85;
+  background: rgba(0,0,0,0.03);
 }
 
 .obs-dd__lastMeta,

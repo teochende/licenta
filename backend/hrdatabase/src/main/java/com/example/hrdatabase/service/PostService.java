@@ -18,6 +18,9 @@ import com.example.hrdatabase.repository.DepartamentRepository;
 import com.example.hrdatabase.repository.PostRepository;
 import com.example.hrdatabase.repository.UtilizatorRepository;
 import com.example.hrdatabase.validation.PostDescriereSectionValidator;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
@@ -51,6 +54,7 @@ import java.util.stream.Collectors;
 public class PostService {
 
     private static final Logger log = LoggerFactory.getLogger(PostService.class);
+    private static final ObjectMapper PIPELINE_MAPPER = new ObjectMapper();
 
     private final PostRepository postRepository;
     private final DepartamentRepository departamentRepository;
@@ -424,6 +428,91 @@ public class PostService {
     private static boolean isFinalizat(Post p, int ocupateOfertaAdmise) {
         int cap = p != null && p.getNrPozitii() != null && p.getNrPozitii() > 0 ? p.getNrPozitii() : 1;
         return Math.max(0, cap - Math.max(0, ocupateOfertaAdmise)) == 0;
+    }
+
+    @Transactional
+    public PostViewDto redeschidePostFinalizat(Long postId, Integer nrPozitiiNou, Utilizator utilizator) {
+        if (utilizator == null || utilizator.getRol() != Rol.ADMIN) {
+            throw new AccessDeniedException("Doar administratorul poate redeschide posturi finalizate.");
+        }
+        Post post = postRepository.findByIdWithAssignments(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Post inexistent: " + postId));
+
+        int ocupate = buildOcupateOfertaByPostId(List.of(postId)).getOrDefault(postId, 0);
+        int target = nrPozitiiNou != null ? Math.max(1, nrPozitiiNou) : Math.max(1, ocupate + 1);
+        if (post.getNrPozitii() == null || post.getNrPozitii() < target) {
+            post.setNrPozitii(target);
+            postRepository.save(post);
+        }
+
+        List<com.example.hrdatabase.entity.Aplicatie> apps = aplicatieRepository.findAllByPostIdWithPost(postId);
+        int changed = 0;
+        for (var a : apps) {
+            String json = a.getPipelineState();
+            if (!PipelineJsonUtil.pipelineOfertaAdmis(json)) {
+                continue;
+            }
+            String updated = resetOfertaToInAsteptareWithNote(json);
+            if (updated != null && !updated.equals(json)) {
+                a.setPipelineState(updated);
+                aplicatieRepository.save(a);
+                changed++;
+            }
+        }
+        log.info(
+                "Redeschis post {}: nrPozitii={}, ocupate={}, pipeline actualizat pentru {} aplicatii (oferta: acceptat -> in_asteptare).",
+                postId,
+                post.getNrPozitii(),
+                ocupate,
+                changed);
+
+        return postViewDtoFromPost(post);
+    }
+
+    private static String resetOfertaToInAsteptareWithNote(String pipelineStateJson) {
+        if (pipelineStateJson == null || pipelineStateJson.isBlank()) {
+            return pipelineStateJson;
+        }
+        try {
+            JsonNode rootN = PIPELINE_MAPPER.readTree(pipelineStateJson);
+            if (!(rootN instanceof ObjectNode root)) {
+                return pipelineStateJson;
+            }
+            JsonNode statusN = root.get("status");
+            if (!(statusN instanceof ObjectNode status)) {
+                return pipelineStateJson;
+            }
+            JsonNode ofertaN = status.get("oferta");
+            if (ofertaN == null || !ofertaN.isTextual() || !"acceptat".equalsIgnoreCase(ofertaN.asText())) {
+                return pipelineStateJson;
+            }
+            status.put("oferta", "in_asteptare");
+
+            JsonNode detailsN = root.get("details");
+            if (detailsN instanceof ObjectNode details) {
+                ObjectNode ofertaDetails;
+                JsonNode ofertaDetailsN = details.get("oferta");
+                if (ofertaDetailsN instanceof ObjectNode od) {
+                    ofertaDetails = od;
+                } else {
+                    ofertaDetails = PIPELINE_MAPPER.createObjectNode();
+                    details.set("oferta", ofertaDetails);
+                }
+                String at = java.time.Instant.now().toString();
+                String note = "Post redeschis: oferta resetată la „În procesare”.";
+                ofertaDetails.put("statusNote", note);
+                ofertaDetails.put("statusNoteAt", at);
+                var logArr = ofertaDetails.withArray("statusNotesLog");
+                ObjectNode entry = PIPELINE_MAPPER.createObjectNode();
+                entry.put("at", at);
+                entry.put("status", "in_asteptare");
+                entry.put("note", note);
+                logArr.add(entry);
+            }
+            return PIPELINE_MAPPER.writeValueAsString(root);
+        } catch (Exception ignored) {
+            return pipelineStateJson;
+        }
     }
 
     private static boolean postMatchesAdminQuery(Post p, String qNorm) {

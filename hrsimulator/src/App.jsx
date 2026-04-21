@@ -291,7 +291,7 @@ function App() {
                             path="/recrutari-finalizate"
                             element={
                                 user.isAuthenticated && isMr ? (
-                                    <RecrutariFinalizate token={user.token} />
+                                    <RecrutariFinalizate token={user.token} user={user} />
                                 ) : (
                                     <PaginaInexistenta />
                                 )

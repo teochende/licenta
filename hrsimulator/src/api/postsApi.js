@@ -96,3 +96,8 @@ export function deletePost(token, id) {
   return apiFetch(`/api/posturi/${id}`, { method: 'DELETE', token })
 }
 
+/** Admin: redeschide un post finalizat (adaugă minim 1 poziție liberă + resetează oferta din pipeline). */
+export function redeschidePost(token, id, body) {
+  return apiFetch(`/api/posturi/${id}/redeschide`, { method: 'POST', token, body: body || {} })
+}
+

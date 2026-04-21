@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getPosturi } from '../api/postsApi'
+import { getPosturi, redeschidePost } from '../api/postsApi'
 import { getAplicatiiDashboard } from '../api/aplicatiiApi'
 import { isPipelineOfertaAdmisFromJson } from '../utils/pipelineDefaults'
 import { formatDataAplicare } from '../utils/dateFormat'
@@ -16,13 +16,14 @@ function numeDinEmail(email) {
     .join(' ')
 }
 
-export default function RecrutariFinalizate({ token }) {
+export default function RecrutariFinalizate({ token, user }) {
   const [posts, setPosts] = useState([])
   const [apps, setApps] = useState([])
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState('')
+  const [reopenBusyId, setReopenBusyId] = useState(null)
 
-  useEffect(() => {
+  const reload = async () => {
     if (!token) {
       setPosts([])
       setApps([])
@@ -30,17 +31,25 @@ export default function RecrutariFinalizate({ token }) {
     }
     setLoading(true)
     setErr('')
-    Promise.all([
-      getPosturi(token, { finalizate: true }).catch(() => []),
-      getAplicatiiDashboard(token).catch(() => []),
-    ])
-      .then(([p, a]) => {
-        setPosts(Array.isArray(p?.content) ? p.content : Array.isArray(p) ? p : [])
-        setApps(Array.isArray(a) ? a : [])
-      })
-      .catch((e) => setErr(e?.message || 'Nu s-au putut încărca recrutările finalizate.'))
-      .finally(() => setLoading(false))
+    try {
+      const [p, a] = await Promise.all([
+        getPosturi(token, { finalizate: true }).catch(() => []),
+        getAplicatiiDashboard(token).catch(() => []),
+      ])
+      setPosts(Array.isArray(p?.content) ? p.content : Array.isArray(p) ? p : [])
+      setApps(Array.isArray(a) ? a : [])
+    } catch (e) {
+      setErr(e?.message || 'Nu s-au putut încărca recrutările finalizate.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    reload()
   }, [token])
+
+  const canReopen = user?.rol === 'admin'
 
   const postIds = useMemo(() => new Set(posts.map((p) => p.id)), [posts])
 
@@ -63,10 +72,17 @@ export default function RecrutariFinalizate({ token }) {
   return (
     <div className="recrutari-finalizate">
       <div className="recrutari-finalizate__header">
-        <h1>Recrutări finalizate</h1>
-        <Link className="recrutari-finalizate__back" to="/administrare-posturi">
-          Înapoi la Administrare posturi
-        </Link>
+        <div className="recrutari-finalizate__title">
+          <h1>Recrutări finalizate</h1>
+          <p className="recrutari-finalizate__subtitle">
+            Posturi fără poziții libere. Vezi candidații admiși și observațiile finale.
+          </p>
+        </div>
+        <div className="recrutari-finalizate__headerActions">
+          <Link className="recrutari-finalizate__back" to="/administrare-posturi">
+            Înapoi la Administrare posturi
+          </Link>
+        </div>
       </div>
 
       {loading ? <p>Se încarcă…</p> : null}
@@ -80,28 +96,59 @@ export default function RecrutariFinalizate({ token }) {
             const hired = angajariByPostId.get(p.id) || []
             return (
               <section key={p.id} className="recrutari-finalizate__post">
-                <div className="recrutari-finalizate__postTitle">
-                  <h2>{p.nume}</h2>
-                  <span className="recrutari-finalizate__meta">
-                    {p.domeniu} · {p.subdomeniu} · {p.nivel}
-                  </span>
+                <div className="recrutari-finalizate__postHead">
+                  <div className="recrutari-finalizate__postTitle">
+                    <h2>{p.nume}</h2>
+                    <span className="recrutari-finalizate__meta">
+                      {p.domeniu} · {p.subdomeniu} · {p.nivel}
+                    </span>
+                  </div>
+                  {canReopen ? (
+                    <div className="recrutari-finalizate__actions">
+                      <button
+                        type="button"
+                        className="recrutari-finalizate__btn"
+                        disabled={reopenBusyId === p.id}
+                        onClick={async () => {
+                          if (!token) return
+                          setReopenBusyId(p.id)
+                          try {
+                            await redeschidePost(token, p.id)
+                            await reload()
+                          } catch (e) {
+                            setErr(e?.message || 'Nu s-a putut redeschide postul.')
+                          } finally {
+                            setReopenBusyId(null)
+                          }
+                        }}
+                      >
+                        {reopenBusyId === p.id ? 'Se redeschide…' : 'Redeschide postul'}
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
-                <div className="recrutari-finalizate__stats">
-                  <span>
-                    Poziții: <strong>{p.nrPozitii ?? 1}</strong>
-                  </span>
-                  <span>
-                    Libere: <strong>{p.pozitiiLibere ?? 0}</strong>
-                  </span>
-                  <span>
-                    Angajați (Ofertă + Admis): <strong>{hired.length}</strong>
-                  </span>
+
+                <div className="recrutari-finalizate__kpis">
+                  <div className="recrutari-finalizate__kpi">
+                    <span className="recrutari-finalizate__kpiLabel">Poziții</span>
+                    <span className="recrutari-finalizate__kpiValue">{p.nrPozitii ?? 1}</span>
+                  </div>
+                  <div className="recrutari-finalizate__kpi">
+                    <span className="recrutari-finalizate__kpiLabel">Libere</span>
+                    <span className="recrutari-finalizate__kpiValue">{p.pozitiiLibere ?? 0}</span>
+                  </div>
+                  <div className="recrutari-finalizate__kpi">
+                    <span className="recrutari-finalizate__kpiLabel">Angajați</span>
+                    <span className="recrutari-finalizate__kpiValue">{hired.length}</span>
+                    <span className="recrutari-finalizate__kpiHint">Ofertă + Admis</span>
+                  </div>
                 </div>
 
                 {hired.length === 0 ? (
                   <p className="recrutari-finalizate__noHired">Nu există candidați marcați ca Admis la etapa Ofertă.</p>
                 ) : (
-                  <table className="recrutari-finalizate__table">
+                  <div className="recrutari-finalizate__tableWrap">
+                    <table className="recrutari-finalizate__table">
                     <thead>
                       <tr>
                         <th>Candidat</th>
@@ -126,7 +173,8 @@ export default function RecrutariFinalizate({ token }) {
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                    </table>
+                  </div>
                 )}
               </section>
             )

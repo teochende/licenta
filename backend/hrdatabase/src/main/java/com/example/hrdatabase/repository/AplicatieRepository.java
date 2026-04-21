@@ -54,4 +54,7 @@ public interface AplicatieRepository extends JpaRepository<Aplicatie, Long> {
 
     @Query("SELECT a.post.id, a.pipelineState FROM Aplicatie a WHERE a.post.id IN :postIds")
     List<Object[]> findPostIdAndPipelineStatesForPosts(@Param("postIds") Collection<Long> postIds);
+
+    @Query("SELECT a FROM Aplicatie a JOIN FETCH a.post p WHERE p.id = :postId")
+    List<Aplicatie> findAllByPostIdWithPost(@Param("postId") Long postId);
 }
