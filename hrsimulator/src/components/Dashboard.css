@@ -385,24 +385,298 @@
   background: #0b5ed7;
 }
 
-.aplicant-toggle-row {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.65rem;
-  margin-top: 0.75rem;
-  padding: 0.75rem;
-  border-radius: 10px;
-  background: rgba(13, 110, 253, 0.04);
-  border: 1px solid rgba(13, 110, 253, 0.14);
+/* —— Review AI: CV + Engleză (carduri + switch) —— */
+.aplicant-ai-reviews {
+  margin-top: 0.85rem;
+  padding: 0.85rem 0.95rem 0.95rem;
+  border-radius: 14px;
+  background: linear-gradient(165deg, rgba(248, 250, 252, 0.95) 0%, rgba(241, 245, 249, 0.65) 100%);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
 }
 
-.aplicant-toggle-row__first {
+.aplicant-ai-reviews__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+@media (max-width: 800px) {
+  .aplicant-ai-reviews__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.aplicant-ai-reviews__vizibil {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.28);
+}
+
+.recrutor-ai-card {
+  position: relative;
+  border-radius: 14px;
+  padding: 0.85rem 0.95rem 0.9rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  transition:
+    border-color 0.22s ease,
+    box-shadow 0.28s ease,
+    background 0.25s ease,
+    transform 0.22s ease;
+}
+
+.recrutor-ai-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.07);
+  transform: translateY(-1px);
+}
+
+.recrutor-ai-card--active {
+  border-color: rgba(37, 99, 235, 0.42);
+  background: linear-gradient(160deg, rgba(239, 246, 255, 0.92) 0%, rgba(255, 255, 255, 0.98) 55%);
+  box-shadow:
+    0 0 0 1px rgba(37, 99, 235, 0.1),
+    0 10px 28px rgba(37, 99, 235, 0.1);
+}
+
+.recrutor-ai-card--active:hover {
+  border-color: rgba(37, 99, 235, 0.55);
+  box-shadow:
+    0 0 0 1px rgba(37, 99, 235, 0.14),
+    0 12px 32px rgba(37, 99, 235, 0.12);
+}
+
+.recrutor-ai-card--busy {
+  pointer-events: none;
+  opacity: 0.93;
+}
+
+.recrutor-ai-card__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.recrutor-ai-card__icon-wrap {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.22s ease;
+}
+
+.recrutor-ai-card:hover .recrutor-ai-card__icon-wrap {
+  transform: scale(1.04);
+}
+
+.recrutor-ai-card__icon-wrap--cv {
+  background: linear-gradient(145deg, #e0e7ff 0%, #c7d2fe 100%);
+  color: #3730a3;
+  box-shadow: 0 2px 8px rgba(67, 56, 202, 0.12);
+}
+
+.recrutor-ai-card__icon-wrap--en {
+  background: linear-gradient(145deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #1d4ed8;
+  box-shadow: 0 2px 8px rgba(29, 78, 216, 0.12);
+}
+
+.recrutor-ai-card__icon-svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.recrutor-ai-card__body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.recrutor-ai-card__titles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.recrutor-ai-card__title {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.recrutor-ai-card__subtitle {
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: #64748b;
+}
+
+.recrutor-ai-card__metrics {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
   align-items: center;
-  width: 100%;
+  gap: 0.45rem;
+  min-height: 2.15rem;
+  margin-top: 0.7rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(226, 232, 240, 0.95);
+}
+
+.recrutor-ai-score {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  padding: 0.3rem 0.6rem;
+  border-radius: 9px;
+  letter-spacing: 0.01em;
+  animation: recrutor-ai-metric-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes recrutor-ai-metric-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.recrutor-ai-score--manual {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+}
+
+.recrutor-ai-score--ai {
+  background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
+  color: #1e3a8a;
+  border: 1px solid #93c5fd;
+}
+
+.recrutor-ai-score--placeholder,
+.recrutor-ai-score--muted {
+  font-weight: 500;
+  font-size: 0.78rem;
+  color: #94a3b8;
+  padding: 0.15rem 0;
+  border: none;
+  background: transparent;
+  animation: none;
+}
+
+.recrutor-ai-score--muted {
+  color: #cbd5e1;
+}
+
+.recrutor-ai-card__error {
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+/* Switch (checkbox vizual) */
+.recrutor-ai-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  cursor: pointer;
+  margin-left: auto;
+  padding: 0.15rem 0 0 0.25rem;
+}
+
+.recrutor-ai-switch__spinner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.recrutor-ai-switch__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  opacity: 0;
+}
+
+.recrutor-ai-switch__track {
+  position: relative;
+  width: 46px;
+  height: 26px;
+  border-radius: 999px;
+  background: #cbd5e1;
+  transition: background 0.24s ease, box-shadow 0.24s ease;
+  flex-shrink: 0;
+}
+
+.recrutor-ai-switch__track::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.18);
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.recrutor-ai-switch__input:checked + .recrutor-ai-switch__track {
+  background: linear-gradient(90deg, #2563eb, #3b82f6);
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25) inset;
+}
+
+.recrutor-ai-switch__input:checked + .recrutor-ai-switch__track::after {
+  transform: translateX(20px);
+}
+
+.recrutor-ai-switch__input:focus-visible + .recrutor-ai-switch__track {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+}
+
+.recrutor-ai-switch__input:disabled + .recrutor-ai-switch__track {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.recrutor-ai-switch:has(.recrutor-ai-switch__input:disabled) {
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .recrutor-ai-card,
+  .recrutor-ai-card__icon-wrap,
+  .recrutor-ai-switch__track,
+  .recrutor-ai-switch__track::after {
+    transition: none !important;
+  }
+
+  .recrutor-ai-card:hover {
+    transform: none;
+  }
+
+  .recrutor-ai-score {
+    animation: none !important;
+  }
 }
 
 .aplicant-toggle {
@@ -422,11 +696,6 @@
   border-left: 3px solid #198754;
   padding-left: 0.65rem;
   margin-left: 0.15rem;
-}
-
-/* Al doilea rând din .aplicant-toggle-row — același stil ca Review CV AI */
-.aplicant-toggle--engleza-automat {
-  margin: 0;
 }
 
 .aplicant-etape {

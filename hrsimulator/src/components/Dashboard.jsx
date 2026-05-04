@@ -25,6 +25,7 @@ import {
     appendPipelineObservatiiToTooltipLines,
     applyPipelineEtapaChange,
     appendPipelineObservationOnly,
+    aggregateJobCvPipelineStats,
     isPipelineOfertaAdmisFromJson,
 } from '../utils/pipelineDefaults'
 import { formatDataAplicare } from '../utils/dateFormat'
@@ -39,6 +40,45 @@ function sortJobsDashboard(jobs) {
         if (pa !== pb) return pa - pb
         return (a.ordineDashboard ?? 0) - (b.ordineDashboard ?? 0)
     })
+}
+
+function IconAiCvDocument() {
+    return (
+        <svg
+            className="recrutor-ai-card__icon-svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+        >
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <polyline points="10 9 9 9 8 9" />
+        </svg>
+    )
+}
+
+function IconAiEnglishVideo() {
+    return (
+        <svg
+            className="recrutor-ai-card__icon-svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+        >
+            <rect x="2" y="6" width="14" height="12" rx="2" ry="2" />
+            <polygon points="23 7 16 12 23 17 23 7" />
+        </svg>
+    )
 }
 
 function pipelineLabelFor(etapaKey) {
@@ -149,11 +189,6 @@ function cvContinutPentruAfisare(a, fallbackLipsaText) {
     return fallbackLipsaText
 }
 
-const initialCvStatsForJob = () => ({
-    cvAcceptate: 0,
-    cvRespinse: 0,
-})
-
 function nrOfertaAdmisPentruPost(aplicatii, postId) {
     return aplicatii.filter(
         (a) => a.postId === postId && isPipelineOfertaAdmisFromJson(a.pipelineStateJson)
@@ -193,7 +228,6 @@ export default function Dashboard({
     const pipelinePendingSaveRef = useRef(new Set())
     /** Aplicații la care am trimis deja pipeline implicit la DB (fără JSON inițial). */
     const pipelineDefaultSavedRef = useRef(new Set())
-    const [jobStats, setJobStats] = useState({})
     const [aplicantiState, setAplicantiState] = useState({})
     const [candidatDetaliiOpen, setCandidatDetaliiOpen] = useState(null)
     const [hoverEtapa, setHoverEtapa] = useState(null)
@@ -397,17 +431,10 @@ export default function Dashboard({
         }, 450)
     }
 
-    useEffect(() => {
-        setJobStats((prev) => {
-            const next = { ...prev }
-            posturiVizibile.forEach((p) => {
-                if (next[p.id] == null) {
-                    next[p.id] = initialCvStatsForJob()
-                }
-            })
-            return next
-        })
-    }, [posturiVizibile])
+    const pipelineStatsByJob = useMemo(
+        () => aggregateJobCvPipelineStats(aplicatiiServer),
+        [aplicatiiServer]
+    )
 
     const setPrioritateJob = async (jobId, prioritate) => {
         if (!authToken || !onRefreshPosturi) return
@@ -959,28 +986,187 @@ export default function Dashboard({
                     </div>
                 </div>
 
-                <div className="aplicant-toggle-row">
-                    <div className="aplicant-toggle-row__first">
-                        <label
-                            className="aplicant-toggle"
-                            title={
-                                aiCvReviewBusyId === aplicatieId
-                                    ? 'Se rulează analiza AI…'
-                                    : 'Bifați pentru a trimite CV-ul și descrierea jobului la modulul AI; debifați pentru scor manual (cuvinte cheie).'
-                            }
+                <div className="aplicant-ai-reviews">
+                    <div className="aplicant-ai-reviews__grid">
+                        <div
+                            className={[
+                                'recrutor-ai-card',
+                                reviewAiEfectiv ? 'recrutor-ai-card--active' : '',
+                                aiCvReviewBusyId === aplicatieId ? 'recrutor-ai-card--busy' : '',
+                            ]
+                                .filter(Boolean)
+                                .join(' ')}
                         >
-                            <input
-                                type="checkbox"
-                                checked={reviewAiEfectiv}
-                                disabled={aiCvReviewBusyId === aplicatieId}
-                                onChange={(ev) => handleToggleAiCvReview(aplicatieId, ev.target.checked)}
-                            />
-                            {aiCvReviewBusyId === aplicatieId ? (
-                                <span className="dashboard-btn-spinner dashboard-btn-spinner--sm" aria-hidden="true" />
-                            ) : null}
-                            Review CV AI
-                        </label>
-                        {poateSetaVizibilitateIt && aplicatieId != null ? (
+                            <div className="recrutor-ai-card__row">
+                                <div
+                                    className="recrutor-ai-card__icon-wrap recrutor-ai-card__icon-wrap--cv"
+                                    aria-hidden
+                                >
+                                    <IconAiCvDocument />
+                                </div>
+                                <div className="recrutor-ai-card__body">
+                                    <div className="recrutor-ai-card__titles">
+                                        <span className="recrutor-ai-card__title">Review CV AI</span>
+                                        <span className="recrutor-ai-card__subtitle">
+                                            Potrivire automată între CV și descrierea postului
+                                        </span>
+                                    </div>
+                                </div>
+                                <label className="recrutor-ai-switch">
+                                    {aiCvReviewBusyId === aplicatieId ? (
+                                        <span
+                                            className="recrutor-ai-switch__spinner"
+                                            aria-label="Se rulează analiza AI"
+                                        >
+                                            <span
+                                                className="dashboard-btn-spinner dashboard-btn-spinner--sm"
+                                                aria-hidden="true"
+                                            />
+                                        </span>
+                                    ) : null}
+                                    <input
+                                        type="checkbox"
+                                        className="recrutor-ai-switch__input"
+                                        checked={reviewAiEfectiv}
+                                        disabled={aiCvReviewBusyId === aplicatieId}
+                                        onChange={(ev) => handleToggleAiCvReview(aplicatieId, ev.target.checked)}
+                                        aria-label={
+                                            reviewAiEfectiv
+                                                ? 'Dezactivează review CV AI'
+                                                : 'Activează review CV AI'
+                                        }
+                                        title={
+                                            aiCvReviewBusyId === aplicatieId
+                                                ? 'Se rulează analiza AI…'
+                                                : 'Activați pentru analiză AI; dezactivați pentru scor manual (cuvinte cheie).'
+                                        }
+                                    />
+                                    <span className="recrutor-ai-switch__track" aria-hidden="true" />
+                                </label>
+                            </div>
+                            <div className="recrutor-ai-card__metrics" aria-live="polite">
+                                {matchScoreManual != null || matchScoreAi != null ? (
+                                    <>
+                                        {matchScoreManual != null ? (
+                                            <span
+                                                key={`cv-m-${matchScoreManual}`}
+                                                className="recrutor-ai-score recrutor-ai-score--manual"
+                                                title="Scor potrivire (cuvinte cheie)"
+                                            >
+                                                Manual {matchScoreManual}%
+                                            </span>
+                                        ) : null}
+                                        {reviewAiEfectiv && matchScoreAi != null ? (
+                                            <span
+                                                key={`cv-a-${matchScoreAi}`}
+                                                className="recrutor-ai-score recrutor-ai-score--ai"
+                                                title="Scor potrivire (AI)"
+                                            >
+                                                AI {matchScoreAi}%
+                                            </span>
+                                        ) : null}
+                                    </>
+                                ) : (
+                                    <span className="recrutor-ai-score recrutor-ai-score--placeholder">
+                                        {reviewAiEfectiv
+                                            ? 'Scorul AI apare după analiză'
+                                            : 'Scor manual după recalculare'}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+                        <div
+                            className={[
+                                'recrutor-ai-card',
+                                reviewEnglezaAutomat ? 'recrutor-ai-card--active' : '',
+                                englezaAiBusyId === aplicatieId ? 'recrutor-ai-card--busy' : '',
+                            ]
+                                .filter(Boolean)
+                                .join(' ')}
+                        >
+                            <div className="recrutor-ai-card__row">
+                                <div
+                                    className="recrutor-ai-card__icon-wrap recrutor-ai-card__icon-wrap--en"
+                                    aria-hidden
+                                >
+                                    <IconAiEnglishVideo />
+                                </div>
+                                <div className="recrutor-ai-card__body">
+                                    <div className="recrutor-ai-card__titles">
+                                        <span className="recrutor-ai-card__title">
+                                            Activează analiză AI pentru engleză
+                                        </span>
+                                        <span className="recrutor-ai-card__subtitle">
+                                            Comunicare orală din videoclipul de aplicare
+                                        </span>
+                                    </div>
+                                </div>
+                                <label className="recrutor-ai-switch">
+                                    {englezaAiBusyId === aplicatieId ? (
+                                        <span
+                                            className="recrutor-ai-switch__spinner"
+                                            aria-label="Se analizează engleza"
+                                        >
+                                            <span
+                                                className="dashboard-btn-spinner dashboard-btn-spinner--sm"
+                                                aria-hidden="true"
+                                            />
+                                        </span>
+                                    ) : null}
+                                    <input
+                                        type="checkbox"
+                                        className="recrutor-ai-switch__input"
+                                        checked={reviewEnglezaAutomat}
+                                        disabled={englezaAiBusyId === aplicatieId}
+                                        onChange={(ev) =>
+                                            handleToggleReviewEnglezaAutomat(aplicatieId, ev.target.checked)
+                                        }
+                                        aria-label={
+                                            reviewEnglezaAutomat
+                                                ? 'Dezactivează analiza AI pentru engleză'
+                                                : 'Activează analiza AI pentru engleză'
+                                        }
+                                        title={
+                                            englezaAiBusyId === aplicatieId
+                                                ? 'Se analizează…'
+                                                : 'Activați pentru analiză automată; dezactivați pentru evaluare manuală.'
+                                        }
+                                    />
+                                    <span className="recrutor-ai-switch__track" aria-hidden="true" />
+                                </label>
+                            </div>
+                            <div className="recrutor-ai-card__metrics" aria-live="polite">
+                                {reviewEnglezaAutomat && aplicatieRaw?.englezaAiScore != null ? (
+                                    <span
+                                        key={`en-${aplicatieRaw.englezaAiScore}`}
+                                        className="recrutor-ai-score recrutor-ai-score--ai"
+                                        title="Scor AI engleză (0–100)"
+                                    >
+                                        Scor {aplicatieRaw.englezaAiScore}/100
+                                    </span>
+                                ) : reviewEnglezaAutomat &&
+                                  aplicatieRaw?.englezaAiError &&
+                                  aplicatieRaw?.englezaAiScore == null ? (
+                                    <span className="recrutor-ai-card__error">{aplicatieRaw.englezaAiError}</span>
+                                ) : reviewEnglezaAutomat && englezaAiBusyId === aplicatieId ? (
+                                    <span className="recrutor-ai-score recrutor-ai-score--placeholder">
+                                        Se analizează videoclipul…
+                                    </span>
+                                ) : reviewEnglezaAutomat ? (
+                                    <span className="recrutor-ai-score recrutor-ai-score--placeholder">
+                                        Scorul apare după rularea analizei
+                                    </span>
+                                ) : (
+                                    <span className="recrutor-ai-score recrutor-ai-score--muted">
+                                        Mod manual în pipeline
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                    {poateSetaVizibilitateIt && aplicatieId != null ? (
+                        <div className="aplicant-ai-reviews__vizibil">
                             <label
                                 className="aplicant-toggle aplicant-toggle--vizibil-it"
                                 title="Doar candidații bifați apar în dashboardul intervievatorilor tehnici atribuiți acestui post."
@@ -996,27 +1182,8 @@ export default function Dashboard({
                                 ) : null}
                                 Vizibil pentru intervievatori tehnici
                             </label>
-                        ) : null}
-                    </div>
-                    <label
-                        className="aplicant-toggle aplicant-toggle--engleza-automat"
-                        title={
-                            englezaAiBusyId === aplicatieId
-                                ? 'Se analizează engleza din videoclip…'
-                                : 'Bifați pentru analiza automată (AI) a englezei din videoclip; debifați pentru evaluare manuală.'
-                        }
-                    >
-                        <input
-                            type="checkbox"
-                            checked={reviewEnglezaAutomat}
-                            disabled={englezaAiBusyId === aplicatieId}
-                            onChange={(ev) => handleToggleReviewEnglezaAutomat(aplicatieId, ev.target.checked)}
-                        />
-                        {englezaAiBusyId === aplicatieId ? (
-                            <span className="dashboard-btn-spinner dashboard-btn-spinner--sm" aria-hidden="true" />
-                        ) : null}
-                        Review Engleză Automat
-                    </label>
+                        </div>
+                    ) : null}
                 </div>
 
                 <div className="aplicant-pipeline">
@@ -1130,10 +1297,18 @@ export default function Dashboard({
                                         jobIds: [job.id],
                                     }))
                                 const nrCandidatiAplicati = candidatiPentruJob.length
+                                const fromPipeline = pipelineStatsByJob[job.id]
                                 const statsCuCandidati = {
-                                    ...jobStats[job.id],
                                     totalCVuri: nrCandidatiAplicati,
                                     pozitiiLibere: pozitiiLibereLive(job, aplicatiiServer),
+                                    cvAcceptate:
+                                        fromPipeline != null
+                                            ? fromPipeline.cvAcceptate
+                                            : (job.cvAcceptateReviewCv ?? 0),
+                                    cvRespinse:
+                                        fromPipeline != null
+                                            ? fromPipeline.cvRespinse
+                                            : (job.cvRespinseReviewTehnic ?? 0),
                                 }
                                 const poateEditaDescriere = (user?.rol === ROLURI.RECRUTOR || user?.rol === ROLURI.INTERVIEVATOR_TEHNIC) && setPosturi
                                 return (

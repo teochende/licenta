@@ -296,10 +296,10 @@ public class PostService {
     @Transactional(readOnly = true)
     public List<PostViewDto> findPublicEnabledDtos() {
         List<Post> posts = postRepository.findAll().stream().filter(Post::isEnabled).toList();
-        Map<Long, Integer> ocupate = buildOcupateOfertaByPostId(posts.stream().map(Post::getId).toList());
+        PostPipelineStats pipe = buildPostPipelineStats(posts.stream().map(Post::getId).toList());
         return posts.stream()
-                .filter(p -> !isFinalizat(p, ocupate.getOrDefault(p.getId(), 0)))
-                .map(p -> toViewForListing(p, ocupate))
+                .filter(p -> !isFinalizat(p, pipe.ocupateOfertaAdmise().getOrDefault(p.getId(), 0)))
+                .map(p -> toViewForListing(p, pipe))
                 .toList();
     }
 
@@ -358,10 +358,10 @@ public class PostService {
         int from = (int) Math.min((long) safePage * safeSize, total);
         int to = (int) Math.min(from + safeSize, total);
         List<Post> pagePosts = from >= to ? List.of() : filtered.subList(from, to);
-        Map<Long, Integer> ocupate = buildOcupateOfertaByPostId(pagePosts.stream().map(Post::getId).toList());
+        PostPipelineStats pipe = buildPostPipelineStats(pagePosts.stream().map(Post::getId).toList());
         List<PostViewDto> content = pagePosts.stream()
-                .filter(p -> !isFinalizat(p, ocupate.getOrDefault(p.getId(), 0)))
-                .map(p -> toViewForListing(p, ocupate))
+                .filter(p -> !isFinalizat(p, pipe.ocupateOfertaAdmise().getOrDefault(p.getId(), 0)))
+                .map(p -> toViewForListing(p, pipe))
                 .toList();
         int totalPages = total == 0 ? 0 : (int) Math.ceil((double) total / safeSize);
         return new PageResponse<>(content, total, safePage, safeSize, totalPages);
@@ -382,10 +382,10 @@ public class PostService {
     public List<PostViewDto> findPostDtosFor(Utilizator utilizator, boolean finalizate) {
         List<Post> posts =
                 postRepository.findAll().stream().filter(p -> postAccessService.canViewPost(utilizator, p)).toList();
-        Map<Long, Integer> ocupate = buildOcupateOfertaByPostId(posts.stream().map(Post::getId).toList());
+        PostPipelineStats pipe = buildPostPipelineStats(posts.stream().map(Post::getId).toList());
         return posts.stream()
-                .filter(p -> finalizate == isFinalizat(p, ocupate.getOrDefault(p.getId(), 0)))
-                .map(p -> toViewForListing(p, ocupate))
+                .filter(p -> finalizate == isFinalizat(p, pipe.ocupateOfertaAdmise().getOrDefault(p.getId(), 0)))
+                .map(p -> toViewForListing(p, pipe))
                 .toList();
     }
 
@@ -416,10 +416,10 @@ public class PostService {
         int from = (int) Math.min((long) safePage * safeSize, total);
         int to = (int) Math.min(from + safeSize, total);
         List<Post> pagePosts = from >= to ? List.of() : filtered.subList(from, to);
-        Map<Long, Integer> ocupate = buildOcupateOfertaByPostId(pagePosts.stream().map(Post::getId).toList());
+        PostPipelineStats pipe = buildPostPipelineStats(pagePosts.stream().map(Post::getId).toList());
         List<PostViewDto> content = pagePosts.stream()
-                .filter(p -> finalizate == isFinalizat(p, ocupate.getOrDefault(p.getId(), 0)))
-                .map(p -> toViewForListing(p, ocupate))
+                .filter(p -> finalizate == isFinalizat(p, pipe.ocupateOfertaAdmise().getOrDefault(p.getId(), 0)))
+                .map(p -> toViewForListing(p, pipe))
                 .toList();
         int totalPages = total == 0 ? 0 : (int) Math.ceil((double) total / safeSize);
         return new PageResponse<>(content, total, safePage, safeSize, totalPages);
@@ -530,19 +530,38 @@ public class PostService {
                 && p.getDepartament().getNume().toLowerCase(Locale.ROOT).contains(qNorm);
     }
 
+    /** Agregări din {@code aplicatie.pipeline_state} pe post (ofertă ocupată, review CV, review tehnic). */
+    private record PostPipelineStats(
+            Map<Long, Integer> ocupateOfertaAdmise,
+            Map<Long, Integer> cvAcceptateReviewCv,
+            Map<Long, Integer> cvRespinseReviewTehnic) {}
+
     private PostViewDto postViewDtoFromPost(Post post) {
-        int occ = buildOcupateOfertaByPostId(List.of(post.getId())).getOrDefault(post.getId(), 0);
-        return PostMapper.toView(post, occ);
+        PostPipelineStats pipe = buildPostPipelineStats(List.of(post.getId()));
+        long id = post.getId();
+        return PostMapper.toView(
+                post,
+                pipe.ocupateOfertaAdmise().getOrDefault(id, 0),
+                pipe.cvAcceptateReviewCv().getOrDefault(id, 0),
+                pipe.cvRespinseReviewTehnic().getOrDefault(id, 0));
     }
 
     private Map<Long, Integer> buildOcupateOfertaByPostId(Collection<Long> postIds) {
+        return buildPostPipelineStats(postIds).ocupateOfertaAdmise();
+    }
+
+    private PostPipelineStats buildPostPipelineStats(Collection<Long> postIds) {
+        Map<Long, Integer> occ = new HashMap<>();
+        Map<Long, Integer> acc = new HashMap<>();
+        Map<Long, Integer> resp = new HashMap<>();
         if (postIds == null || postIds.isEmpty()) {
-            return Map.of();
+            return new PostPipelineStats(Map.of(), Map.of(), Map.of());
         }
-        List<Long> idList = new ArrayList<>(postIds);
-        Map<Long, Integer> out = new HashMap<>();
+        List<Long> idList = new ArrayList<>(new HashSet<>(postIds));
         for (Long id : idList) {
-            out.put(id, 0);
+            occ.put(id, 0);
+            acc.put(id, 0);
+            resp.put(id, 0);
         }
         List<Object[]> rows = aplicatieRepository.findPostIdAndPipelineStatesForPosts(idList);
         for (Object[] row : rows) {
@@ -552,19 +571,28 @@ public class PostService {
             long pid = ((Number) row[0]).longValue();
             String json = row[1] instanceof String ? (String) row[1] : null;
             if (PipelineJsonUtil.pipelineOfertaAdmis(json)) {
-                out.merge(pid, 1, Integer::sum);
+                occ.merge(pid, 1, Integer::sum);
+            }
+            if (PipelineJsonUtil.pipelineReviewCvAdmis(json)) {
+                acc.merge(pid, 1, Integer::sum);
+            }
+            if (PipelineJsonUtil.pipelineReviewTehnicRespins(json)) {
+                resp.merge(pid, 1, Integer::sum);
             }
         }
-        return out;
+        return new PostPipelineStats(occ, acc, resp);
     }
 
     /**
      * Text descriere pentru afișare: descrierea introdusă ca text sau, dacă lipsește, text extras din fișierul PDF/DOCX.
      * Zona de keywords (linii care încep cu {@code =keywords=}) este exclusă din afișare.
      */
-    private PostViewDto toViewForListing(Post p, Map<Long, Integer> ocupateByPostId) {
-        int occ = ocupateByPostId.getOrDefault(p.getId(), 0);
-        PostViewDto base = PostMapper.toView(p, occ);
+    private PostViewDto toViewForListing(Post p, PostPipelineStats pipe) {
+        long id = p.getId();
+        int occ = pipe.ocupateOfertaAdmise().getOrDefault(id, 0);
+        int cvAcc = pipe.cvAcceptateReviewCv().getOrDefault(id, 0);
+        int cvResp = pipe.cvRespinseReviewTehnic().getOrDefault(id, 0);
+        PostViewDto base = PostMapper.toView(p, occ, cvAcc, cvResp);
         String descriereAfisare = buildDescriereAfisareFaraKeywords(p);
         return new PostViewDto(
                 base.id(),
@@ -582,7 +610,9 @@ public class PostService {
                 base.assignedRecrutori(),
                 base.assignedIntervievatori(),
                 base.nrPozitii(),
-                base.pozitiiLibere());
+                base.pozitiiLibere(),
+                base.cvAcceptateReviewCv(),
+                base.cvRespinseReviewTehnic());
     }
 
     private String buildDescriereAfisareFaraKeywords(Post post) {
@@ -760,8 +790,14 @@ public class PostService {
             toSave.add(p);
         }
         postRepository.saveAll(toSave);
-        Map<Long, Integer> ocupate = buildOcupateOfertaByPostId(toSave.stream().map(Post::getId).toList());
-        return toSave.stream().map(p -> PostMapper.toView(p, ocupate.getOrDefault(p.getId(), 0))).collect(Collectors.toList());
+        PostPipelineStats pipe = buildPostPipelineStats(toSave.stream().map(Post::getId).toList());
+        return toSave.stream()
+                .map(p -> PostMapper.toView(
+                        p,
+                        pipe.ocupateOfertaAdmise().getOrDefault(p.getId(), 0),
+                        pipe.cvAcceptateReviewCv().getOrDefault(p.getId(), 0),
+                        pipe.cvRespinseReviewTehnic().getOrDefault(p.getId(), 0)))
+                .collect(Collectors.toList());
     }
 
     private static String normalizePrioritate(String raw) {

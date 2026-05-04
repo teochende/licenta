@@ -8,10 +8,17 @@ public final class PostMapper {
     private PostMapper() {
     }
 
+    /** Varianta fără statistici review (ex. cereri angajare): contoare 0. */
+    public static PostViewDto toView(Post p, int ocupateOfertaAdmise) {
+        return toView(p, ocupateOfertaAdmise, 0, 0);
+    }
+
     /**
      * @param ocupateOfertaAdmise număr de aplicări pe acest post cu {@code status.oferta == acceptat} în pipeline
+     * @param cvAcceptateReviewCv aplicări cu {@code status.reviewCv == acceptat}
+     * @param cvRespinseReviewTehnic aplicări cu {@code status.reviewTehnic == respins}
      */
-    public static PostViewDto toView(Post p, int ocupateOfertaAdmise) {
+    public static PostViewDto toView(Post p, int ocupateOfertaAdmise, int cvAcceptateReviewCv, int cvRespinseReviewTehnic) {
         String domeniu = p.getDepartament() != null ? p.getDepartament().getNume() : "";
         Long depId = p.getDepartament() != null ? p.getDepartament().getId() : null;
         String pr = p.getPrioritate() != null && !p.getPrioritate().isBlank() ? p.getPrioritate() : "mica";
@@ -38,7 +45,9 @@ public final class PostMapper {
                 p.getRecrutori().stream().map(u -> u.getNumeUtilizator()).sorted().toList(),
                 p.getIntervievatori().stream().map(u -> u.getNumeUtilizator()).sorted().toList(),
                 nrPoz,
-                pozLib
+                pozLib,
+                Math.max(0, cvAcceptateReviewCv),
+                Math.max(0, cvRespinseReviewTehnic)
         );
     }
 }

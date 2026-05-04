@@ -22,6 +22,10 @@ public record PostViewDto(
         /** Capacitate recrutare pentru post (poziții cerute). */
         int nrPozitii,
         /** {@code nrPozitii} minus aplicări cu etapa „ofertă” admisă ({@code acceptat}) în pipeline. */
-        int pozitiiLibere
+        int pozitiiLibere,
+        /** Aplicări cu etapa „Review CV” în status {@code acceptat} (flux manual sau AI). */
+        int cvAcceptateReviewCv,
+        /** Aplicări cu etapa „Review tehnic” în status {@code respins}. */
+        int cvRespinseReviewTehnic
 ) {
 }

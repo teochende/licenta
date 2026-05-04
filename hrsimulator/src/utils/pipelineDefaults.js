@@ -262,6 +262,29 @@ export function isPipelineOfertaAdmisFromJson(json) {
 }
 
 /**
+ * Agregări pentru job card: review CV admis (manual sau AI) și review tehnic respins.
+ * Cheie: postId (number).
+ * @param {Array<{ postId?: number, pipelineStateJson?: string }>} aplicatii
+ * @returns {Record<number, { cvAcceptate: number, cvRespinse: number }>}
+ */
+export function aggregateJobCvPipelineStats(aplicatii) {
+  const out = {}
+  if (!Array.isArray(aplicatii)) return out
+  for (const a of aplicatii) {
+    const pid = a.postId
+    if (pid == null || pid === '') continue
+    const key = Number(pid)
+    if (!Number.isFinite(key)) continue
+    if (!out[key]) out[key] = { cvAcceptate: 0, cvRespinse: 0 }
+    const parsed = parsePipelineStateJson(a.pipelineStateJson)
+    const st = parsed?.status
+    if (st?.reviewCv === STATUS_ETAPA.ACCEPTAT) out[key].cvAcceptate += 1
+    if (st?.reviewTehnic === STATUS_ETAPA.RESPINS) out[key].cvRespinse += 1
+  }
+  return out
+}
+
+/**
  * @param {number|string} seedNum
  * @param {{ aiCvReview?: boolean }} [options] — dacă aplicarea a fost trimisă cu Review CV AI activat
  */
