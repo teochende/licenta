@@ -9,7 +9,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Locale;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -21,9 +23,13 @@ public class PostDescriereFileStorageService {
     private static final long MAX_BYTES = 10 * 1024 * 1024L;
 
     private final Path uploadRoot;
+    private final List<Path> legacyRoots;
 
-    public PostDescriereFileStorageService(@Value("${app.upload.dir:uploads}") String uploadDir) {
+    public PostDescriereFileStorageService(
+            @Value("${app.upload.dir:uploads}") String uploadDir,
+            @Value("${app.upload.legacy-dirs:}") String legacyDirsCsv) {
         this.uploadRoot = Path.of(uploadDir).toAbsolutePath().normalize();
+        this.legacyRoots = parseLegacyRoots(legacyDirsCsv);
     }
 
     @PostConstruct
@@ -32,11 +38,39 @@ public class PostDescriereFileStorageService {
     }
 
     public Path resolveStoredPath(String relativePath) {
-        Path p = uploadRoot.resolve(relativePath).normalize();
-        if (!p.startsWith(uploadRoot)) {
+        Path primary = resolveUnderRoot(uploadRoot, relativePath);
+        if (Files.exists(primary)) {
+            return primary;
+        }
+        for (Path root : legacyRoots) {
+            Path candidate = resolveUnderRoot(root, relativePath);
+            if (Files.exists(candidate)) {
+                return candidate;
+            }
+        }
+        return primary;
+    }
+
+    private static Path resolveUnderRoot(Path root, String relativePath) {
+        Path p = root.resolve(relativePath).normalize();
+        if (!p.startsWith(root)) {
             throw new IllegalArgumentException("Cale invalidă");
         }
         return p;
+    }
+
+    private static List<Path> parseLegacyRoots(String csv) {
+        if (csv == null || csv.isBlank()) {
+            return List.of();
+        }
+        String[] parts = csv.split(",");
+        List<Path> out = new ArrayList<>();
+        for (String raw : parts) {
+            String s = raw != null ? raw.trim() : "";
+            if (s.isEmpty()) continue;
+            out.add(Path.of(s).toAbsolutePath().normalize());
+        }
+        return List.copyOf(out);
     }
 
     public void deleteIfExists(String relativePath) {
