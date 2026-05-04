@@ -3,6 +3,30 @@ import { useState, useRef } from 'react'
 import { createAplicatie } from '../api/aplicatiiApi'
 import './aplicare_job.css'
 
+const MAX_VIDEO_SEC = 5 * 60
+
+function getVideoDuration(file) {
+    return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file)
+        const el = document.createElement('video')
+        el.preload = 'metadata'
+        el.onloadedmetadata = () => {
+            URL.revokeObjectURL(url)
+            resolve(el.duration)
+        }
+        el.onerror = () => {
+            URL.revokeObjectURL(url)
+            reject(new Error('metadata'))
+        }
+        el.src = url
+        try {
+            el.load()
+        } catch {
+            /* ignore */
+        }
+    })
+}
+
 export default function AplicareJob() {
     const { state } = useLocation()
     const jobSelectat = state ? state.jobSelectat : null
@@ -13,7 +37,11 @@ export default function AplicareJob() {
     const [aiCvReview, setAiCvReview] = useState(false)
     const [sending, setSending] = useState(false)
     const [doneMsg, setDoneMsg] = useState('')
+    const [video, setVideo] = useState(null)
+    const [videoDurationLabel, setVideoDurationLabel] = useState('')
+    const [videoError, setVideoError] = useState('')
     const inputCvRef = useRef(null)
+    const inputVideoRef = useRef(null)
 
     const handleCvChange = (event) => {
         const file = event.target.files[0]
@@ -37,13 +65,50 @@ export default function AplicareJob() {
         }
     }
 
+    const handleVideoChange = async (event) => {
+        const file = event.target.files[0]
+        setVideoError('')
+        setVideoDurationLabel('')
+        setVideo(null)
+        if (!file) {
+            return
+        }
+        const okMime = file.type && file.type.startsWith('video/')
+        const okExt = file.name.match(/\.(mp4|webm|mov|mkv|avi|m4v|mpeg|mpg)$/i)
+        if (!okMime && !okExt) {
+            setVideoError('Selectează un fișier video (ex. MP4, WEBM, MOV).')
+            return
+        }
+        try {
+            const dur = await getVideoDuration(file)
+            if (dur > MAX_VIDEO_SEC + 0.25) {
+                setVideoError('Videoclipul nu poate depăși 5 minute.')
+                if (inputVideoRef.current) inputVideoRef.current.value = ''
+                return
+            }
+            setVideo(file)
+            const m = Math.floor(dur / 60)
+            const s = Math.floor(dur % 60)
+            setVideoDurationLabel(`Durată: ${m} min ${s} s`)
+        } catch {
+            setVideoError('Nu s-a putut verifica durata. Încearcă alt fișier video.')
+            if (inputVideoRef.current) inputVideoRef.current.value = ''
+        }
+    }
+
     const handleSubmit = async (event) => {
         event.preventDefault()
         setDoneMsg('')
+        setCvError('')
         if (!cv) {
             setCvError('Te rugăm să încarci un CV.')
             return
         }
+        if (videoError) {
+            setCvError('Corectează eroarea la videoclip înainte de trimitere.')
+            return
+        }
+        setCvError('')
         setSending(true)
         try {
             const fd = new FormData()
@@ -51,6 +116,9 @@ export default function AplicareJob() {
             fd.append('numeCandidat', nume.trim())
             fd.append('email', email.trim())
             fd.append('file', cv)
+            if (video) {
+                fd.append('videoFile', video)
+            }
             // implicit false: review manual; se trimite doar ca să fie explicit în backend
             fd.append('aiCvReview', aiCvReview ? 'true' : 'false')
             await createAplicatie(fd)
@@ -58,8 +126,12 @@ export default function AplicareJob() {
             setNume('')
             setEmail('')
             setCv(null)
+            setVideo(null)
+            setVideoDurationLabel('')
+            setVideoError('')
             setAiCvReview(false)
             if (inputCvRef.current) inputCvRef.current.value = ''
+            if (inputVideoRef.current) inputVideoRef.current.value = ''
         } catch (e) {
             setCvError(e?.message || 'Eroare la trimiterea aplicării.')
         } finally {
@@ -147,6 +219,34 @@ export default function AplicareJob() {
                         />
                         {cv && <span className="aplicare-cv-filename">Fișier selectat: {cv.name}</span>}
                         {cvError && <div className="aplicare-alert">{cvError}</div>}
+                    </div>
+                </section>
+
+                <section className="aplicare-sec aplicare-sec--video" aria-labelledby="aplicare-sec-video">
+                    <h3 id="aplicare-sec-video" className="aplicare-sec__titlu">
+                        Videoclip opțional (prezentare)
+                    </h3>
+                    <p className="aplicare-sec__intro">
+                        Poți atașa un videoclip scurt (maxim 5 minute), de exemplu în limba engleză. Recrutorii îl pot
+                        deschide din dashboard la fel ca fișierul CV.
+                    </p>
+                    <div className="campAplicare">
+                        <label htmlFor="video-candidat">Fișier video (opțional)</label>
+                        <br />
+                        <input
+                            ref={inputVideoRef}
+                            type="file"
+                            id="video-candidat"
+                            accept="video/*,.mp4,.webm,.mov,.mkv,.avi,.m4v,.mpeg,.mpg"
+                            onChange={handleVideoChange}
+                        />
+                        {video && (
+                            <span className="aplicare-cv-filename">
+                                Selectat: {video.name}
+                                {videoDurationLabel ? ` · ${videoDurationLabel}` : ''}
+                            </span>
+                        )}
+                        {videoError && <div className="aplicare-alert">{videoError}</div>}
                     </div>
                 </section>
 

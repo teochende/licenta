@@ -4,6 +4,7 @@ import com.example.hrdatabase.dto.request.AplicatieCreateRequest;
 import com.example.hrdatabase.dto.request.AplicatiePipelinePatchRequest;
 import com.example.hrdatabase.dto.request.AplicatieVizibilitateItPatchRequest;
 import com.example.hrdatabase.dto.ai.AiCvAnalyzeResponse;
+import com.example.hrdatabase.dto.ai.AiEnglishVideoApiResponse;
 import com.example.hrdatabase.dto.response.AplicatieDashboardDto;
 import com.example.hrdatabase.dto.response.PageResponse;
 import com.example.hrdatabase.dto.response.RecalcMatchScoreResultDto;
@@ -25,8 +26,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -55,6 +58,7 @@ public class AplicatieService {
     private final DocumentTextExtractor documentTextExtractor;
     private final CvJobMatchService cvJobMatchService;
     private final AiCvReviewClientService aiCvReviewClientService;
+    private final AiEnglishVideoReviewClientService aiEnglishVideoReviewClientService;
 
     public AplicatieService(
             AplicatieRepository aplicatieRepository,
@@ -64,7 +68,8 @@ public class AplicatieService {
             PostDescriereFileStorageService postDescriereFileStorageService,
             DocumentTextExtractor documentTextExtractor,
             CvJobMatchService cvJobMatchService,
-            AiCvReviewClientService aiCvReviewClientService) {
+            AiCvReviewClientService aiCvReviewClientService,
+            AiEnglishVideoReviewClientService aiEnglishVideoReviewClientService) {
         this.aplicatieRepository = aplicatieRepository;
         this.postRepository = postRepository;
         this.postAccessService = postAccessService;
@@ -73,6 +78,7 @@ public class AplicatieService {
         this.documentTextExtractor = documentTextExtractor;
         this.cvJobMatchService = cvJobMatchService;
         this.aiCvReviewClientService = aiCvReviewClientService;
+        this.aiEnglishVideoReviewClientService = aiEnglishVideoReviewClientService;
     }
 
     @Transactional
@@ -113,7 +119,13 @@ public class AplicatieService {
     }
 
     @Transactional
-    public Aplicatie savePublicApplicationMultipart(Long postId, String numeCandidat, String email, MultipartFile file, boolean aiCvReview)
+    public Aplicatie savePublicApplicationMultipart(
+            Long postId,
+            String numeCandidat,
+            String email,
+            MultipartFile file,
+            MultipartFile videoFile,
+            boolean aiCvReview)
             throws IOException {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Post inexistent: " + postId));
@@ -147,6 +159,14 @@ public class AplicatieService {
             a.setAiCvMatchScore(null);
             a.setAiCvObservatii(null);
             a.setAiCvConcluzii(null);
+        }
+        if (videoFile != null && !videoFile.isEmpty()) {
+            String videoOriginal =
+                    videoFile.getOriginalFilename() != null ? videoFile.getOriginalFilename() : "video.mp4";
+            byte[] videoBytes = videoFile.getBytes();
+            String videoRelative = aplicatieCvFileStorageService.storeVideoBytes(videoBytes, videoOriginal);
+            a.setVideoNumeFisier(stripNullChars(videoOriginal));
+            a.setVideoFisierPath(videoRelative);
         }
         Aplicatie saved = aplicatieRepository.save(a);
         if (aiCvReview) {
@@ -465,6 +485,58 @@ public class AplicatieService {
         return ResponseEntity.ok().headers(headers).body(resource);
     }
 
+    @Transactional(readOnly = true)
+    public ResponseEntity<Resource> getVideoFileResponse(Long aplicatieId, Utilizator utilizator) {
+        Aplicatie a = aplicatieRepository.findByIdWithPostGraph(aplicatieId)
+                .orElseThrow(() -> new IllegalArgumentException("Aplicare inexistentă: " + aplicatieId));
+        if (!postAccessService.canAccessAplicatieDetail(utilizator, a.getPost(), a)) {
+            throw new AccessDeniedException("Nu aveți acces la această aplicare.");
+        }
+        String pathStr = a.getVideoFisierPath();
+        if (pathStr == null || pathStr.isBlank()) {
+            throw new IllegalArgumentException("Nu există videoclip stocat pentru această aplicare.");
+        }
+        var path = aplicatieCvFileStorageService.resolveStoredPath(pathStr);
+        if (!Files.exists(path)) {
+            throw new IllegalArgumentException("Videoclipul lipsește de pe disc.");
+        }
+        Resource resource = new FileSystemResource(path);
+        String displayName = a.getVideoNumeFisier() != null && !a.getVideoNumeFisier().isBlank()
+                ? a.getVideoNumeFisier()
+                : path.getFileName().toString();
+        String lower = displayName.toLowerCase(Locale.ROOT);
+        MediaType mediaType = mediaTypeForVideoFilename(lower);
+        ContentDisposition disposition = ContentDisposition.builder("inline")
+                .filename(displayName, StandardCharsets.UTF_8)
+                .build();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(mediaType);
+        headers.setContentDisposition(disposition);
+        return ResponseEntity.ok().headers(headers).body(resource);
+    }
+
+    private static MediaType mediaTypeForVideoFilename(String lower) {
+        if (lower.endsWith(".mp4") || lower.endsWith(".m4v")) {
+            return MediaType.parseMediaType("video/mp4");
+        }
+        if (lower.endsWith(".webm")) {
+            return MediaType.parseMediaType("video/webm");
+        }
+        if (lower.endsWith(".mov")) {
+            return MediaType.parseMediaType("video/quicktime");
+        }
+        if (lower.endsWith(".mkv")) {
+            return MediaType.parseMediaType("video/x-matroska");
+        }
+        if (lower.endsWith(".avi")) {
+            return MediaType.parseMediaType("video/x-msvideo");
+        }
+        if (lower.endsWith(".mpeg") || lower.endsWith(".mpg")) {
+            return MediaType.parseMediaType("video/mpeg");
+        }
+        return MediaType.APPLICATION_OCTET_STREAM;
+    }
+
     private static MediaType mediaTypeForFilename(String lower) {
         if (lower.endsWith(".pdf")) {
             return MediaType.APPLICATION_PDF;
@@ -502,6 +574,181 @@ public class AplicatieService {
         }
         a.setPipelineState(stripNullChars(request.pipelineStateJson()));
         aplicatieRepository.save(a);
+    }
+
+    /**
+     * Bifează/debifează „Review engleză automat”: la activare trimite videoclipul la modulul AI (o singură dată
+     * cât există rezultate valide; reutilizare fără reapel la hover). La dezactivare păstrează scorurile în DB,
+     * dar nu mai afișează fluxul AI în UI (pipeline).
+     */
+    @Transactional
+    public AplicatieDashboardDto updateReviewEnglezaAutomat(Long aplicatieId, boolean enabled, Utilizator utilizator)
+            throws IOException {
+        if (utilizator == null) {
+            throw new AccessDeniedException("Neautentificat");
+        }
+        Aplicatie a = aplicatieRepository.findByIdWithPostGraph(aplicatieId)
+                .orElseThrow(() -> new IllegalArgumentException("Aplicare inexistentă: " + aplicatieId));
+        if (!postAccessService.canAccessAplicatieDetail(utilizator, a.getPost(), a)) {
+            throw new AccessDeniedException("Nu aveți acces la această aplicare.");
+        }
+
+        if (!enabled) {
+            a.setPipelineState(mergeReviewEnglezaAutomatIntoPipeline(a.getPipelineState(), false));
+            a.setEnglezaAiError(null);
+            aplicatieRepository.save(a);
+            return toDashboardDto(aplicatieRepository.findByIdWithPostGraph(aplicatieId).orElseThrow());
+        }
+
+        String videoPathStr = a.getVideoFisierPath();
+        if (videoPathStr == null || videoPathStr.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Nu există videoclip încărcat pentru această aplicare. Analiza AI nu poate rula.");
+        }
+
+        boolean cachedOk = a.getEnglezaAiScore() != null
+                && a.getEnglezaAiAnalyzedAt() != null
+                && (a.getEnglezaAiError() == null || a.getEnglezaAiError().isBlank());
+        if (cachedOk) {
+            a.setPipelineState(mergeReviewEnglezaAutomatIntoPipeline(a.getPipelineState(), true));
+            aplicatieRepository.save(a);
+            return toDashboardDto(aplicatieRepository.findByIdWithPostGraph(aplicatieId).orElseThrow());
+        }
+
+        var path = aplicatieCvFileStorageService.resolveStoredPath(videoPathStr);
+        if (!Files.exists(path)) {
+            throw new IllegalArgumentException(
+                    "Fișierul video lipsește de pe server. Încărcați din nou videoclipul printr-o aplicare nouă.");
+        }
+
+        a.setPipelineState(mergeReviewEnglezaAutomatIntoPipeline(a.getPipelineState(), true));
+        aplicatieRepository.save(a);
+
+        Optional<AiEnglishVideoApiResponse> opt = aiEnglishVideoReviewClientService.analyzeVideoFromPath(
+                path, a.getVideoNumeFisier() != null ? a.getVideoNumeFisier() : path.getFileName().toString());
+        if (opt.isEmpty()) {
+            a.setEnglezaAiError(
+                    "Analiza engleză (video) a eșuat: modulul AI indisponibil sau răspuns invalid. "
+                            + "Verificați modul_ai_cv_review (FastAPI), OPENAI_API_KEY și ai.cv.review.base-url.");
+            a.setPipelineState(mergeReviewEnglezaAutomatIntoPipeline(a.getPipelineState(), false));
+            aplicatieRepository.save(a);
+            return toDashboardDto(aplicatieRepository.findByIdWithPostGraph(aplicatieId).orElseThrow());
+        }
+
+        applyEnglishVideoAiSuccess(a, opt.get());
+        aplicatieRepository.save(a);
+        return toDashboardDto(aplicatieRepository.findByIdWithPostGraph(aplicatieId).orElseThrow());
+    }
+
+    private static String mergeReviewEnglezaAutomatIntoPipeline(String pipelineJson, boolean enabled) {
+        try {
+            ObjectNode root;
+            if (pipelineJson == null || pipelineJson.isBlank()) {
+                root = PIPELINE_OBJECT_MAPPER.createObjectNode();
+                root.set("status", PIPELINE_OBJECT_MAPPER.createObjectNode());
+                root.set("details", PIPELINE_OBJECT_MAPPER.createObjectNode());
+                root.put("unlockedUpTo", 0);
+            } else {
+                JsonNode n = PIPELINE_OBJECT_MAPPER.readTree(pipelineJson);
+                root = n.isObject() ? (ObjectNode) n : PIPELINE_OBJECT_MAPPER.createObjectNode();
+            }
+            if (!root.has("status") || !root.get("status").isObject()) {
+                root.set("status", PIPELINE_OBJECT_MAPPER.createObjectNode());
+            }
+            if (!root.has("details") || !root.get("details").isObject()) {
+                root.set("details", PIPELINE_OBJECT_MAPPER.createObjectNode());
+            }
+            if (!root.has("unlockedUpTo") || !root.get("unlockedUpTo").isNumber()) {
+                root.put("unlockedUpTo", 0);
+            }
+            root.put("reviewEnglezaAutomat", enabled);
+            return PIPELINE_OBJECT_MAPPER.writeValueAsString(root);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("Pipeline JSON invalid; reîncărcați dashboardul.", e);
+        }
+    }
+
+    private static boolean readReviewEnglezaAutomatFromPipeline(String pipelineJson) {
+        if (pipelineJson == null || pipelineJson.isBlank()) {
+            return false;
+        }
+        try {
+            JsonNode n = PIPELINE_OBJECT_MAPPER.readTree(pipelineJson).get("reviewEnglezaAutomat");
+            return n != null && n.isBoolean() && n.booleanValue();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private static void applyEnglishVideoAiSuccess(Aplicatie a, AiEnglishVideoApiResponse r) {
+        a.setEnglezaAiScore(AiCvReviewClientService.clampScore(r.englishScore()));
+        a.setEnglezaAiPerformanceStatus(normalizeEnglishPerformanceStatus(r.performanceStatus()));
+        a.setEnglezaAiVerdict(normalizeEnglishVerdict(r.hiringVerdict()));
+        a.setEnglezaAiSummary(truncate(buildEnglishSummaryFromApi(r), 2000));
+        String tip = r.tooltipSummary() != null && !r.tooltipSummary().isBlank()
+                ? r.tooltipSummary()
+                : defaultEnglishTooltipFromApi(r);
+        a.setEnglezaAiTooltipSummary(truncate(tip, 4000));
+        a.setEnglezaAiError(null);
+        a.setEnglezaAiAnalyzedAt(Instant.now());
+    }
+
+    private static String normalizeEnglishPerformanceStatus(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return "Average";
+        }
+        String s = raw.trim().toLowerCase(Locale.ROOT);
+        if (s.equals("good") || s.equals("average") || s.equals("poor")) {
+            return s.substring(0, 1).toUpperCase(Locale.ROOT) + s.substring(1);
+        }
+        return "Average";
+    }
+
+    private static String normalizeEnglishVerdict(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return "PARTIAL";
+        }
+        String u = raw.trim().toUpperCase(Locale.ROOT);
+        if (u.equals("YES") || u.equals("PARTIAL") || u.equals("NO")) {
+            return u;
+        }
+        return "PARTIAL";
+    }
+
+    private static String buildEnglishSummaryFromApi(AiEnglishVideoApiResponse r) {
+        String cefr = r.cefrLevel() != null ? r.cefrLevel() : "—";
+        return String.format(
+                Locale.ROOT,
+                "Scor %d/100 · %s · verdict %s · CEFR %s",
+                r.englishScore(),
+                normalizeEnglishPerformanceStatus(r.performanceStatus()),
+                normalizeEnglishVerdict(r.hiringVerdict()),
+                cefr);
+    }
+
+    private static String defaultEnglishTooltipFromApi(AiEnglishVideoApiResponse r) {
+        return String.join(
+                "\n",
+                "Verdict: " + normalizeEnglishVerdict(r.hiringVerdict()),
+                "Performanță: " + normalizeEnglishPerformanceStatus(r.performanceStatus()),
+                "CEFR estimat: " + (r.cefrLevel() != null ? r.cefrLevel() : "—"),
+                "Fluență: " + truncate(safe(r.fluencyFeedback()), 220),
+                "Claritate: " + truncate(safe(r.clarityFeedback()), 220),
+                "Inteligibilitate / pronunție: " + truncate(safe(r.pronunciationFeedback()), 220));
+    }
+
+    private static String safe(String s) {
+        return s != null ? s : "";
+    }
+
+    private static String truncate(String s, int max) {
+        if (s == null) {
+            return "";
+        }
+        if (s.length() <= max) {
+            return s;
+        }
+        return s.substring(0, max) + "…";
     }
 
     /**
@@ -665,6 +912,7 @@ public class AplicatieService {
 
     private static AplicatieDashboardDto toDashboardDto(Aplicatie a) {
         String path = a.getCvFisierPath();
+        String videoPath = a.getVideoFisierPath();
         return new AplicatieDashboardDto(
                 a.getId(),
                 a.getPost().getId(),
@@ -672,6 +920,8 @@ public class AplicatieService {
                 a.getEmail(),
                 a.getCvNumeFisier(),
                 path != null && !path.isBlank(),
+                a.getVideoNumeFisier(),
+                videoPath != null && !videoPath.isBlank(),
                 a.getDataAplicare(),
                 a.getCvContinut(),
                 a.isAiCvReview(),
@@ -680,7 +930,15 @@ public class AplicatieService {
                 a.getAiCvObservatii(),
                 a.getAiCvConcluzii(),
                 a.isVizibilIntervievatoriTehnic(),
-                a.getPipelineState());
+                a.getPipelineState(),
+                readReviewEnglezaAutomatFromPipeline(a.getPipelineState()),
+                a.getEnglezaAiScore(),
+                a.getEnglezaAiPerformanceStatus(),
+                a.getEnglezaAiVerdict(),
+                a.getEnglezaAiSummary(),
+                a.getEnglezaAiTooltipSummary(),
+                a.getEnglezaAiError(),
+                a.getEnglezaAiAnalyzedAt());
     }
 
     public List<Aplicatie> findAll() {

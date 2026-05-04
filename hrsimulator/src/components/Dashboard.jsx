@@ -2,10 +2,12 @@ import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback } fr
 import { createPortal } from 'react-dom'
 import JobCard from './JobCard'
 import CvFisierLink from './CvFisierLink'
+import VideoFisierLink from './VideoFisierLink'
 import { ROLURI } from '../context/login_context'
 import {
     getAplicatiiDashboard,
     patchAplicatieAiCvReview,
+    patchAplicatieReviewEnglezaAutomat,
     patchAplicatiePipeline,
     patchAplicatieVizibilitateIntervievatoriTehnic,
     recalcAplicatiiMatchScore,
@@ -122,6 +124,8 @@ function entryFromAplicatie(a, jobsVizibileMap, jobIdsVizibile) {
             dataAplicare: a.dataAplicare,
             cvNumeFisier: a.cvNumeFisier,
             cvFisierStocat: !!a.cvFisierStocat,
+            videoNumeFisier: a.videoNumeFisier,
+            videoFisierStocat: !!a.videoFisierStocat,
             cv: cvContinutPentruAfisare(
                 a,
                 '(Text CV necompletat la aplicare – verificați fișierul atașat în sistem.)'
@@ -203,6 +207,9 @@ export default function Dashboard({
     const [recalcMessage, setRecalcMessage] = useState('')
     const [vizibilItSavingId, setVizibilItSavingId] = useState(null)
     const [aiCvReviewBusyId, setAiCvReviewBusyId] = useState(null)
+    const [englezaAiBusyId, setEnglezaAiBusyId] = useState(null)
+    const [hoverEnglezaAi, setHoverEnglezaAi] = useState(null)
+    const englezaAiTooltipRef = useRef(null)
 
     const poateRecalcScor =
         user?.rol === ROLURI.ADMIN || user?.rol === ROLURI.MANAGER_RECRUTARE
@@ -352,6 +359,25 @@ export default function Dashboard({
             alert(e?.message || 'Nu s-a putut actualiza Review CV AI (verificați modulul AI și drepturile de acces).')
         } finally {
             setAiCvReviewBusyId(null)
+        }
+    }
+
+    const handleToggleReviewEnglezaAutomat = async (aplicatieId, checked) => {
+        if (!authToken || aplicatieId == null) return
+        setEnglezaAiBusyId(aplicatieId)
+        try {
+            const dto = await patchAplicatieReviewEnglezaAutomat(authToken, aplicatieId, checked)
+            await reloadAplicatii()
+            if (checked && dto?.englezaAiError && !dto?.reviewEnglezaAutomat) {
+                alert(dto.englezaAiError)
+            }
+        } catch (e) {
+            alert(
+                e?.message ||
+                    'Nu s-a putut actualiza Review Engleză Automat (videoclip lipsă, modul AI oprit sau drepturi).'
+            )
+        } finally {
+            setEnglezaAiBusyId(null)
         }
     }
 
@@ -588,7 +614,9 @@ export default function Dashboard({
                 etapaKey === 'reviewCv'
                     ? (reviewAiEfectiv ? 'Review CV AI' : 'Review CV HR')
                     : etapaKey === 'reviewEngleza'
-                        ? (st?.reviewEnglezaAutomat ? 'Review CV engleză (automat)' : 'Review CV engleză (manual)')
+                        ? (st?.reviewEnglezaAutomat
+                              ? 'Review engleză (AI video)'
+                              : 'Review engleză (manual)')
                         : etapaKey === 'reviewTehnic'
                             ? 'Review CV tehnic'
                             : 'Review CV management'
@@ -617,6 +645,33 @@ export default function Dashboard({
                         .filter(Boolean)
                     if (obsLines.length) sections.push({ title: 'Observații AI', lines: obsLines })
                     if (concl.trim()) sections.push({ title: 'Concluzii AI', lines: [concl.trim()] })
+                }
+            }
+            if (etapaKey === 'reviewEngleza') {
+                const auto = !!st?.reviewEnglezaAutomat
+                if (auto && aplicatieRaw?.englezaAiScore != null) {
+                    sections.push({
+                        title: 'AI — engleză orală (video)',
+                        lines: [
+                            `Scor: ${aplicatieRaw.englezaAiScore}/100`,
+                            `Performanță: ${aplicatieRaw.englezaAiPerformanceStatus || '—'}`,
+                            `Verdict (job): ${aplicatieRaw.englezaAiVerdict || '—'}`,
+                        ],
+                    })
+                    const tipEng = aplicatieRaw?.englezaAiTooltipSummary
+                    if (tipEng && String(tipEng).trim()) {
+                        const ls = String(tipEng)
+                            .split(/\n+/)
+                            .map((s) => s.trim())
+                            .filter(Boolean)
+                            .slice(0, 14)
+                        if (ls.length) sections.push({ title: 'Feedback sumar (AI)', lines: ls })
+                    }
+                } else if (auto && aplicatieRaw?.englezaAiError) {
+                    sections.push({
+                        title: 'Eroare analiză AI (video)',
+                        lines: [String(aplicatieRaw.englezaAiError)],
+                    })
                 }
             }
             if (details.notes) sections.push({ title: 'Notițe', lines: [String(details.notes)] })
@@ -681,6 +736,25 @@ export default function Dashboard({
     }
 
     useLayoutEffect(() => {
+        if (!hoverEnglezaAi) return undefined
+        const el = englezaAiTooltipRef.current
+        if (!el) return undefined
+        const pad = 12
+        el.style.setProperty('--pipeline-tip-dx', '0px')
+        el.style.setProperty('--pipeline-tip-dy', '0px')
+        const r = el.getBoundingClientRect()
+        let dx = 0
+        let dy = 0
+        if (r.left < pad) dx = pad - r.left
+        if (r.right > window.innerWidth - pad) dx = window.innerWidth - pad - r.right
+        if (r.top < pad) dy = pad - r.top
+        if (r.bottom > window.innerHeight - pad) dy = window.innerHeight - pad - r.bottom
+        el.style.setProperty('--pipeline-tip-dx', `${dx}px`)
+        el.style.setProperty('--pipeline-tip-dy', `${dy}px`)
+        return undefined
+    }, [hoverEnglezaAi])
+
+    useLayoutEffect(() => {
         if (!hoverEtapa?.aplicantKey || !hoverEtapa?.etapaKey) return
         const el = pipelineTooltipRef.current
         if (!el) return
@@ -722,17 +796,6 @@ export default function Dashboard({
         if (!job?.id) return
         setListaPostFilter(String(job.id))
         scrollToListaAplicatii()
-    }
-
-    const toggleAplicant = (aplicantKey, field) => {
-        setAplicantiState((prev) => {
-            const cur = prev[aplicantKey]
-            if (!cur) return prev
-            const updated = { ...cur, [field]: !cur[field] }
-            const aid = aplicatieIdFromKey(aplicantKey)
-            schedulePipelinePersist(aid, updated)
-            return { ...prev, [aplicantKey]: updated }
-        })
     }
 
     const openPipelineStatusDropdown = (ev, aplicantKey, etapaKey) => {
@@ -853,7 +916,7 @@ export default function Dashboard({
         const { key, candidat, job, aplicatieId, aplicatieRaw } = entry
         const state = aplicantiState[key]
         const reviewAiEfectiv = !!aplicatieRaw?.aiCvReview
-        const reviewEnglezaAutomat = state?.reviewEnglezaAutomat ?? true
+        const reviewEnglezaAutomat = state?.reviewEnglezaAutomat ?? false
         const statusEtape = state?.status || {}
         const unlockedUpTo = Number.isFinite(state?.unlockedUpTo) ? state.unlockedUpTo : 0
         const matchScoreManual =
@@ -939,14 +1002,6 @@ export default function Dashboard({
                         ) : null}
                         Review CV AI
                     </label>
-                    <label className="aplicant-toggle">
-                        <input
-                            type="checkbox"
-                            checked={reviewEnglezaAutomat}
-                            onChange={() => toggleAplicant(key, 'reviewEnglezaAutomat')}
-                        />
-                        Review engleză automat
-                    </label>
                     {poateSetaVizibilitateIt && aplicatieId != null ? (
                         <label
                             className="aplicant-toggle aplicant-toggle--vizibil-it"
@@ -963,6 +1018,87 @@ export default function Dashboard({
                             ) : null}
                             Vizibil pentru intervievatori tehnici
                         </label>
+                    ) : null}
+                </div>
+
+                <div className="aplicant-engleza-ai-block">
+                    <div className="aplicant-engleza-ai-head">Review engleză (videoclip)</div>
+                    <p className="aplicant-engleza-ai-hint">
+                        Implicit, nu se rulează AI: recrutorul evaluează manual după vizionarea videoclipului. Bifați
+                        „Review Engleză Automat” pentru a trimite videoclipul la modulul AI; rezultatele se salvează și
+                        rămân disponibile (nu se reanalizează la fiecare hover).
+                    </p>
+                    <label className="aplicant-toggle aplicant-toggle--engleza-automat">
+                        <input
+                            type="checkbox"
+                            checked={reviewEnglezaAutomat}
+                            disabled={englezaAiBusyId === aplicatieId}
+                            onChange={(ev) => handleToggleReviewEnglezaAutomat(aplicatieId, ev.target.checked)}
+                        />
+                        {englezaAiBusyId === aplicatieId ? (
+                            <span className="dashboard-btn-spinner dashboard-btn-spinner--sm" aria-hidden="true" />
+                        ) : null}
+                        Review Engleză Automat
+                    </label>
+                    {englezaAiBusyId === aplicatieId ? (
+                        <div className="engleza-ai-loading-msg" role="status">
+                            Analyzing English skills…
+                        </div>
+                    ) : null}
+                    {reviewEnglezaAutomat && aplicatieRaw?.englezaAiScore != null ? (
+                        <div className="engleza-ai-result-row">
+                            <span className="engleza-ai-score-badge" title="Scor AI (0–100)">
+                                {aplicatieRaw.englezaAiScore}
+                            </span>
+                            <span
+                                className={`engleza-ai-status-badge engleza-ai-status-badge--${String(
+                                    aplicatieRaw?.englezaAiPerformanceStatus || ''
+                                ).toLowerCase()}`}
+                                tabIndex={0}
+                                onMouseEnter={(e) => {
+                                    const tip = aplicatieRaw?.englezaAiTooltipSummary || ''
+                                    const lines = tip
+                                        .split(/\n+/)
+                                        .map((l) => l.trim())
+                                        .filter(Boolean)
+                                    setHoverEnglezaAi({
+                                        anchorX: e.clientX,
+                                        anchorY: e.clientY,
+                                        lines:
+                                            lines.length > 0
+                                                ? lines
+                                                : [
+                                                      `Verdict: ${aplicatieRaw?.englezaAiVerdict || '—'}`,
+                                                      `Scor: ${aplicatieRaw?.englezaAiScore}/100`,
+                                                  ],
+                                    })
+                                }}
+                                onMouseMove={(e) => {
+                                    setHoverEnglezaAi((prev) =>
+                                        prev
+                                            ? {
+                                                  ...prev,
+                                                  anchorX: e.clientX,
+                                                  anchorY: e.clientY,
+                                              }
+                                            : prev
+                                    )
+                                }}
+                                onMouseLeave={() => setHoverEnglezaAi(null)}
+                                role="button"
+                                aria-label="Status analiză AI engleză — detalii la hover"
+                            >
+                                {aplicatieRaw?.englezaAiPerformanceStatus || '—'}
+                            </span>
+                            <span className="engleza-ai-verdict-pill" title="Verdict pentru comunicare la job">
+                                {aplicatieRaw?.englezaAiVerdict || '—'}
+                            </span>
+                        </div>
+                    ) : null}
+                    {reviewEnglezaAutomat &&
+                    aplicatieRaw?.englezaAiError &&
+                    aplicatieRaw?.englezaAiScore == null ? (
+                        <div className="engleza-ai-inline-error">{aplicatieRaw.englezaAiError}</div>
                     ) : null}
                 </div>
 
@@ -1001,7 +1137,19 @@ export default function Dashboard({
                                                     : reviewAiEfectiv
                                                       ? 'Review\nCV AI'
                                                       : 'Review\nCV HR'
-                                                : pipelineLabelFor(et.key)}
+                                                : et.key === 'reviewEngleza'
+                                                  ? !reviewEnglezaAutomat
+                                                      ? 'Review\nengleză\n(manual)'
+                                                      : englezaAiBusyId === aplicatieId
+                                                        ? 'Analyzing\nEnglish\nskills…'
+                                                        : aplicatieRaw?.englezaAiError &&
+                                                            aplicatieRaw?.englezaAiScore == null
+                                                          ? 'Engleză AI\n(eroare)'
+                                                          : aplicatieRaw?.englezaAiScore != null &&
+                                                              aplicatieRaw?.englezaAiPerformanceStatus
+                                                            ? `Engleză AI\n${aplicatieRaw.englezaAiScore}% · ${aplicatieRaw.englezaAiPerformanceStatus}`
+                                                            : 'Review\nengleză\n(automat)'
+                                                  : pipelineLabelFor(et.key)}
                                         </div>
                                     </div>
                                     <button
@@ -1060,6 +1208,8 @@ export default function Dashboard({
                                         dataAplicare: a.dataAplicare,
                                         cvNumeFisier: a.cvNumeFisier,
                                         cvFisierStocat: !!a.cvFisierStocat,
+                                        videoNumeFisier: a.videoNumeFisier,
+                                        videoFisierStocat: !!a.videoFisierStocat,
                                         cv: cvContinutPentruAfisare(a, '(Text CV necompletat la aplicare.)'),
                                         jobIds: [job.id],
                                     }))
@@ -1325,6 +1475,30 @@ export default function Dashboard({
                 )}
 
             {typeof document !== 'undefined' &&
+                hoverEnglezaAi &&
+                createPortal(
+                    <div
+                        ref={englezaAiTooltipRef}
+                        className="pipeline-tooltip pipeline-tooltip--fixed engleza-ai-hover-tip"
+                        role="tooltip"
+                        style={{
+                            left: `${hoverEnglezaAi.anchorX}px`,
+                            top: `${hoverEnglezaAi.anchorY}px`,
+                        }}
+                    >
+                        <div className="pipeline-tooltip-title">Feedback AI — engleză (rezumat)</div>
+                        <div className="pipeline-tooltip-body">
+                            {(hoverEnglezaAi.lines || []).map((ln, i) => (
+                                <div key={i} className="pipeline-tooltip-line">
+                                    {ln}
+                                </div>
+                            ))}
+                        </div>
+                    </div>,
+                    document.body
+                )}
+
+            {typeof document !== 'undefined' &&
                 pipelineInfoModal &&
                 createPortal(
                     <div className="pipeline-info-modal-overlay" onClick={() => setPipelineInfoModal(null)}>
@@ -1498,6 +1672,18 @@ export default function Dashboard({
                                 />
                                 {!candidatDetaliiOpen.candidat.cvFisierStocat ? (
                                     <p className="aplicant-cv-hint">Nu există fișier CV încărcat pentru deschidere.</p>
+                                ) : null}
+                            </div>
+                            <div className="aplicant-cv aplicant-video">
+                                <h4>Videoclip</h4>
+                                <VideoFisierLink
+                                    authToken={authToken}
+                                    aplicatieId={candidatDetaliiOpen.candidat.id}
+                                    videoNumeFisier={candidatDetaliiOpen.candidat.videoNumeFisier}
+                                    videoFisierStocat={candidatDetaliiOpen.candidat.videoFisierStocat}
+                                />
+                                {!candidatDetaliiOpen.candidat.videoFisierStocat ? (
+                                    <p className="aplicant-cv-hint">Nu a fost încărcat videoclip pentru această aplicare.</p>
                                 ) : null}
                             </div>
                         </div>

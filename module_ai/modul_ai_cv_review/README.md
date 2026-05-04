@@ -41,6 +41,14 @@ uvicorn main:app --reload
 
 Open [http://127.0.0.1:8000](http://127.0.0.1:8000).
 
+## Analiză video (engleză vorbită)
+
+- În UI există o secțiune separată: încarcă un videoclip (max. **5 minute**), apoi **„Analizează videoclip”**.
+- Backend: `POST /analyze-video` cu câmp multipart `video_file`.
+- Flux: validare video → durată (ffmpeg) → extragere audio WAV → **Whisper** (`whisper-1`) → evaluare structurată (chat JSON).
+- Necesită **`OPENAI_API_KEY`** (transcriere + evaluare; nu există fallback fără cheie pentru acest flux).
+- FFmpeg vine prin pachetul **`imageio-ffmpeg`** (prima rulare poate descărca binarul).
+
 ## API Endpoints
 
 - `POST /analyze` (multipart form)
@@ -50,6 +58,8 @@ Open [http://127.0.0.1:8000](http://127.0.0.1:8000).
   - `job_text` (optional)
   - At least one CV input (`cv_text` or `cv_file`) and one Job input (`job_text` or `job_file`) are required.
 - `POST /feedback` (JSON body)
+- `POST /analyze-video` (multipart form)
+  - `video_file` (required): fișier video; durată maximă 5 minute.
 
 ## Notes
 

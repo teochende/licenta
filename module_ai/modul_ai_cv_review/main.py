@@ -1,3 +1,6 @@
+import logging
+import os
+import tempfile
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -6,13 +9,27 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
 from db.database import get_all_feedback_cases, init_db, insert_feedback
-from db.models import AnalyzeResponse, FeedbackRequest, FeedbackResponse
+from db.models import (
+    AnalyzeResponse,
+    FeedbackRequest,
+    FeedbackResponse,
+    VideoEnglishAnalysisResponse,
+)
 from services.ai_service import AIService
 from services.parsing_service import extract_text_from_upload
 from services.similarity_service import combine_case_text, find_similar_cases
+from services.video_service import (
+    assert_duration_within_limit,
+    extract_audio_wav,
+    probe_video_duration_seconds,
+    save_upload_to_temp_video,
+    validate_video_upload,
+)
 
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="CV Matcher MVP", version="0.1.0")
 ai_service = AIService()
@@ -113,3 +130,63 @@ async def save_feedback(payload: FeedbackRequest) -> FeedbackResponse:
         feedback_id=feedback_id,
         difference=float(payload.human_score - payload.ai_score),
     )
+
+
+@app.post("/analyze-video", response_model=VideoEnglishAnalysisResponse)
+async def analyze_video_english(
+    video_file: UploadFile = File(..., description="Videoclip scurt cu vorbire în engleză"),
+) -> VideoEnglishAnalysisResponse:
+    """
+    Extrage audio, transcrie (Whisper) și evaluează competențele lingvistice în engleză.
+    Durata maximă: 5 minute.
+    """
+    validate_video_upload(video_file)
+    if not ai_service._ensure_client():
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Pentru analiza video este necesar OPENAI_API_KEY "
+                "(transcriere Whisper și evaluare AI)."
+            ),
+        )
+
+    video_path: Path | None = None
+    wav_path: Path | None = None
+    try:
+        video_path = await save_upload_to_temp_video(video_file)
+        duration_sec = probe_video_duration_seconds(video_path)
+        assert_duration_within_limit(duration_sec)
+
+        wav_fd, wav_str = tempfile.mkstemp(suffix=".wav", prefix="cv_review_audio_")
+        os.close(wav_fd)
+        wav_path = Path(wav_str)
+        extract_audio_wav(video_path, wav_path)
+
+        try:
+            transcript = await ai_service.transcribe_audio_wav(str(wav_path))
+        except Exception as exc:
+            logger.warning("Transcriere Whisper eșuată: %s", exc, exc_info=True)
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    "Transcrierea videoclipului a eșuat. Verifică formatul audio, "
+                    "dimensiunea fișierului și disponibilitatea API OpenAI."
+                ),
+            ) from exc
+
+        if not transcript.strip():
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Nu s-a detectat vorbire în engleză în videoclip "
+                    "(transcript gol). Verifică microfonul, volumul și limba folosită."
+                ),
+            )
+
+        analysis = await ai_service.analyze_spoken_english_from_transcript(transcript)
+        return VideoEnglishAnalysisResponse(**analysis)
+    finally:
+        if video_path is not None:
+            video_path.unlink(missing_ok=True)
+        if wav_path is not None:
+            wav_path.unlink(missing_ok=True)

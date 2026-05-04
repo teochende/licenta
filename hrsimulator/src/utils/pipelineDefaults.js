@@ -275,7 +275,7 @@ export function buildDefaultPipelineState(seedNum, options = {}) {
   return {
     // Aliniat cu backend: dacă candidatul a bifat AI la aplicare, reviewAi reflectă fluxul AI
     reviewAi: aiFromApply,
-    reviewEnglezaAutomat: true,
+    reviewEnglezaAutomat: false,
     unlockedUpTo: 1,
     details: {
       depusCv: {

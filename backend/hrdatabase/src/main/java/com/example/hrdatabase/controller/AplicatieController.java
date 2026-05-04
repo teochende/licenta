@@ -1,6 +1,7 @@
 package com.example.hrdatabase.controller;
 
 import com.example.hrdatabase.dto.request.AplicatieAiCvReviewPatchRequest;
+import com.example.hrdatabase.dto.request.AplicatieReviewEnglezaAutomatPatchRequest;
 import com.example.hrdatabase.dto.request.AplicatieCreateRequest;
 import com.example.hrdatabase.dto.request.AplicatiePipelinePatchRequest;
 import com.example.hrdatabase.dto.request.AplicatieVizibilitateItPatchRequest;
@@ -31,8 +32,8 @@ public class AplicatieController {
     }
 
     /**
-     * Aplicare publică cu fișier CV (FormData). Singurul POST pe {@code /api/aplicatii} ca să nu existe
-     * ambiguitate cu {@code consumes} între JSON și multipart (Spring poate mapa greșit la @RequestBody).
+     * Aplicare publică cu fișier CV (FormData). Opțional: {@code videoFile} (videoclip, același request).
+     * Singurul POST pe {@code /api/aplicatii} ca să nu existe ambiguitate cu {@code consumes} între JSON și multipart.
      */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
@@ -41,9 +42,10 @@ public class AplicatieController {
             @RequestParam("numeCandidat") String numeCandidat,
             @RequestParam("email") String email,
             @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "videoFile", required = false) MultipartFile videoFile,
             @RequestParam(value = "aiCvReview", required = false) Boolean aiCvReview) throws IOException {
         return aplicatieService.savePublicApplicationMultipart(
-                postId, numeCandidat, email, file, Boolean.TRUE.equals(aiCvReview));
+                postId, numeCandidat, email, file, videoFile, Boolean.TRUE.equals(aiCvReview));
     }
 
     /** Aplicare fără fișier pe disc (JSON) — pentru teste / integrări vechi. */
@@ -78,6 +80,12 @@ public class AplicatieController {
         return aplicatieService.getCvFileResponse(id, utilizator);
     }
 
+    @GetMapping("/{id}/video-fisier")
+    public ResponseEntity<Resource> getVideoFisier(
+            @PathVariable Long id, @AuthenticationPrincipal Utilizator utilizator) {
+        return aplicatieService.getVideoFileResponse(id, utilizator);
+    }
+
     @PatchMapping("/{id}/pipeline")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void patchPipeline(
@@ -106,5 +114,17 @@ public class AplicatieController {
             @Valid @RequestBody AplicatieAiCvReviewPatchRequest request,
             @AuthenticationPrincipal Utilizator utilizator) {
         return aplicatieService.updateAiCvReview(id, Boolean.TRUE.equals(request.aiCvReview()), utilizator);
+    }
+
+    /**
+     * Review engleză din videoclip: la bifare trimite fișierul la modulul AI; rezultatele se persistă pe aplicare.
+     */
+    @PatchMapping("/{id}/review-engleza-automat")
+    public AplicatieDashboardDto patchReviewEnglezaAutomat(
+            @PathVariable Long id,
+            @Valid @RequestBody AplicatieReviewEnglezaAutomatPatchRequest request,
+            @AuthenticationPrincipal Utilizator utilizator) throws IOException {
+        return aplicatieService.updateReviewEnglezaAutomat(
+                id, Boolean.TRUE.equals(request.reviewEnglezaAutomat()), utilizator);
     }
 }

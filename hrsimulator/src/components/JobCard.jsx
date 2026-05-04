@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import CVReview from './CVReview'
 import CvFisierLink from './CvFisierLink'
+import VideoFisierLink from './VideoFisierLink'
 import { formatDataAplicare } from '../utils/dateFormat'
 import { JobDescriereSectiuniHint } from '../utils/jobDescriereSections.jsx'
 import './JobCard.css'
@@ -209,6 +210,20 @@ export default function JobCard({
                                                             {c.cvNumeFisier}
                                                         </span>
                                                     )
+                                                ) : null}
+                                                {c.videoNumeFisier && c.videoFisierStocat ? (
+                                                    <span className="job-card-cv-link-inline job-card-video-link-inline">
+                                                        <VideoFisierLink
+                                                            authToken={authToken}
+                                                            aplicatieId={c.id}
+                                                            videoNumeFisier={c.videoNumeFisier}
+                                                            videoFisierStocat={c.videoFisierStocat}
+                                                        />
+                                                    </span>
+                                                ) : c.videoNumeFisier && !c.videoFisierStocat ? (
+                                                    <span className="job-card-cv-nume-fisier" title="Videoclip indisponibil">
+                                                        {c.videoNumeFisier}
+                                                    </span>
                                                 ) : null}
                                             </div>
                                             <span className="job-card-candidat-email">{c.email}</span>

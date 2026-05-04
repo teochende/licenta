@@ -10,6 +10,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -35,6 +36,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new ApiErrorResponse(ex.getMessage(), null));
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiErrorResponse> handleMaxUpload(MaxUploadSizeExceededException ex) {
+        log.warn("Upload prea mare: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(new ApiErrorResponse(
+                        "Fișierul depășește limita permisă (CV max. 10 MB, videoclip max. 200 MB, cerere totală max. 220 MB).",
+                        null));
     }
 
     @ExceptionHandler(BadCredentialsException.class)

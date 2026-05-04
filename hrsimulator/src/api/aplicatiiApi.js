@@ -1,6 +1,6 @@
 import { apiFetch } from './client'
 
-/** Multipart: postId, numeCandidat, email, file */
+/** Multipart: postId, numeCandidat, email, file (CV), opțional videoFile */
 export function createAplicatie(formData) {
   return apiFetch('/api/aplicatii', { method: 'POST', body: formData })
 }
@@ -32,6 +32,32 @@ export async function fetchAplicatieCv(token, aplicatieId) {
     filename = decodeURIComponent((m[1] || m[2] || m[3] || 'cv').replace(/"/g, ''))
   }
   return { blob, contentType: res.headers.get('content-type') || '', filename }
+}
+
+/**
+ * Descarcă videoclipul candidatului (autentificat); deschidere în tab nou pentru redare.
+ */
+export async function fetchAplicatieVideo(token, aplicatieId) {
+  const res = await fetch(`/api/aplicatii/${aplicatieId}/video-fisier`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (!res.ok) {
+    throw new Error(await parseErrorJson(res))
+  }
+  const blob = await res.blob()
+  const cd = res.headers.get('Content-Disposition') || ''
+  const m = cd.match(/filename\*=UTF-8''([^;]+)|filename="([^"]+)"|filename=([^;\s]+)/i)
+  let filename = 'video'
+  if (m) {
+    filename = decodeURIComponent((m[1] || m[2] || m[3] || 'video').replace(/"/g, ''))
+  }
+  return { blob, contentType: res.headers.get('content-type') || '', filename }
+}
+
+export function openVideoFromBlob(blob) {
+  const url = URL.createObjectURL(blob)
+  window.open(url, '_blank', 'noopener,noreferrer')
+  setTimeout(() => URL.revokeObjectURL(url), 600000)
 }
 
 export function openCvFromBlob(cvNumeFisier, blob, filename) {
@@ -96,6 +122,15 @@ export function patchAplicatieAiCvReview(token, aplicatieId, aiCvReview) {
     method: 'PATCH',
     token,
     body: { aiCvReview },
+  })
+}
+
+/** Bifează/debifează review engleză automat: trimite videoclipul la modulul AI (rezultate persistate). */
+export function patchAplicatieReviewEnglezaAutomat(token, aplicatieId, reviewEnglezaAutomat) {
+  return apiFetch(`/api/aplicatii/${aplicatieId}/review-engleza-automat`, {
+    method: 'PATCH',
+    token,
+    body: { reviewEnglezaAutomat },
   })
 }
 

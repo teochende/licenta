@@ -32,6 +32,14 @@ public class Aplicatie {
     @Column(name = "cv_fisier_path", length = 512)
     private String cvFisierPath;
 
+    /** Numele fișierului video încărcat la aplicare (opțional, max. 5 min în UI). */
+    @Column(name = "video_nume_fisier", length = 512)
+    private String videoNumeFisier;
+
+    /** Cale relativă la videoclip pe disc (ex. aplicatii/uuid.mp4). */
+    @Column(name = "video_fisier_path", length = 512)
+    private String videoFisierPath;
+
     /** Text CV (simulare: conținut introdus la aplicare fără stocare fișier). */
     @Column(name = "cv_continut", columnDefinition = "text")
     private String cvContinut;
@@ -74,6 +82,34 @@ public class Aplicatie {
     /** JSON: starea pipeline-ului din dashboard (toggle-uri, status etape, detalii). */
     @Column(name = "pipeline_state", columnDefinition = "text")
     private String pipelineState;
+
+    /** Scor AI (0–100) pentru competențe engleză din videoclip, după {@code POST /analyze-video}. */
+    @Column(name = "engleza_ai_score")
+    private Integer englezaAiScore;
+
+    /** Good / Average / Poor — nivel general raportat de modulul AI. */
+    @Column(name = "engleza_ai_performance_status", length = 32)
+    private String englezaAiPerformanceStatus;
+
+    /** YES / PARTIAL / NO — verdict pentru comunicare eficientă în engleză la job. */
+    @Column(name = "engleza_ai_verdict", length = 16)
+    private String englezaAiVerdict;
+
+    /** Rezumat scurt AI (afișare în dashboard). */
+    @Column(name = "engleza_ai_summary", columnDefinition = "text")
+    private String englezaAiSummary;
+
+    /** Text concis pentru tooltip (linii separate prin \\n). */
+    @Column(name = "engleza_ai_tooltip_summary", columnDefinition = "text")
+    private String englezaAiTooltipSummary;
+
+    /** Ultima eroare la analiza video (null dacă succes). */
+    @Column(name = "engleza_ai_error", columnDefinition = "text")
+    private String englezaAiError;
+
+    /** Momentul ultimei analize AI reușite. */
+    @Column(name = "engleza_ai_analyzed_at")
+    private Instant englezaAiAnalyzedAt;
 
     /** Momentul aplicării (server). */
     @Column(name = "data_aplicare")
@@ -131,6 +167,22 @@ public class Aplicatie {
 
     public void setCvFisierPath(String cvFisierPath) {
         this.cvFisierPath = cvFisierPath;
+    }
+
+    public String getVideoNumeFisier() {
+        return videoNumeFisier;
+    }
+
+    public void setVideoNumeFisier(String videoNumeFisier) {
+        this.videoNumeFisier = videoNumeFisier;
+    }
+
+    public String getVideoFisierPath() {
+        return videoFisierPath;
+    }
+
+    public void setVideoFisierPath(String videoFisierPath) {
+        this.videoFisierPath = videoFisierPath;
     }
 
     public String getCvContinut() {
@@ -199,6 +251,62 @@ public class Aplicatie {
 
     public void setPipelineState(String pipelineState) {
         this.pipelineState = pipelineState;
+    }
+
+    public Integer getEnglezaAiScore() {
+        return englezaAiScore;
+    }
+
+    public void setEnglezaAiScore(Integer englezaAiScore) {
+        this.englezaAiScore = englezaAiScore;
+    }
+
+    public String getEnglezaAiPerformanceStatus() {
+        return englezaAiPerformanceStatus;
+    }
+
+    public void setEnglezaAiPerformanceStatus(String englezaAiPerformanceStatus) {
+        this.englezaAiPerformanceStatus = englezaAiPerformanceStatus;
+    }
+
+    public String getEnglezaAiVerdict() {
+        return englezaAiVerdict;
+    }
+
+    public void setEnglezaAiVerdict(String englezaAiVerdict) {
+        this.englezaAiVerdict = englezaAiVerdict;
+    }
+
+    public String getEnglezaAiSummary() {
+        return englezaAiSummary;
+    }
+
+    public void setEnglezaAiSummary(String englezaAiSummary) {
+        this.englezaAiSummary = englezaAiSummary;
+    }
+
+    public String getEnglezaAiTooltipSummary() {
+        return englezaAiTooltipSummary;
+    }
+
+    public void setEnglezaAiTooltipSummary(String englezaAiTooltipSummary) {
+        this.englezaAiTooltipSummary = englezaAiTooltipSummary;
+    }
+
+    public String getEnglezaAiError() {
+        return englezaAiError;
+    }
+
+    public void setEnglezaAiError(String englezaAiError) {
+        this.englezaAiError = englezaAiError;
+    }
+
+    public Instant getEnglezaAiAnalyzedAt() {
+        return englezaAiAnalyzedAt;
+    }
+
+    public void setEnglezaAiAnalyzedAt(Instant englezaAiAnalyzedAt) {
+        this.englezaAiAnalyzedAt = englezaAiAnalyzedAt;
     }
 
     public Instant getDataAplicare() {

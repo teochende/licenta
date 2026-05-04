@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="ro">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -17,6 +17,10 @@
       border-radius: 8px;
       padding: 16px;
       margin-bottom: 16px;
+    }
+    .card.section-video {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 1px #e0f2fe inset;
     }
     h1, h2 {
       margin-top: 0;
@@ -41,8 +45,18 @@
       font-weight: 600;
       margin-top: 14px;
     }
-    button:hover {
+    button:hover:not(:disabled) {
       background: #1d4ed8;
+    }
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    button.btn-video {
+      background: #0284c7;
+    }
+    button.btn-video:hover:not(:disabled) {
+      background: #0369a1;
     }
     .muted {
       color: #6b7280;
@@ -56,6 +70,85 @@
       grid-template-columns: 1fr 1fr;
       gap: 12px;
     }
+    .video-meta {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: #f8fafc;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      font-size: 14px;
+    }
+    .video-error {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .video-loading {
+      margin-top: 12px;
+      padding: 12px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 6px;
+      color: #1e40af;
+      font-weight: 600;
+    }
+    .video-result-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .video-score-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 120px;
+      padding: 16px 20px;
+      border-radius: 12px;
+      background: linear-gradient(145deg, #0369a1, #0ea5e9);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(3, 105, 161, 0.35);
+    }
+    .video-score-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      opacity: 0.9;
+    }
+    .video-score-value {
+      font-size: 2.5rem;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+    .cefr-badge {
+      display: inline-block;
+      padding: 6px 14px;
+      background: #e0f2fe;
+      color: #075985;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 15px;
+    }
+    .feedback-block {
+      margin-top: 12px;
+      line-height: 1.5;
+    }
+    .feedback-block h3 {
+      margin: 0 0 6px 0;
+      font-size: 15px;
+      color: #0f172a;
+    }
+    @media (max-width: 640px) {
+      .row {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
@@ -65,7 +158,7 @@
   </p>
 
   <div class="card">
-    <h2>1) Analyze</h2>
+    <h2>1) Analiză CV și descriere job</h2>
     <form id="analyzeForm">
       <label for="cvText">CV text</label>
       <textarea id="cvText" name="cv_text" rows="8" placeholder="Paste CV text here"></textarea>
@@ -83,8 +176,28 @@
     </form>
   </div>
 
+  <div class="card section-video">
+    <h2>2) Competențe lingvistice în engleză (videoclip)</h2>
+    <p class="muted">
+      Încarcă un videoclip scurt (max. 5 minute) în care candidatul vorbește în engleză. Secțiunea este separată de analiza CV + job.
+    </p>
+    <label for="videoFile">Videoclip (doar fișiere video)</label>
+    <input
+      id="videoFile"
+      name="video_file"
+      type="file"
+      accept="video/*,.mp4,.webm,.mov,.mkv,.avi,.m4v,.mpeg,.mpg"
+    />
+    <div id="videoMeta" class="video-meta" style="display:none;"></div>
+    <div id="videoClientError" class="video-error" style="display:none;"></div>
+    <button type="button" class="btn-video" id="analyzeVideoBtn" disabled>Analizează videoclip</button>
+    <div id="videoLoading" class="video-loading" style="display:none;">
+      Analizăm competențele lingvistice…
+    </div>
+  </div>
+
   <div class="card" id="resultsCard" style="display:none;">
-    <h2>2) AI Result</h2>
+    <h2>3) Rezultat AI (CV – job)</h2>
     <p><strong>Match score:</strong> <span id="scoreValue">-</span>/100</p>
     <p><strong>Recommendation:</strong> <span id="recommendationValue">-</span></p>
 
@@ -101,7 +214,7 @@
   </div>
 
   <div class="card" id="feedbackCard" style="display:none;">
-    <h2>3) Human Feedback</h2>
+    <h2>4) Human Feedback</h2>
     <form id="feedbackForm">
       <label for="humanScore">Override score (0-100)</label>
       <input id="humanScore" type="number" min="0" max="100" required />
@@ -114,8 +227,63 @@
     <p id="feedbackMessage"></p>
   </div>
 
+  <div class="card section-video" id="videoResultsCard" style="display:none;">
+    <h2>5) Rezultat analiză engleză (video)</h2>
+    <div class="video-result-header">
+      <div class="video-score-wrap">
+        <span class="video-score-label">Scor engleză</span>
+        <span class="video-score-value" id="englishScoreValue">—</span>
+        <span class="muted" style="color:#e0f2fe;font-size:12px;margin-top:4px;">din 100</span>
+      </div>
+      <div>
+        <p style="margin:0 0 8px 0;"><strong>Nivel CEFR estimat:</strong>
+          <span class="cefr-badge" id="cefrLevelValue">—</span>
+        </p>
+        <p class="muted" style="margin:0;">Bazat pe transcrierea vorbirii din videoclip.</p>
+      </div>
+    </div>
+
+    <div class="feedback-block">
+      <h3>Pronunție</h3>
+      <p id="pronunciationFeedback">—</p>
+    </div>
+    <div class="feedback-block">
+      <h3>Fluență</h3>
+      <p id="fluencyFeedback">—</p>
+    </div>
+    <div class="feedback-block">
+      <h3>Gramatică</h3>
+      <p id="grammarFeedback">—</p>
+    </div>
+    <div class="feedback-block">
+      <h3>Vocabular</h3>
+      <p id="vocabularyFeedback">—</p>
+    </div>
+    <div class="feedback-block">
+      <h3>Claritate</h3>
+      <p id="clarityFeedback">—</p>
+    </div>
+
+    <div class="row" style="margin-top:16px;">
+      <div>
+        <strong>Puncte forte</strong>
+        <ul id="englishStrengths"></ul>
+      </div>
+      <div>
+        <strong>Aspecte de îmbunătățit</strong>
+        <ul id="englishImprovements"></ul>
+      </div>
+    </div>
+    <div class="feedback-block">
+      <h3>Recomandări pentru progres</h3>
+      <ul id="englishRecommendations"></ul>
+    </div>
+  </div>
+
   <script>
     let latestAnalysis = null;
+    let selectedVideoFile = null;
+    let selectedVideoDurationSec = null;
 
     function renderList(listElement, values) {
       listElement.innerHTML = "";
@@ -129,6 +297,43 @@
         const li = document.createElement("li");
         li.textContent = value;
         listElement.appendChild(li);
+      });
+    }
+
+    function formatDuration(sec) {
+      if (!Number.isFinite(sec)) return "—";
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return m + " min " + s + " s";
+    }
+
+    function apiErrorMessage(data, fallback) {
+      const d = data && data.detail;
+      if (typeof d === "string") return d;
+      if (Array.isArray(d)) {
+        return d.map((e) => e.msg || JSON.stringify(e)).join("; ");
+      }
+      if (d && typeof d === "object") return JSON.stringify(d);
+      return fallback;
+    }
+
+    function getVideoDuration(file) {
+      return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const video = document.createElement("video");
+        video.preload = "metadata";
+        video.onloadedmetadata = () => {
+          URL.revokeObjectURL(url);
+          resolve(video.duration);
+        };
+        video.onerror = () => {
+          URL.revokeObjectURL(url);
+          reject(new Error("Nu s-a putut citi metadatele videoclipului."));
+        };
+        video.src = url;
+        try {
+          video.load();
+        } catch (_) {}
       });
     }
 
@@ -170,7 +375,7 @@
         });
         const data = await response.json();
         if (!response.ok) {
-          throw new Error(data.detail || "Analyze failed");
+          throw new Error(apiErrorMessage(data, "Analyze failed"));
         }
 
         latestAnalysis = data;
@@ -211,12 +416,111 @@
         });
         const data = await response.json();
         if (!response.ok) {
-          throw new Error(data.detail || "Feedback failed");
+          throw new Error(apiErrorMessage(data, "Feedback failed"));
         }
         document.getElementById("feedbackMessage").textContent =
           `Saved feedback #${data.feedback_id}. Difference: ${data.difference.toFixed(2)}`;
       } catch (error) {
         document.getElementById("feedbackMessage").textContent = error.message;
+      }
+    });
+
+    const videoFileInput = document.getElementById("videoFile");
+    const videoMeta = document.getElementById("videoMeta");
+    const videoClientError = document.getElementById("videoClientError");
+    const analyzeVideoBtn = document.getElementById("analyzeVideoBtn");
+    const videoLoading = document.getElementById("videoLoading");
+    const videoResultsCard = document.getElementById("videoResultsCard");
+    const MAX_VIDEO_SEC = 5 * 60;
+
+    videoFileInput.addEventListener("change", async () => {
+      videoClientError.style.display = "none";
+      videoMeta.style.display = "none";
+      videoResultsCard.style.display = "none";
+      selectedVideoFile = null;
+      selectedVideoDurationSec = null;
+      analyzeVideoBtn.disabled = true;
+
+      const file = videoFileInput.files[0];
+      if (!file) return;
+
+      selectedVideoFile = file;
+
+      try {
+        const dur = await getVideoDuration(file);
+        selectedVideoDurationSec = dur;
+        videoMeta.style.display = "block";
+        videoMeta.innerHTML =
+          "<strong>Fișier:</strong> " +
+          file.name +
+          "<br><strong>Durată:</strong> " +
+          formatDuration(dur) +
+          " (" +
+          Math.round(dur) +
+          " s)";
+
+        if (dur > MAX_VIDEO_SEC + 0.25) {
+          videoClientError.style.display = "block";
+          videoClientError.textContent =
+            "Videoclipul depășește 5 minute. Te rugăm să încarci un fișier mai scurt (maxim 5 minute).";
+          analyzeVideoBtn.disabled = true;
+          selectedVideoFile = null;
+          return;
+        }
+
+        analyzeVideoBtn.disabled = false;
+      } catch (e) {
+        videoClientError.style.display = "block";
+        videoClientError.textContent =
+          e.message || "Nu am putut citi durata. Verifică că fișierul este un videoclip valid.";
+        selectedVideoFile = null;
+        analyzeVideoBtn.disabled = true;
+      }
+    });
+
+    analyzeVideoBtn.addEventListener("click", async () => {
+      if (!selectedVideoFile) {
+        alert("Selectează mai întâi un videoclip valid.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("video_file", selectedVideoFile);
+
+      videoLoading.style.display = "block";
+      analyzeVideoBtn.disabled = true;
+      videoFileInput.disabled = true;
+
+      try {
+        const response = await fetch("/analyze-video", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(apiErrorMessage(data, "Analiza videoclipului a eșuat."));
+        }
+
+        videoResultsCard.style.display = "block";
+        document.getElementById("englishScoreValue").textContent = data.english_score;
+        document.getElementById("cefrLevelValue").textContent = data.cefr_level;
+        document.getElementById("pronunciationFeedback").textContent =
+          data.pronunciation_feedback || "—";
+        document.getElementById("fluencyFeedback").textContent = data.fluency_feedback || "—";
+        document.getElementById("grammarFeedback").textContent = data.grammar_feedback || "—";
+        document.getElementById("vocabularyFeedback").textContent =
+          data.vocabulary_feedback || "—";
+        document.getElementById("clarityFeedback").textContent = data.clarity_feedback || "—";
+
+        renderList(document.getElementById("englishStrengths"), data.strengths);
+        renderList(document.getElementById("englishImprovements"), data.improvements);
+        renderList(document.getElementById("englishRecommendations"), data.recommendations);
+      } catch (error) {
+        alert(error.message || "Analiza videoclipului a eșuat.");
+      } finally {
+        videoLoading.style.display = "none";
+        analyzeVideoBtn.disabled = !selectedVideoFile;
+        videoFileInput.disabled = false;
       }
     });
   </script>

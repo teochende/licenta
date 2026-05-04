@@ -20,6 +20,8 @@ import java.util.UUID;
 public class AplicatieCvFileStorageService {
 
     private static final long MAX_BYTES = 10 * 1024 * 1024L;
+    /** Videoclip la aplicare (limite separate de CV). */
+    private static final long MAX_VIDEO_BYTES = 200 * 1024 * 1024L;
 
     private final Path uploadRoot;
     private final List<Path> legacyRoots;
@@ -103,6 +105,31 @@ public class AplicatieCvFileStorageService {
         return relative;
     }
 
+    /**
+     * Salvează un videoclip de aplicare și întoarce calea relativă (ex.: {@code aplicatii/uuid.mp4}).
+     */
+    public String storeVideoBytes(byte[] data, String originalFilename) throws IOException {
+        if (data == null || data.length == 0) {
+            throw new IllegalArgumentException("Fișierul video este gol.");
+        }
+        if (data.length > MAX_VIDEO_BYTES) {
+            throw new IllegalArgumentException("Videoclipul depășește limita de 200 MB.");
+        }
+        String ext = videoExtensionOf(originalFilename);
+        if (ext.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Format video neacceptat. Folosiți MP4, WEBM, MOV, MKV, AVI, M4V sau MPEG.");
+        }
+        String relative = "aplicatii/" + UUID.randomUUID() + ext;
+        Path dest = uploadRoot.resolve(relative).normalize();
+        if (!dest.startsWith(uploadRoot)) {
+            throw new IllegalStateException("Cale invalidă");
+        }
+        Files.createDirectories(dest.getParent());
+        Files.write(dest, data);
+        return relative;
+    }
+
     public static String extensionOf(String name) {
         if (name == null || !name.contains(".")) {
             return "";
@@ -119,6 +146,38 @@ public class AplicatieCvFileStorageService {
         }
         if (lower.endsWith(".txt")) {
             return ".txt";
+        }
+        return "";
+    }
+
+    public static String videoExtensionOf(String name) {
+        if (name == null || !name.contains(".")) {
+            return "";
+        }
+        String lower = name.toLowerCase(Locale.ROOT);
+        if (lower.endsWith(".mp4")) {
+            return ".mp4";
+        }
+        if (lower.endsWith(".webm")) {
+            return ".webm";
+        }
+        if (lower.endsWith(".mov")) {
+            return ".mov";
+        }
+        if (lower.endsWith(".mkv")) {
+            return ".mkv";
+        }
+        if (lower.endsWith(".avi")) {
+            return ".avi";
+        }
+        if (lower.endsWith(".m4v")) {
+            return ".m4v";
+        }
+        if (lower.endsWith(".mpeg")) {
+            return ".mpeg";
+        }
+        if (lower.endsWith(".mpg")) {
+            return ".mpg";
         }
         return "";
     }

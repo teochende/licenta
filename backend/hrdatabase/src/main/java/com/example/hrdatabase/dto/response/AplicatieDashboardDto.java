@@ -9,6 +9,8 @@ public record AplicatieDashboardDto(
         String email,
         String cvNumeFisier,
         boolean cvFisierStocat,
+        String videoNumeFisier,
+        boolean videoFisierStocat,
         Instant dataAplicare,
         String cvContinut,
         boolean aiCvReview,
@@ -17,6 +19,14 @@ public record AplicatieDashboardDto(
         String aiCvObservatii,
         String aiCvConcluzii,
         boolean vizibilIntervievatoriTehnic,
-        String pipelineStateJson
+        String pipelineStateJson,
+        boolean reviewEnglezaAutomat,
+        Integer englezaAiScore,
+        String englezaAiPerformanceStatus,
+        String englezaAiVerdict,
+        String englezaAiSummary,
+        String englezaAiTooltipSummary,
+        String englezaAiError,
+        Instant englezaAiAnalyzedAt
 ) {
 }
