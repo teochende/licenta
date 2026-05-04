@@ -208,8 +208,6 @@ export default function Dashboard({
     const [vizibilItSavingId, setVizibilItSavingId] = useState(null)
     const [aiCvReviewBusyId, setAiCvReviewBusyId] = useState(null)
     const [englezaAiBusyId, setEnglezaAiBusyId] = useState(null)
-    const [hoverEnglezaAi, setHoverEnglezaAi] = useState(null)
-    const englezaAiTooltipRef = useRef(null)
 
     const poateRecalcScor =
         user?.rol === ROLURI.ADMIN || user?.rol === ROLURI.MANAGER_RECRUTARE
@@ -650,23 +648,21 @@ export default function Dashboard({
             if (etapaKey === 'reviewEngleza') {
                 const auto = !!st?.reviewEnglezaAutomat
                 if (auto && aplicatieRaw?.englezaAiScore != null) {
-                    sections.push({
-                        title: 'AI — engleză orală (video)',
-                        lines: [
-                            `Scor: ${aplicatieRaw.englezaAiScore}/100`,
-                            `Performanță: ${aplicatieRaw.englezaAiPerformanceStatus || '—'}`,
-                            `Verdict (job): ${aplicatieRaw.englezaAiVerdict || '—'}`,
-                        ],
-                    })
                     const tipEng = aplicatieRaw?.englezaAiTooltipSummary
                     if (tipEng && String(tipEng).trim()) {
                         const ls = String(tipEng)
                             .split(/\n+/)
                             .map((s) => s.trim())
                             .filter(Boolean)
-                            .slice(0, 14)
-                        if (ls.length) sections.push({ title: 'Feedback sumar (AI)', lines: ls })
+                            .slice(0, 16)
+                        if (ls.length) sections.push({ title: 'Analiză video (AI)', lines: ls })
                     }
+                    const rezumat = [`Scor: ${aplicatieRaw.englezaAiScore}/100`]
+                    if (aplicatieRaw.englezaAiVerdict)
+                        rezumat.push(`Comunicare la job: ${aplicatieRaw.englezaAiVerdict}`)
+                    if (aplicatieRaw.englezaAiPerformanceStatus)
+                        rezumat.push(`Nivel general: ${aplicatieRaw.englezaAiPerformanceStatus}`)
+                    sections.push({ title: 'Rezumat', lines: rezumat })
                 } else if (auto && aplicatieRaw?.englezaAiError) {
                     sections.push({
                         title: 'Eroare analiză AI (video)',
@@ -734,25 +730,6 @@ export default function Dashboard({
             lines: Array.isArray(tip?.lines) ? tip.lines : [],
         })
     }
-
-    useLayoutEffect(() => {
-        if (!hoverEnglezaAi) return undefined
-        const el = englezaAiTooltipRef.current
-        if (!el) return undefined
-        const pad = 12
-        el.style.setProperty('--pipeline-tip-dx', '0px')
-        el.style.setProperty('--pipeline-tip-dy', '0px')
-        const r = el.getBoundingClientRect()
-        let dx = 0
-        let dy = 0
-        if (r.left < pad) dx = pad - r.left
-        if (r.right > window.innerWidth - pad) dx = window.innerWidth - pad - r.right
-        if (r.top < pad) dy = pad - r.top
-        if (r.bottom > window.innerHeight - pad) dy = window.innerHeight - pad - r.bottom
-        el.style.setProperty('--pipeline-tip-dx', `${dx}px`)
-        el.style.setProperty('--pipeline-tip-dy', `${dy}px`)
-        return undefined
-    }, [hoverEnglezaAi])
 
     useLayoutEffect(() => {
         if (!hoverEtapa?.aplicantKey || !hoverEtapa?.etapaKey) return
@@ -983,52 +960,52 @@ export default function Dashboard({
                 </div>
 
                 <div className="aplicant-toggle-row">
-                    <label
-                        className="aplicant-toggle"
-                        title={
-                            aiCvReviewBusyId === aplicatieId
-                                ? 'Se rulează analiza AI…'
-                                : 'Bifați pentru a trimite CV-ul și descrierea jobului la modulul AI; debifați pentru scor manual (cuvinte cheie).'
-                        }
-                    >
-                        <input
-                            type="checkbox"
-                            checked={reviewAiEfectiv}
-                            disabled={aiCvReviewBusyId === aplicatieId}
-                            onChange={(ev) => handleToggleAiCvReview(aplicatieId, ev.target.checked)}
-                        />
-                        {aiCvReviewBusyId === aplicatieId ? (
-                            <span className="dashboard-btn-spinner dashboard-btn-spinner--sm" aria-hidden="true" />
-                        ) : null}
-                        Review CV AI
-                    </label>
-                    {poateSetaVizibilitateIt && aplicatieId != null ? (
+                    <div className="aplicant-toggle-row__first">
                         <label
-                            className="aplicant-toggle aplicant-toggle--vizibil-it"
-                            title="Doar candidații bifați apar în dashboardul intervievatorilor tehnici atribuiți acestui post."
+                            className="aplicant-toggle"
+                            title={
+                                aiCvReviewBusyId === aplicatieId
+                                    ? 'Se rulează analiza AI…'
+                                    : 'Bifați pentru a trimite CV-ul și descrierea jobului la modulul AI; debifați pentru scor manual (cuvinte cheie).'
+                            }
                         >
                             <input
                                 type="checkbox"
-                                checked={!!aplicatieRaw?.vizibilIntervievatoriTehnic}
-                                disabled={vizibilItSavingId === aplicatieId}
-                                onChange={(ev) => handleToggleVizibilitateIt(aplicatieId, ev.target.checked)}
+                                checked={reviewAiEfectiv}
+                                disabled={aiCvReviewBusyId === aplicatieId}
+                                onChange={(ev) => handleToggleAiCvReview(aplicatieId, ev.target.checked)}
                             />
-                            {vizibilItSavingId === aplicatieId ? (
+                            {aiCvReviewBusyId === aplicatieId ? (
                                 <span className="dashboard-btn-spinner dashboard-btn-spinner--sm" aria-hidden="true" />
                             ) : null}
-                            Vizibil pentru intervievatori tehnici
+                            Review CV AI
                         </label>
-                    ) : null}
-                </div>
-
-                <div className="aplicant-engleza-ai-block">
-                    <div className="aplicant-engleza-ai-head">Review engleză (videoclip)</div>
-                    <p className="aplicant-engleza-ai-hint">
-                        Implicit, nu se rulează AI: recrutorul evaluează manual după vizionarea videoclipului. Bifați
-                        „Review Engleză Automat” pentru a trimite videoclipul la modulul AI; rezultatele se salvează și
-                        rămân disponibile (nu se reanalizează la fiecare hover).
-                    </p>
-                    <label className="aplicant-toggle aplicant-toggle--engleza-automat">
+                        {poateSetaVizibilitateIt && aplicatieId != null ? (
+                            <label
+                                className="aplicant-toggle aplicant-toggle--vizibil-it"
+                                title="Doar candidații bifați apar în dashboardul intervievatorilor tehnici atribuiți acestui post."
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={!!aplicatieRaw?.vizibilIntervievatoriTehnic}
+                                    disabled={vizibilItSavingId === aplicatieId}
+                                    onChange={(ev) => handleToggleVizibilitateIt(aplicatieId, ev.target.checked)}
+                                />
+                                {vizibilItSavingId === aplicatieId ? (
+                                    <span className="dashboard-btn-spinner dashboard-btn-spinner--sm" aria-hidden="true" />
+                                ) : null}
+                                Vizibil pentru intervievatori tehnici
+                            </label>
+                        ) : null}
+                    </div>
+                    <label
+                        className="aplicant-toggle aplicant-toggle--engleza-automat"
+                        title={
+                            englezaAiBusyId === aplicatieId
+                                ? 'Se analizează engleza din videoclip…'
+                                : 'Bifați pentru analiza automată (AI) a englezei din videoclip; debifați pentru evaluare manuală.'
+                        }
+                    >
                         <input
                             type="checkbox"
                             checked={reviewEnglezaAutomat}
@@ -1040,66 +1017,6 @@ export default function Dashboard({
                         ) : null}
                         Review Engleză Automat
                     </label>
-                    {englezaAiBusyId === aplicatieId ? (
-                        <div className="engleza-ai-loading-msg" role="status">
-                            Analyzing English skills…
-                        </div>
-                    ) : null}
-                    {reviewEnglezaAutomat && aplicatieRaw?.englezaAiScore != null ? (
-                        <div className="engleza-ai-result-row">
-                            <span className="engleza-ai-score-badge" title="Scor AI (0–100)">
-                                {aplicatieRaw.englezaAiScore}
-                            </span>
-                            <span
-                                className={`engleza-ai-status-badge engleza-ai-status-badge--${String(
-                                    aplicatieRaw?.englezaAiPerformanceStatus || ''
-                                ).toLowerCase()}`}
-                                tabIndex={0}
-                                onMouseEnter={(e) => {
-                                    const tip = aplicatieRaw?.englezaAiTooltipSummary || ''
-                                    const lines = tip
-                                        .split(/\n+/)
-                                        .map((l) => l.trim())
-                                        .filter(Boolean)
-                                    setHoverEnglezaAi({
-                                        anchorX: e.clientX,
-                                        anchorY: e.clientY,
-                                        lines:
-                                            lines.length > 0
-                                                ? lines
-                                                : [
-                                                      `Verdict: ${aplicatieRaw?.englezaAiVerdict || '—'}`,
-                                                      `Scor: ${aplicatieRaw?.englezaAiScore}/100`,
-                                                  ],
-                                    })
-                                }}
-                                onMouseMove={(e) => {
-                                    setHoverEnglezaAi((prev) =>
-                                        prev
-                                            ? {
-                                                  ...prev,
-                                                  anchorX: e.clientX,
-                                                  anchorY: e.clientY,
-                                              }
-                                            : prev
-                                    )
-                                }}
-                                onMouseLeave={() => setHoverEnglezaAi(null)}
-                                role="button"
-                                aria-label="Status analiză AI engleză — detalii la hover"
-                            >
-                                {aplicatieRaw?.englezaAiPerformanceStatus || '—'}
-                            </span>
-                            <span className="engleza-ai-verdict-pill" title="Verdict pentru comunicare la job">
-                                {aplicatieRaw?.englezaAiVerdict || '—'}
-                            </span>
-                        </div>
-                    ) : null}
-                    {reviewEnglezaAutomat &&
-                    aplicatieRaw?.englezaAiError &&
-                    aplicatieRaw?.englezaAiScore == null ? (
-                        <div className="engleza-ai-inline-error">{aplicatieRaw.englezaAiError}</div>
-                    ) : null}
                 </div>
 
                 <div className="aplicant-pipeline">
@@ -1141,14 +1058,13 @@ export default function Dashboard({
                                                   ? !reviewEnglezaAutomat
                                                       ? 'Review\nengleză\n(manual)'
                                                       : englezaAiBusyId === aplicatieId
-                                                        ? 'Analyzing\nEnglish\nskills…'
+                                                        ? 'Review\nengleză AI\n…'
                                                         : aplicatieRaw?.englezaAiError &&
                                                             aplicatieRaw?.englezaAiScore == null
-                                                          ? 'Engleză AI\n(eroare)'
-                                                          : aplicatieRaw?.englezaAiScore != null &&
-                                                              aplicatieRaw?.englezaAiPerformanceStatus
-                                                            ? `Engleză AI\n${aplicatieRaw.englezaAiScore}% · ${aplicatieRaw.englezaAiPerformanceStatus}`
-                                                            : 'Review\nengleză\n(automat)'
+                                                          ? 'Review\nengleză AI\n(eroare)'
+                                                          : aplicatieRaw?.englezaAiScore != null
+                                                            ? `Review\nengleză AI\n${aplicatieRaw.englezaAiScore}%`
+                                                            : 'Review\nengleză AI\n(automat)'
                                                   : pipelineLabelFor(et.key)}
                                         </div>
                                     </div>
@@ -1471,30 +1387,6 @@ export default function Dashboard({
                             </div>
                         )
                     })(),
-                    document.body
-                )}
-
-            {typeof document !== 'undefined' &&
-                hoverEnglezaAi &&
-                createPortal(
-                    <div
-                        ref={englezaAiTooltipRef}
-                        className="pipeline-tooltip pipeline-tooltip--fixed engleza-ai-hover-tip"
-                        role="tooltip"
-                        style={{
-                            left: `${hoverEnglezaAi.anchorX}px`,
-                            top: `${hoverEnglezaAi.anchorY}px`,
-                        }}
-                    >
-                        <div className="pipeline-tooltip-title">Feedback AI — engleză (rezumat)</div>
-                        <div className="pipeline-tooltip-body">
-                            {(hoverEnglezaAi.lines || []).map((ln, i) => (
-                                <div key={i} className="pipeline-tooltip-line">
-                                    {ln}
-                                </div>
-                            ))}
-                        </div>
-                    </div>,
                     document.body
                 )}
 
