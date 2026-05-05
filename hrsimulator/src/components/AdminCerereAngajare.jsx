@@ -108,6 +108,7 @@ export default function AdminCerereAngajare({ token, departamente = [], onCreate
                         <label htmlFor="admin-cerere-dep">Departament (domeniu) *</label>
                         <select
                             id="admin-cerere-dep"
+                            className="ui-select"
                             value={departamentId}
                             onChange={(e) => setDepartamentId(e.target.value)}
                             required

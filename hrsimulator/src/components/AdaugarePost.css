@@ -160,7 +160,7 @@
 
 .formular-adaugare-post .form-camp input[type='text'],
 .formular-adaugare-post .form-camp textarea,
-.formular-adaugare-post .form-camp select {
+.formular-adaugare-post .form-camp select:not(.ui-select) {
   box-sizing: border-box;
   width: 100%;
   padding: 0.55rem 0.75rem;
@@ -175,7 +175,7 @@
     background-color var(--ap-transition);
 }
 
-.formular-adaugare-post .form-camp select {
+.formular-adaugare-post .form-camp select:not(.ui-select) {
   padding-right: 2.25rem;
   cursor: pointer;
   appearance: none;
@@ -184,15 +184,19 @@
   background-position: right 0.65rem center;
 }
 
+.formular-adaugare-post .form-camp select.ui-select {
+  width: 100%;
+}
+
 .formular-adaugare-post .form-camp input[type='text']:hover,
 .formular-adaugare-post .form-camp textarea:hover,
-.formular-adaugare-post .form-camp select:hover {
+.formular-adaugare-post .form-camp select:not(.ui-select):hover {
   border-color: rgba(59, 130, 246, 0.35);
 }
 
 .formular-adaugare-post .form-camp input[type='text']:focus,
 .formular-adaugare-post .form-camp textarea:focus,
-.formular-adaugare-post .form-camp select:focus {
+.formular-adaugare-post .form-camp select:not(.ui-select):focus {
   outline: none;
   border-color: var(--ap-blue);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);

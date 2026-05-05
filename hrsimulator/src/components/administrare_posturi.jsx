@@ -264,6 +264,7 @@ export default function AdministrarePosturi({
                     <span className="posturi-admin-toolbar__label">Căutare</span>
                     <input
                         type="search"
+                        className="ui-input"
                         placeholder="Nume, subdomeniu, nivel, domeniu…"
                         value={qInput}
                         onChange={(ev) => setQInput(ev.target.value)}
@@ -273,6 +274,7 @@ export default function AdministrarePosturi({
                 <label className="posturi-admin-toolbar__field">
                     <span className="posturi-admin-toolbar__label">Stare</span>
                     <select
+                        className="ui-select"
                         value={enabledFilter}
                         onChange={(ev) => setEnabledFilter(ev.target.value)}
                         aria-label="Filtru activ"
@@ -285,6 +287,7 @@ export default function AdministrarePosturi({
                 <label className="posturi-admin-toolbar__field">
                     <span className="posturi-admin-toolbar__label">Departament</span>
                     <select
+                        className="ui-select"
                         value={departamentFilter}
                         onChange={(ev) => setDepartamentFilter(ev.target.value)}
                         aria-label="Filtru departament"
@@ -300,6 +303,7 @@ export default function AdministrarePosturi({
                 <label className="posturi-admin-toolbar__field posturi-admin-toolbar__field--narrow">
                     <span className="posturi-admin-toolbar__label">Pe pagină</span>
                     <select
+                        className="ui-select ui-select--compact ui-select--narrow"
                         value={pageSize}
                         onChange={(ev) => {
                             setPageSize(Number(ev.target.value))

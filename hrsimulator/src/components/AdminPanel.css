@@ -335,10 +335,10 @@
     color: #334155;
 }
 
-.admin-field input,
-.admin-field select,
-.admin-modal .admin-field input,
-.admin-modal .admin-field select {
+.admin-field input:not(.ui-input),
+.admin-field select:not(.ui-select),
+.admin-modal .admin-field input:not(.ui-input),
+.admin-modal .admin-field select:not(.ui-select) {
     padding: 0.55rem 0.7rem;
     border: 1px solid var(--admin-border);
     border-radius: 8px;
@@ -347,16 +347,26 @@
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.admin-field input:hover,
-.admin-field select:hover {
+.admin-field input:not(.ui-input):hover,
+.admin-field select:not(.ui-select):hover,
+.admin-modal .admin-field input:not(.ui-input):hover,
+.admin-modal .admin-field select:not(.ui-select):hover {
     border-color: #cbd5e1;
 }
 
-.admin-field input:focus,
-.admin-field select:focus {
+.admin-field input:not(.ui-input):focus,
+.admin-field select:not(.ui-select):focus,
+.admin-modal .admin-field input:not(.ui-input):focus,
+.admin-modal .admin-field select:not(.ui-select):focus {
     outline: none;
     border-color: var(--admin-primary);
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.admin-field select.ui-select,
+.admin-modal .admin-field select.ui-select {
+    width: 100%;
+    max-width: 100%;
 }
 
 .admin-form__hint {
@@ -816,14 +826,9 @@
     letter-spacing: 0.03em;
 }
 
-.admin-list-toolbar input,
-.admin-list-toolbar select {
-    padding: 0.45rem 0.55rem;
-    border: 1px solid var(--admin-border, #e2e8f0);
-    border-radius: 8px;
-    font-size: 0.9rem;
-    background: #fff;
-    color: var(--admin-text, #0f172a);
+.admin-list-toolbar input.ui-input,
+.admin-list-toolbar select.ui-select {
+    width: 100%;
 }
 
 .admin-pager {

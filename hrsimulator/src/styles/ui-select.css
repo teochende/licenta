@@ -1,0 +1,122 @@
+/**
+ * Select & input de filtrare — stil SaaS reutilizabil (native <select> + .ui-input).
+ * Folosiți className="ui-select" / "ui-select ui-select--compact" pe toate listele derulante.
+ */
+
+:root {
+  --ui-select-bg: #ffffff;
+  --ui-select-border: rgba(148, 163, 184, 0.45);
+  --ui-select-border-hover: rgba(37, 99, 235, 0.35);
+  --ui-select-focus: #2563eb;
+  --ui-select-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 4px 14px rgba(15, 23, 42, 0.06);
+  --ui-select-text: #0f172a;
+  --ui-select-muted: #64748b;
+  --ui-select-radius: 10px;
+  --ui-select-transition: border-color 0.18s ease, box-shadow 0.2s ease, background-color 0.18s ease;
+  --ui-select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+}
+
+select.ui-select {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  color: var(--ui-select-text);
+  background-color: var(--ui-select-bg);
+  border: 1px solid var(--ui-select-border);
+  border-radius: var(--ui-select-radius);
+  padding: 0.55rem 2.35rem 0.55rem 0.75rem;
+  min-height: 2.5rem;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: var(--ui-select-chevron);
+  background-repeat: no-repeat;
+  background-position: right 0.65rem center;
+  background-size: 0.875rem;
+  box-shadow: var(--ui-select-shadow);
+  transition: var(--ui-select-transition);
+}
+
+select.ui-select:hover {
+  border-color: var(--ui-select-border-hover);
+  background-color: #fafbff;
+}
+
+select.ui-select:focus {
+  outline: none;
+  border-color: var(--ui-select-focus);
+  box-shadow: var(--ui-select-shadow), 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+
+select.ui-select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background-color: #f8fafc;
+}
+
+select.ui-select--compact {
+  min-height: 2.35rem;
+  padding-top: 0.45rem;
+  padding-bottom: 0.45rem;
+  font-size: 0.875rem;
+  border-radius: 9px;
+}
+
+select.ui-select--narrow {
+  width: auto;
+  min-width: 4.25rem;
+}
+
+/* Câmpuri text în bare de filtrare (aliniat vizual cu select) */
+input.ui-input[type='search'],
+input.ui-input[type='text'] {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  color: var(--ui-select-text);
+  background-color: var(--ui-select-bg);
+  border: 1px solid var(--ui-select-border);
+  border-radius: var(--ui-select-radius);
+  padding: 0.55rem 0.75rem;
+  min-height: 2.5rem;
+  box-shadow: var(--ui-select-shadow);
+  transition: var(--ui-select-transition);
+}
+
+input.ui-input[type='search']:hover,
+input.ui-input[type='text']:hover {
+  border-color: var(--ui-select-border-hover);
+  background-color: #fafbff;
+}
+
+input.ui-input[type='search']:focus,
+input.ui-input[type='text']:focus {
+  outline: none;
+  border-color: var(--ui-select-focus);
+  box-shadow: var(--ui-select-shadow), 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+
+@media (max-width: 640px) {
+  select.ui-select,
+  input.ui-input[type='search'],
+  input.ui-input[type='text'] {
+    min-height: 2.65rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  select.ui-select,
+  input.ui-input[type='search'],
+  input.ui-input[type='text'] {
+    transition: none;
+  }
+}

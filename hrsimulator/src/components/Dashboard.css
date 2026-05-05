@@ -85,6 +85,15 @@
   min-width: 5.5rem;
 }
 
+.dashboard-candidati-toolbar__field--post {
+  min-width: 12rem;
+  flex: 1 1 14rem;
+}
+
+.dashboard-candidati-toolbar__field--post .searchable-select {
+  min-width: 0;
+}
+
 .dashboard-candidati-toolbar__label {
   font-size: 0.7rem;
   font-weight: 600;
@@ -93,12 +102,9 @@
   color: #868e96;
 }
 
-.dashboard-candidati-toolbar input,
-.dashboard-candidati-toolbar select {
-  padding: 0.4rem 0.5rem;
-  border: 1px solid #ced4da;
-  border-radius: 6px;
-  font-size: 0.9rem;
+.dashboard-candidati-toolbar input.ui-input,
+.dashboard-candidati-toolbar select.ui-select {
+  width: 100%;
 }
 
 .dashboard-candidati-loading {

@@ -128,40 +128,8 @@
   color: #94a3b8;
 }
 
-.acasa-select {
+.acasa-field .searchable-select {
   width: 100%;
-  min-height: 2rem;
-  padding: 0.22rem 1.75rem 0.22rem 0.45rem;
-  font: inherit;
-  font-size: 0.8125rem;
-  line-height: 1.35;
-  color: var(--acasa-text);
-  border: 1px solid var(--acasa-border-strong);
-  border-radius: var(--acasa-radius);
-  background-color: var(--acasa-input-bg);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0.4rem center;
-  background-size: 0.7rem;
-  cursor: pointer;
-  appearance: none;
-  transition: border-color 0.14s ease, box-shadow 0.14s ease;
-}
-
-.acasa-select:hover {
-  border-color: rgba(37, 99, 235, 0.32);
-}
-
-.acasa-select:focus {
-  outline: none;
-  border-color: rgba(37, 99, 235, 0.42);
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
-}
-
-.acasa-select--narrow {
-  width: auto;
-  min-width: 3.35rem;
-  padding-right: 1.55rem;
 }
 
 .acasa-filters {

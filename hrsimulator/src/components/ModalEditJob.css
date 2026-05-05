@@ -23,13 +23,17 @@
   max-width: 520px;
 }
 
-.modal-edit-camp select {
+.modal-edit-camp select:not(.ui-select) {
   width: 100%;
   padding: 8px 10px;
   border: 1px solid #e1e4e8;
   border-radius: 4px;
   font-size: 14px;
   box-sizing: border-box;
+}
+
+.modal-edit-camp select.ui-select {
+  width: 100%;
 }
 
 .modal-edit-fisier-descriere input[type="file"] {

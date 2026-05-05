@@ -112,6 +112,7 @@ export default function AdaugarePost({ token, onCreated }) {
                     <label htmlFor="adaugare-dep">Departament</label>
                     <select
                         id="adaugare-dep"
+                        className="ui-select"
                         value={departamentId}
                         onChange={(e) => setDepartamentId(e.target.value)}
                         required

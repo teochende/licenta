@@ -109,6 +109,7 @@ export default function Register({ onRegistered }) {
                             <td>
                                 <select
                                     id="reg_rol"
+                                    className="ui-select"
                                     value={rolDorit}
                                     onChange={(e) => setRolDorit(e.target.value)}
                                 >

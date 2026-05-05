@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import JobDisponibil from './job_disponibil'
 import { getPosturiDisponibile, getPosturiDisponibileMeta } from '../api/postsApi'
+import SearchableSelect from './ui/SearchableSelect'
 import './acasa.css'
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20]
@@ -76,6 +77,19 @@ export default function Acasa() {
     const [filtruSubdomeniu, setFiltruSubdomeniu] = useState('')
     const [filtruNivel, setFiltruNivel] = useState('')
     const [listaLoading, setListaLoading] = useState(false)
+
+    const domeniuOptions = useMemo(
+        () => [{ value: '', label: 'Toate' }, ...domeniiUnice.map((d) => ({ value: d, label: d }))],
+        [domeniiUnice]
+    )
+    const subdomeniuOptions = useMemo(
+        () => [{ value: '', label: 'Toate' }, ...subdomeniiUnice.map((d) => ({ value: d, label: d }))],
+        [subdomeniiUnice]
+    )
+    const nivelOptions = useMemo(
+        () => [{ value: '', label: 'Toate' }, ...niveluriUnice.map((d) => ({ value: d, label: d }))],
+        [niveluriUnice]
+    )
 
     useEffect(() => {
         getPosturiDisponibileMeta()
@@ -161,7 +175,7 @@ export default function Acasa() {
                         <div className="acasa-field acasa-field--pagesize">
                             <select
                                 id="acasa-page-size"
-                                className="acasa-select acasa-select--narrow"
+                                className="ui-select ui-select--compact ui-select--narrow"
                                 value={pageSize}
                                 aria-label="Pe pagină"
                                 onChange={(e) => {
@@ -184,55 +198,40 @@ export default function Acasa() {
                                 <label className="acasa-micro-label" htmlFor="acasa-filtru-domeniu">
                                     Departament
                                 </label>
-                                <select
+                                <SearchableSelect
                                     id="acasa-filtru-domeniu"
-                                    className="acasa-select"
                                     value={filtruDomeniu}
                                     onChange={(e) => setFiltruDomeniu(e.target.value)}
-                                >
-                                    <option value="">Toate</option>
-                                    {domeniiUnice.map((d) => (
-                                        <option key={d} value={d}>
-                                            {d}
-                                        </option>
-                                    ))}
-                                </select>
+                                    placeholder="Toate"
+                                    ariaLabel="Departament"
+                                    options={domeniuOptions}
+                                />
                             </div>
                             <div className="acasa-field">
                                 <label className="acasa-micro-label" htmlFor="acasa-filtru-subdomeniu">
                                     Subdomeniu
                                 </label>
-                                <select
+                                <SearchableSelect
                                     id="acasa-filtru-subdomeniu"
-                                    className="acasa-select"
                                     value={filtruSubdomeniu}
                                     onChange={(e) => setFiltruSubdomeniu(e.target.value)}
-                                >
-                                    <option value="">Toate</option>
-                                    {subdomeniiUnice.map((d) => (
-                                        <option key={d} value={d}>
-                                            {d}
-                                        </option>
-                                    ))}
-                                </select>
+                                    placeholder="Toate"
+                                    ariaLabel="Subdomeniu"
+                                    options={subdomeniuOptions}
+                                />
                             </div>
                             <div className="acasa-field">
                                 <label className="acasa-micro-label" htmlFor="acasa-filtru-nivel">
                                     Nivel
                                 </label>
-                                <select
+                                <SearchableSelect
                                     id="acasa-filtru-nivel"
-                                    className="acasa-select"
                                     value={filtruNivel}
                                     onChange={(e) => setFiltruNivel(e.target.value)}
-                                >
-                                    <option value="">Toate</option>
-                                    {niveluriUnice.map((d) => (
-                                        <option key={d} value={d}>
-                                            {d}
-                                        </option>
-                                    ))}
-                                </select>
+                                    placeholder="Toate"
+                                    ariaLabel="Nivel"
+                                    options={nivelOptions}
+                                />
                             </div>
                         </div>
                     </div>

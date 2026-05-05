@@ -35,12 +35,20 @@
 .job-card-select-prioritate {
   font-size: 0.85rem;
   font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 0.35rem 0.6rem;
+  border-radius: 8px;
   border: 2px solid #dee2e6;
-  background: #fff;
+  background-color: #fff;
   cursor: pointer;
   flex-shrink: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 1.75rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.45rem center;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  transition: border-color 0.18s ease, box-shadow 0.2s ease, filter 0.15s ease;
 }
 
 .job-card-select-prioritate--critic {

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import JobCard from './JobCard'
 import CvFisierLink from './CvFisierLink'
 import VideoFisierLink from './VideoFisierLink'
+import SearchableSelect from './ui/SearchableSelect'
 import { ROLURI } from '../context/login_context'
 import {
     getAplicatiiDashboard,
@@ -510,6 +511,17 @@ export default function Dashboard({
     )
     const jobIdsVizibile = useMemo(
         () => new Set(posturiVizibile.map((p) => p.id)),
+        [posturiVizibile]
+    )
+
+    const listaPostSearchOptions = useMemo(
+        () => [
+            { value: '', label: 'Toate posturile' },
+            ...posturiVizibile.map((p) => ({
+                value: String(p.id),
+                label: `${p.nume} (${p.domeniu})`,
+            })),
+        ],
         [posturiVizibile]
     )
 
@@ -1396,30 +1408,43 @@ export default function Dashboard({
                                 <span className="dashboard-candidati-toolbar__label">Căutare</span>
                                 <input
                                     type="search"
+                                    className="ui-input"
                                     placeholder="Nume, email, job, departament…"
                                     value={listaQInput}
                                     onChange={(ev) => setListaQInput(ev.target.value)}
                                     aria-label="Căutare candidați"
                                 />
                             </label>
-                            <label className="dashboard-candidati-toolbar__field">
+                            <label className="dashboard-candidati-toolbar__field dashboard-candidati-toolbar__field--post">
                                 <span className="dashboard-candidati-toolbar__label">Post</span>
-                                <select
-                                    value={listaPostFilter}
-                                    onChange={(ev) => setListaPostFilter(ev.target.value)}
-                                    aria-label="Filtru post"
-                                >
-                                    <option value="">Toate posturile</option>
-                                    {posturiVizibile.map((p) => (
-                                        <option key={p.id} value={p.id}>
-                                            {p.nume} ({p.domeniu})
-                                        </option>
-                                    ))}
-                                </select>
+                                {posturiVizibile.length > 8 ? (
+                                    <SearchableSelect
+                                        value={listaPostFilter}
+                                        onChange={(ev) => setListaPostFilter(ev.target.value)}
+                                        placeholder="Toate posturile"
+                                        ariaLabel="Filtru post"
+                                        options={listaPostSearchOptions}
+                                    />
+                                ) : (
+                                    <select
+                                        className="ui-select"
+                                        value={listaPostFilter}
+                                        onChange={(ev) => setListaPostFilter(ev.target.value)}
+                                        aria-label="Filtru post"
+                                    >
+                                        <option value="">Toate posturile</option>
+                                        {posturiVizibile.map((p) => (
+                                            <option key={p.id} value={p.id}>
+                                                {p.nume} ({p.domeniu})
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
                             </label>
                             <label className="dashboard-candidati-toolbar__field">
                                 <span className="dashboard-candidati-toolbar__label">Stare</span>
                                 <select
+                                    className="ui-select"
                                     value={listaStatusFilter}
                                     onChange={(ev) => setListaStatusFilter(ev.target.value)}
                                     aria-label="Filtru stare candidat"
@@ -1432,6 +1457,7 @@ export default function Dashboard({
                             <label className="dashboard-candidati-toolbar__field dashboard-candidati-toolbar__field--narrow">
                                 <span className="dashboard-candidati-toolbar__label">Pe pagină</span>
                                 <select
+                                    className="ui-select ui-select--compact ui-select--narrow"
                                     value={listaPageSize}
                                     onChange={(ev) => {
                                         setListaPageSize(Number(ev.target.value))

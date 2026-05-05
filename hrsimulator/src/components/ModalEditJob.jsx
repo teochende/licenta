@@ -143,6 +143,7 @@ export default function ModalEditJob({
                         <label htmlFor="edit-departament">Departament</label>
                         <select
                             id="edit-departament"
+                            className="ui-select"
                             value={formData.departamentId === '' ? '' : String(formData.departamentId)}
                             onChange={(e) => handleChange('departamentId', e.target.value ? Number(e.target.value) : '')}
                             required

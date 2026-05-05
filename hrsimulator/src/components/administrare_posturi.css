@@ -109,12 +109,9 @@
     letter-spacing: 0.03em;
 }
 
-.posturi-admin-toolbar input,
-.posturi-admin-toolbar select {
-    padding: 0.45rem 0.55rem;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    font-size: 0.9rem;
+.posturi-admin-toolbar input.ui-input,
+.posturi-admin-toolbar select.ui-select {
+  width: 100%;
 }
 
 .posturi-admin-loading {

@@ -162,7 +162,7 @@
   color: #94a3b8;
 }
 
-.auth-page select {
+.auth-page select:not(.ui-select) {
   box-sizing: border-box;
   width: 100%;
   max-width: 100%;
@@ -182,14 +182,19 @@
   transition: border-color var(--auth-transition), box-shadow var(--auth-transition);
 }
 
-.auth-page select:hover {
+.auth-page select:not(.ui-select):hover {
   border-color: rgba(59, 130, 246, 0.35);
 }
 
-.auth-page select:focus {
+.auth-page select:not(.ui-select):focus {
   outline: none;
   border-color: var(--auth-blue);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.auth-page select.ui-select {
+  width: 100%;
+  max-width: 100%;
 }
 
 .auth-page input[type='submit'] {

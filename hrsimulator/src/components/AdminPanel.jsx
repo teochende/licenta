@@ -498,6 +498,7 @@ export default function AdminPanel({ token }) {
                             <div className="admin-field">
                                 <span>Rol</span>
                                 <select
+                                    className="ui-select"
                                     value={createForm.rol}
                                     onChange={(ev) => setCreateForm((f) => ({ ...f, rol: ev.target.value }))}
                                 >
@@ -514,6 +515,7 @@ export default function AdminPanel({ token }) {
                                 <div className="admin-field admin-field--full">
                                     <span>Departament</span>
                                     <select
+                                        className="ui-select"
                                         value={createForm.departamentId}
                                         onChange={(ev) => setCreateForm((f) => ({ ...f, departamentId: ev.target.value }))}
                                         required
@@ -542,6 +544,7 @@ export default function AdminPanel({ token }) {
                             <span className="admin-list-toolbar__label">Căutare</span>
                             <input
                                 type="search"
+                                className="ui-input"
                                 placeholder="Nume sau email…"
                                 value={userQInput}
                                 onChange={(ev) => setUserQInput(ev.target.value)}
@@ -551,6 +554,7 @@ export default function AdminPanel({ token }) {
                         <label className="admin-list-toolbar__field">
                             <span className="admin-list-toolbar__label">Rol</span>
                             <select
+                                className="ui-select"
                                 value={userRolFilter}
                                 onChange={(ev) => setUserRolFilter(ev.target.value)}
                                 aria-label="Filtru rol"
@@ -566,6 +570,7 @@ export default function AdminPanel({ token }) {
                         <label className="admin-list-toolbar__field">
                             <span className="admin-list-toolbar__label">Departament</span>
                             <select
+                                className="ui-select"
                                 value={userDepFilter}
                                 onChange={(ev) => setUserDepFilter(ev.target.value)}
                                 aria-label="Filtru departament"
@@ -581,6 +586,7 @@ export default function AdminPanel({ token }) {
                         <label className="admin-list-toolbar__field admin-list-toolbar__field--narrow">
                             <span className="admin-list-toolbar__label">Pe pagină</span>
                             <select
+                                className="ui-select ui-select--compact ui-select--narrow"
                                 value={userPageSize}
                                 onChange={(ev) => {
                                     setUserPageSize(Number(ev.target.value))
@@ -756,6 +762,7 @@ export default function AdminPanel({ token }) {
                                     <div className="admin-field">
                                         <span>Rol</span>
                                         <select
+                                            className="ui-select"
                                             value={editingUser.rol}
                                             onChange={(ev) => setEditingUser((x) => ({ ...x, rol: ev.target.value }))}
                                         >
@@ -770,6 +777,7 @@ export default function AdminPanel({ token }) {
                                         <div className="admin-field">
                                             <span>Departament</span>
                                             <select
+                                                className="ui-select"
                                                 value={editingUser.departamentId || ''}
                                                 onChange={(ev) =>
                                                     setEditingUser((x) => ({
@@ -840,6 +848,7 @@ export default function AdminPanel({ token }) {
                             <span className="admin-list-toolbar__label">Căutare</span>
                             <input
                                 type="search"
+                                className="ui-input"
                                 placeholder="Nume departament…"
                                 value={depQInput}
                                 onChange={(ev) => setDepQInput(ev.target.value)}
@@ -849,6 +858,7 @@ export default function AdminPanel({ token }) {
                         <label className="admin-list-toolbar__field admin-list-toolbar__field--narrow">
                             <span className="admin-list-toolbar__label">Pe pagină</span>
                             <select
+                                className="ui-select ui-select--compact ui-select--narrow"
                                 value={depPageSize}
                                 onChange={(ev) => {
                                     setDepPageSize(Number(ev.target.value))
@@ -992,6 +1002,7 @@ export default function AdminPanel({ token }) {
                                     <span id="admin-manager-label">Utilizator</span>
                                     <select
                                         id="admin-manager-select"
+                                        className="ui-select"
                                         aria-labelledby="admin-manager-label"
                                         value={managerUserId}
                                         onChange={(ev) => setManagerUserId(ev.target.value)}
