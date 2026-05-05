@@ -4,6 +4,7 @@ import JobCard from './JobCard'
 import CvFisierLink from './CvFisierLink'
 import VideoFisierLink from './VideoFisierLink'
 import SearchableSelect from './ui/SearchableSelect'
+import IconSearch from './ui/IconSearch'
 import { ROLURI } from '../context/login_context'
 import {
     getAplicatiiDashboard,
@@ -31,6 +32,13 @@ import {
 } from '../utils/pipelineDefaults'
 import { formatDataAplicare } from '../utils/dateFormat'
 import './Dashboard.css'
+
+const DASHBOARD_LISTA_STATUS_OPTIONS = [
+    { value: 'toti', label: 'Toți (activi + respinși)' },
+    { value: 'activi', label: 'Doar activi' },
+    { value: 'respinsi', label: 'Doar respinși' },
+]
+const DASHBOARD_LISTA_PAGE_SIZE_OPTIONS = [5, 8, 10, 15, 20].map((n) => ({ value: String(n), label: String(n) }))
 
 const ORDINE_PRIORITATE = { critic: 0, mare: 1, medie: 2, mica: 3 }
 
@@ -1403,75 +1411,77 @@ export default function Dashboard({
                     </p>
                 ) : (
                     <>
-                        <div className="dashboard-candidati-toolbar" role="search">
-                            <label className="dashboard-candidati-toolbar__field">
-                                <span className="dashboard-candidati-toolbar__label">Căutare</span>
-                                <input
-                                    type="search"
-                                    className="ui-input"
-                                    placeholder="Nume, email, job, departament…"
-                                    value={listaQInput}
-                                    onChange={(ev) => setListaQInput(ev.target.value)}
-                                    aria-label="Căutare candidați"
-                                />
-                            </label>
-                            <label className="dashboard-candidati-toolbar__field dashboard-candidati-toolbar__field--post">
-                                <span className="dashboard-candidati-toolbar__label">Post</span>
-                                {posturiVizibile.length > 8 ? (
-                                    <SearchableSelect
-                                        value={listaPostFilter}
-                                        onChange={(ev) => setListaPostFilter(ev.target.value)}
-                                        placeholder="Toate posturile"
-                                        ariaLabel="Filtru post"
-                                        options={listaPostSearchOptions}
-                                    />
-                                ) : (
-                                    <select
-                                        className="ui-select"
-                                        value={listaPostFilter}
-                                        onChange={(ev) => setListaPostFilter(ev.target.value)}
-                                        aria-label="Filtru post"
-                                    >
-                                        <option value="">Toate posturile</option>
-                                        {posturiVizibile.map((p) => (
-                                            <option key={p.id} value={p.id}>
-                                                {p.nume} ({p.domeniu})
-                                            </option>
-                                        ))}
-                                    </select>
-                                )}
-                            </label>
-                            <label className="dashboard-candidati-toolbar__field">
-                                <span className="dashboard-candidati-toolbar__label">Stare</span>
-                                <select
-                                    className="ui-select"
-                                    value={listaStatusFilter}
-                                    onChange={(ev) => setListaStatusFilter(ev.target.value)}
-                                    aria-label="Filtru stare candidat"
-                                >
-                                    <option value="toti">Toți (activi + respinși)</option>
-                                    <option value="activi">Doar activi</option>
-                                    <option value="respinsi">Doar respinși</option>
-                                </select>
-                            </label>
-                            <label className="dashboard-candidati-toolbar__field dashboard-candidati-toolbar__field--narrow">
-                                <span className="dashboard-candidati-toolbar__label">Pe pagină</span>
-                                <select
-                                    className="ui-select ui-select--compact ui-select--narrow"
-                                    value={listaPageSize}
-                                    onChange={(ev) => {
-                                        setListaPageSize(Number(ev.target.value))
-                                        setListaPage(0)
-                                    }}
-                                    aria-label="Mărime pagină"
-                                >
-                                    {[5, 8, 10, 15, 20].map((n) => (
-                                        <option key={n} value={n}>
-                                            {n}
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
+                        <div className="listing-filters-shell">
+                            <section
+                                className="listing-filters listing-filters--dashboard-aplicanti"
+                                role="search"
+                                aria-label="Filtrare listă candidați"
+                            >
+                                <div className="listing-filters__row listing-filters__row--dashboard-tools">
+                                    <div className="listing-filter-field listing-filter-field--pagesize">
+                                        <label className="listing-filter-label" htmlFor="dashboard-aplicanti-page-size">
+                                            Pe pagină
+                                        </label>
+                                        <SearchableSelect
+                                            id="dashboard-aplicanti-page-size"
+                                            value={String(listaPageSize)}
+                                            ariaLabel="Mărime pagină"
+                                            placeholder={String(listaPageSize)}
+                                            options={DASHBOARD_LISTA_PAGE_SIZE_OPTIONS}
+                                            onChange={(ev) => {
+                                                setListaPageSize(Number(ev.target.value))
+                                                setListaPage(0)
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="listing-filter-field listing-filter-field--dashboard-search">
+                                        <label className="listing-filter-label" htmlFor="dashboard-aplicanti-search">
+                                            Căutare
+                                        </label>
+                                        <div className="listing-search-wrap">
+                                            <span className="listing-search-icon" aria-hidden="true">
+                                                <IconSearch />
+                                            </span>
+                                            <input
+                                                id="dashboard-aplicanti-search"
+                                                type="search"
+                                                className="listing-search-input"
+                                                placeholder="Nume, email, job, departament…"
+                                                value={listaQInput}
+                                                onChange={(ev) => setListaQInput(ev.target.value)}
+                                                autoComplete="off"
+                                                aria-label="Căutare candidați"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="listing-filter-field">
+                                        <label className="listing-filter-label" htmlFor="dashboard-aplicanti-post">
+                                            Post
+                                        </label>
+                                        <SearchableSelect
+                                            id="dashboard-aplicanti-post"
+                                            value={listaPostFilter}
+                                            onChange={(ev) => setListaPostFilter(ev.target.value)}
+                                            placeholder="Toate posturile"
+                                            ariaLabel="Filtru post"
+                                            options={listaPostSearchOptions}
+                                        />
+                                    </div>
+                                    <div className="listing-filter-field">
+                                        <label className="listing-filter-label" htmlFor="dashboard-aplicanti-stare">
+                                            Stare
+                                        </label>
+                                        <SearchableSelect
+                                            id="dashboard-aplicanti-stare"
+                                            value={listaStatusFilter}
+                                            onChange={(ev) => setListaStatusFilter(ev.target.value)}
+                                            placeholder="Stare"
+                                            ariaLabel="Filtru stare candidat"
+                                            options={DASHBOARD_LISTA_STATUS_OPTIONS}
+                                        />
+                                    </div>
+                                </div>
+                            </section>
                         </div>
                         {listaLoading ? (
                             <p className="dashboard-candidati-loading">Se încarcă lista…</p>

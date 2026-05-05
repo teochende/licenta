@@ -2,37 +2,10 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import JobDisponibil from './job_disponibil'
 import { getPosturiDisponibile, getPosturiDisponibileMeta } from '../api/postsApi'
 import SearchableSelect from './ui/SearchableSelect'
+import IconSearch from './ui/IconSearch'
 import './acasa.css'
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20]
-
-function IconSearch() {
-    return (
-        <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-        >
-            <path
-                d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-            <path
-                d="m21 21-4.3-4.3"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-        </svg>
-    )
-}
 
 function IconChevronLeft() {
     return (
@@ -77,6 +50,8 @@ export default function Acasa() {
     const [filtruSubdomeniu, setFiltruSubdomeniu] = useState('')
     const [filtruNivel, setFiltruNivel] = useState('')
     const [listaLoading, setListaLoading] = useState(false)
+
+    const pageSizeOptions = useMemo(() => PAGE_SIZE_OPTIONS.map((n) => ({ value: String(n), label: String(n) })), [])
 
     const domeniuOptions = useMemo(
         () => [{ value: '', label: 'Toate' }, ...domeniiUnice.map((d) => ({ value: d, label: d }))],
@@ -153,18 +128,40 @@ export default function Acasa() {
         <div className="acasa-page">
             <h1 className="acasa-title">Poziții disponibile</h1>
 
-            <div className="acasa-controls-shell">
-                <section className="acasa-controls">
-                    <div className="acasa-controls__top">
-                        <div className="acasa-field acasa-field--grow">
-                            <div className="acasa-search-wrap">
-                                <span className="acasa-search-icon" aria-hidden="true">
+            <div className="listing-filters-shell">
+                <section className="listing-filters listing-filters--acasa" role="search" aria-label="Căutare și filtrare posturi">
+                    <div className="listing-filters__row listing-filters__row--acasa-tools">
+                        <div className="listing-filter-field listing-filter-field--pagesize">
+                            <label className="listing-filter-label" htmlFor="acasa-page-size">
+                                Pe pagină
+                            </label>
+                            <SearchableSelect
+                                id="acasa-page-size"
+                                className="acasa-pagesize-select"
+                                value={String(pageSize)}
+                                ariaLabel="Pe pagină"
+                                placeholder={String(pageSize)}
+                                options={pageSizeOptions}
+                                onChange={(ev) => {
+                                    setPageSize(Number(ev.target.value))
+                                    setPage(0)
+                                }}
+                            />
+                        </div>
+                    </div>
+                    <div className="listing-filters__row listing-filters__row--acasa-tools">
+                        <div className="listing-filter-field listing-filter-field--acasa-search">
+                            <label className="listing-filter-label" htmlFor="acasa-cautare">
+                                Căutare
+                            </label>
+                            <div className="listing-search-wrap">
+                                <span className="listing-search-icon" aria-hidden="true">
                                     <IconSearch />
                                 </span>
                                 <input
                                     id="acasa-cautare"
                                     type="search"
-                                    className="acasa-search-input"
+                                    className="listing-search-input"
                                     value={qInput}
                                     onChange={(e) => setQInput(e.target.value)}
                                     autoComplete="off"
@@ -172,66 +169,77 @@ export default function Acasa() {
                                 />
                             </div>
                         </div>
-                        <div className="acasa-field acasa-field--pagesize">
-                            <select
-                                id="acasa-page-size"
-                                className="ui-select ui-select--compact ui-select--narrow"
-                                value={pageSize}
-                                aria-label="Pe pagină"
-                                onChange={(e) => {
-                                    setPageSize(Number(e.target.value))
-                                    setPage(0)
-                                }}
-                            >
-                                {PAGE_SIZE_OPTIONS.map((n) => (
-                                    <option key={n} value={n}>
-                                        {n}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
 
-                    <div className="acasa-filters">
-                        <div className="acasa-filters__row">
-                            <div className="acasa-field">
-                                <label className="acasa-micro-label" htmlFor="acasa-filtru-domeniu">
-                                    Departament
-                                </label>
-                                <SearchableSelect
-                                    id="acasa-filtru-domeniu"
-                                    value={filtruDomeniu}
-                                    onChange={(e) => setFiltruDomeniu(e.target.value)}
-                                    placeholder="Toate"
-                                    ariaLabel="Departament"
-                                    options={domeniuOptions}
-                                />
-                            </div>
-                            <div className="acasa-field">
-                                <label className="acasa-micro-label" htmlFor="acasa-filtru-subdomeniu">
-                                    Subdomeniu
-                                </label>
-                                <SearchableSelect
-                                    id="acasa-filtru-subdomeniu"
-                                    value={filtruSubdomeniu}
-                                    onChange={(e) => setFiltruSubdomeniu(e.target.value)}
-                                    placeholder="Toate"
-                                    ariaLabel="Subdomeniu"
-                                    options={subdomeniuOptions}
-                                />
-                            </div>
-                            <div className="acasa-field">
-                                <label className="acasa-micro-label" htmlFor="acasa-filtru-nivel">
-                                    Nivel
-                                </label>
-                                <SearchableSelect
-                                    id="acasa-filtru-nivel"
-                                    value={filtruNivel}
-                                    onChange={(e) => setFiltruNivel(e.target.value)}
-                                    placeholder="Toate"
-                                    ariaLabel="Nivel"
-                                    options={nivelOptions}
-                                />
+                        <div className="listing-filter-field">
+                            <label className="listing-filter-label" htmlFor="acasa-filtru-domeniu">
+                                Departament
+                            </label>
+                            <SearchableSelect
+                                id="acasa-filtru-domeniu"
+                                value={filtruDomeniu}
+                                onChange={(e) => setFiltruDomeniu(e.target.value)}
+                                placeholder="Toate"
+                                ariaLabel="Departament"
+                                options={domeniuOptions}
+                            />
+                        </div>
+                        <div className="listing-filter-field">
+                            <label className="listing-filter-label" htmlFor="acasa-filtru-subdomeniu">
+                                Subdomeniu
+                            </label>
+                            <SearchableSelect
+                                id="acasa-filtru-subdomeniu"
+                                value={filtruSubdomeniu}
+                                onChange={(e) => setFiltruSubdomeniu(e.target.value)}
+                                placeholder="Toate"
+                                ariaLabel="Subdomeniu"
+                                options={subdomeniuOptions}
+                            />
+                        </div>
+                        <div className="listing-filter-field">
+                            <label className="listing-filter-label" htmlFor="acasa-filtru-nivel">
+                                Nivel
+                            </label>
+                            <SearchableSelect
+                                id="acasa-filtru-nivel"
+                                value={filtruNivel}
+                                onChange={(e) => setFiltruNivel(e.target.value)}
+                                placeholder="Toate"
+                                ariaLabel="Nivel"
+                                options={nivelOptions}
+                            />
+                        </div>
+
+                        <div className="listing-filter-field listing-filter-field--acasa-pager" aria-label="Paginare">
+                            <label className="listing-filter-label" htmlFor="acasa-page-prev">
+                                Pagina
+                            </label>
+                            <div className="acasa-pager-inline">
+                                <p className="acasa-pager-inline__meta">
+                                    {postTotal} · {page + 1}/{totalPages}
+                                </p>
+                                <div className="acasa-pager-inline__actions">
+                                    <button
+                                        id="acasa-page-prev"
+                                        type="button"
+                                        className="acasa-pager-btn acasa-pager-btn--icon"
+                                        disabled={page <= 0 || listaLoading}
+                                        onClick={() => setPage((p) => Math.max(0, p - 1))}
+                                        aria-label="Înapoi"
+                                    >
+                                        <IconChevronLeft />
+                                    </button>
+                                    <button
+                                        id="acasa-page-next"
+                                        type="button"
+                                        className="acasa-pager-btn acasa-pager-btn--icon"
+                                        disabled={page + 1 >= totalPages || listaLoading}
+                                        onClick={() => setPage((p) => p + 1)}
+                                        aria-label="Înainte"
+                                    >
+                                        <IconChevronRight />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -254,31 +262,7 @@ export default function Acasa() {
                 {!listaLoading && posturi.length === 0 && <p className="acasa-empty">Niciun rezultat.</p>}
             </div>
 
-            <nav className="acasa-pager" aria-label="Paginare">
-                <p className="acasa-pager__meta">
-                    {postTotal} · {page + 1}/{totalPages}
-                </p>
-                <div className="acasa-pager__actions">
-                    <button
-                        type="button"
-                        className="acasa-pager-btn acasa-pager-btn--icon"
-                        disabled={page <= 0 || listaLoading}
-                        onClick={() => setPage((p) => Math.max(0, p - 1))}
-                        aria-label="Înapoi"
-                    >
-                        <IconChevronLeft />
-                    </button>
-                    <button
-                        type="button"
-                        className="acasa-pager-btn acasa-pager-btn--icon"
-                        disabled={page + 1 >= totalPages || listaLoading}
-                        onClick={() => setPage((p) => p + 1)}
-                        aria-label="Înainte"
-                    >
-                        <IconChevronRight />
-                    </button>
-                </div>
-            </nav>
+            {/* paginarea a fost mutată în bara de filtre (rând unic) */}
         </div>
     )
 }

@@ -78,40 +78,12 @@
     background: #fef3c7;
 }
 
-.posturi-admin-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem 1rem;
-    align-items: flex-end;
-    margin: 1rem 0;
-    padding: 0.75rem 1rem;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
+.administrare-posturi .listing-filters-shell {
+    margin-top: 1rem;
 }
 
-.posturi-admin-toolbar__field {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    min-width: 10rem;
-}
-
-.posturi-admin-toolbar__field--narrow {
-    min-width: 5.5rem;
-}
-
-.posturi-admin-toolbar__label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-}
-
-.posturi-admin-toolbar input.ui-input,
-.posturi-admin-toolbar select.ui-select {
-  width: 100%;
+.administrare-posturi--embedded .listing-filters-shell {
+    margin-top: 0.75rem;
 }
 
 .posturi-admin-loading {

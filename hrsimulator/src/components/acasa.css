@@ -30,125 +30,7 @@
   color: var(--acasa-text);
 }
 
-/* Înveliș căutare + filtre — aceeași lățime ca lista de posturi */
-.acasa-controls-shell {
-  box-sizing: border-box;
-  width: 100%;
-  max-width: none;
-  margin-inline: 0;
-  margin-bottom: 0.85rem;
-}
-
-.acasa-controls {
-  box-sizing: border-box;
-  width: 100%;
-  margin-bottom: 0;
-  padding: 0.5rem 0.6rem 0.55rem;
-  border: 1px solid var(--acasa-border);
-  border-radius: var(--acasa-radius-lg);
-  background: var(--acasa-bg);
-  box-shadow: 0 1px 8px rgba(15, 23, 42, 0.035);
-}
-
-.acasa-controls__top {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.45rem 0.6rem;
-}
-
-.acasa-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.18rem;
-  min-width: 0;
-}
-
-.acasa-controls__top > .acasa-field {
-  gap: 0;
-}
-
-.acasa-field--grow {
-  flex: 1 1 12rem;
-}
-
-.acasa-field--pagesize {
-  flex: 0 0 auto;
-}
-
-.acasa-micro-label {
-  padding-left: 0.06rem;
-  font-size: 0.625rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--acasa-label);
-  line-height: 1.2;
-  user-select: none;
-}
-
-.acasa-search-wrap {
-  display: flex;
-  align-items: center;
-  gap: 0.38rem;
-  min-height: 2rem;
-  padding: 0.22rem 0.45rem 0.22rem 0.4rem;
-  border: 1px solid var(--acasa-border-strong);
-  border-radius: var(--acasa-radius);
-  background: var(--acasa-input-bg);
-  transition: border-color 0.14s ease, box-shadow 0.14s ease;
-}
-
-.acasa-search-wrap:focus-within {
-  border-color: rgba(37, 99, 235, 0.42);
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
-}
-
-.acasa-search-icon {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  color: var(--acasa-accent);
-  opacity: 0.88;
-}
-
-.acasa-search-input {
-  flex: 1;
-  min-width: 0;
-  border: none;
-  background: transparent;
-  font: inherit;
-  font-size: 0.8125rem;
-  color: var(--acasa-text);
-  outline: none;
-  line-height: 1.35;
-}
-
-.acasa-search-input::placeholder {
-  color: #94a3b8;
-}
-
-.acasa-field .searchable-select {
-  width: 100%;
-}
-
-.acasa-filters {
-  margin-top: 0.45rem;
-  padding-top: 0.45rem;
-  border-top: 1px solid rgba(148, 163, 184, 0.18);
-}
-
-.acasa-filters__row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem 0.5rem;
-  align-items: flex-end;
-}
-
-.acasa-filters__row .acasa-field {
-  flex: 1 1 6.5rem;
-  min-width: min(100%, 7.25rem);
-}
+/* Căutare/filtre: clase globale listing-* în listing-filters.css */
 
 /* Listă posturi — lățime completă (override .informatiiJob 80% din App.css) */
 .acasa-list {
@@ -234,11 +116,51 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 0.45rem 0.65rem;
   border: 1px solid var(--acasa-border);
   border-radius: var(--acasa-radius-lg);
   background: rgba(255, 255, 255, 0.78);
+}
+
+.acasa-pager__meta {
+  text-align: right;
+}
+
+.acasa-page .acasa-pagesize-select {
+  min-width: 6.75rem;
+}
+
+.acasa-page .acasa-pagesize-select .searchable-select__btn {
+  min-width: 6.75rem;
+}
+
+.acasa-pager-inline {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.42rem 0.55rem;
+  border: 1px solid var(--acasa-border);
+  border-radius: var(--acasa-radius-lg);
+  background: rgba(255, 255, 255, 0.78);
+  min-height: 2.35rem;
+  box-sizing: border-box;
+}
+
+.acasa-pager-inline__meta {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--acasa-text);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.acasa-pager-inline__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
 }
 
 .acasa-pager__meta {

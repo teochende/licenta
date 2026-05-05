@@ -34,7 +34,6 @@ export default function AplicareJob() {
     const [email, setEmail] = useState('')
     const [cv, setCv] = useState(null)
     const [cvError, setCvError] = useState('')
-    const [aiCvReview, setAiCvReview] = useState(false)
     const [sending, setSending] = useState(false)
     const [doneMsg, setDoneMsg] = useState('')
     const [video, setVideo] = useState(null)
@@ -119,8 +118,6 @@ export default function AplicareJob() {
             if (video) {
                 fd.append('videoFile', video)
             }
-            // implicit false: review manual; se trimite doar ca să fie explicit în backend
-            fd.append('aiCvReview', aiCvReview ? 'true' : 'false')
             await createAplicatie(fd)
             setDoneMsg('Aplicarea a fost trimisă cu succes.')
             setNume('')
@@ -129,7 +126,6 @@ export default function AplicareJob() {
             setVideo(null)
             setVideoDurationLabel('')
             setVideoError('')
-            setAiCvReview(false)
             if (inputCvRef.current) inputCvRef.current.value = ''
             if (inputVideoRef.current) inputVideoRef.current.value = ''
         } catch (e) {
@@ -247,26 +243,6 @@ export default function AplicareJob() {
                             </span>
                         )}
                         {videoError && <div className="aplicare-alert">{videoError}</div>}
-                    </div>
-                </section>
-
-                <section className="aplicare-sec aplicare-sec--opțiuni" aria-labelledby="aplicare-sec-opt">
-                    <h3 id="aplicare-sec-opt" className="aplicare-sec__titlu">
-                        Opțiuni
-                    </h3>
-                    <div className="campAplicare campAplicareToggle">
-                        <label>
-                            <input
-                                type="checkbox"
-                                checked={aiCvReview}
-                                onChange={(e) => setAiCvReview(e.target.checked)}
-                            />{' '}
-                            Review CV AI
-                        </label>
-                        <div className="hintToggle">
-                            Dacă bifați, la trimitere backend-ul trimite CV-ul și descrierea jobului către modulul AI;
-                            scorul și observațiile apar automat în dashboard la această aplicare.
-                        </div>
                     </div>
                 </section>
 

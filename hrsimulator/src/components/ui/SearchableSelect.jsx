@@ -156,7 +156,7 @@ export default function SearchableSelect({
                         ref={searchRef}
                         type="search"
                         className="searchable-select__search"
-                        placeholder="Căutați în listă…"
+                        placeholder="Search"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         aria-label="Filtru listă"

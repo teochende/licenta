@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import * as utilizatoriApi from '../api/utilizatoriApi'
 import * as departamenteApi from '../api/departamenteApi'
 import { getRecrutori, getIntervievatoriTehnici, getRoluri } from '../api/hrMetaApi'
 import AdministrarePosturi from './administrare_posturi'
+import IconSearch from './ui/IconSearch'
+import SearchableSelect from './ui/SearchableSelect'
 import './AdminPanel.css'
 
 /** Aliniază {@code rolCod} din profil (lowercase) cu valorile enum din formular (ADMIN, …). */
@@ -79,6 +81,22 @@ export default function AdminPanel({ token }) {
     const [managerUserId, setManagerUserId] = useState('')
     /** Formular utilizator nou: deschis doar după click pe indicatorul dropdown */
     const [createUserFormOpen, setCreateUserFormOpen] = useState(false)
+
+    const userRolFilterOptions = useMemo(
+        () => [
+            { value: '', label: 'Toate rolurile' },
+            ...roluri.map((r) => ({ value: r.cod, label: r.denumire })),
+        ],
+        [roluri]
+    )
+    const userDepFilterOptions = useMemo(
+        () => [
+            { value: '', label: 'Toate' },
+            ...departamenteAll.map((d) => ({ value: String(d.id), label: d.nume })),
+        ],
+        [departamenteAll]
+    )
+    const pageSizeOptions = useMemo(() => PAGE_SIZE_OPTIONS.map((n) => ({ value: String(n), label: String(n) })), [])
 
     useEffect(() => {
         const t = setTimeout(() => setUserQDebounced(userQInput.trim()), 350)
@@ -539,68 +557,73 @@ export default function AdminPanel({ token }) {
                         ) : null}
                     </div>
 
-                    <div className="admin-list-toolbar" role="search">
-                        <label className="admin-list-toolbar__field">
-                            <span className="admin-list-toolbar__label">Căutare</span>
-                            <input
-                                type="search"
-                                className="ui-input"
-                                placeholder="Nume sau email…"
-                                value={userQInput}
-                                onChange={(ev) => setUserQInput(ev.target.value)}
-                                aria-label="Căutare utilizatori"
-                            />
-                        </label>
-                        <label className="admin-list-toolbar__field">
-                            <span className="admin-list-toolbar__label">Rol</span>
-                            <select
-                                className="ui-select"
-                                value={userRolFilter}
-                                onChange={(ev) => setUserRolFilter(ev.target.value)}
-                                aria-label="Filtru rol"
-                            >
-                                <option value="">Toate rolurile</option>
-                                {roluri.map((r) => (
-                                    <option key={r.cod} value={r.cod}>
-                                        {r.denumire}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
-                        <label className="admin-list-toolbar__field">
-                            <span className="admin-list-toolbar__label">Departament</span>
-                            <select
-                                className="ui-select"
-                                value={userDepFilter}
-                                onChange={(ev) => setUserDepFilter(ev.target.value)}
-                                aria-label="Filtru departament"
-                            >
-                                <option value="">Toate</option>
-                                {departamenteAll.map((d) => (
-                                    <option key={d.id} value={d.id}>
-                                        {d.nume}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
-                        <label className="admin-list-toolbar__field admin-list-toolbar__field--narrow">
-                            <span className="admin-list-toolbar__label">Pe pagină</span>
-                            <select
-                                className="ui-select ui-select--compact ui-select--narrow"
-                                value={userPageSize}
-                                onChange={(ev) => {
-                                    setUserPageSize(Number(ev.target.value))
-                                    setUserPage(0)
-                                }}
-                                aria-label="Mărime pagină"
-                            >
-                                {PAGE_SIZE_OPTIONS.map((n) => (
-                                    <option key={n} value={n}>
-                                        {n}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
+                    <div className="listing-filters-shell">
+                        <section className="listing-filters" role="search" aria-label="Filtrare utilizatori">
+                            <div className="listing-filters__top">
+                                <div className="listing-filter-field listing-filter-field--pagesize">
+                                    <SearchableSelect
+                                        id="admin-users-page-size"
+                                        value={String(userPageSize)}
+                                        ariaLabel="Mărime pagină"
+                                        placeholder={String(userPageSize)}
+                                        options={pageSizeOptions}
+                                        onChange={(ev) => {
+                                            setUserPageSize(Number(ev.target.value))
+                                            setUserPage(0)
+                                        }}
+                                    />
+                                </div>
+                                <div className="listing-filters__top-search-slot">
+                                    <div className="listing-filter-field listing-filter-field--search">
+                                        <div className="listing-search-wrap">
+                                            <span className="listing-search-icon" aria-hidden="true">
+                                                <IconSearch />
+                                            </span>
+                                            <input
+                                                id="admin-users-search"
+                                                type="search"
+                                                className="listing-search-input"
+                                                placeholder="Nume sau email…"
+                                                value={userQInput}
+                                                onChange={(ev) => setUserQInput(ev.target.value)}
+                                                autoComplete="off"
+                                                aria-label="Căutare utilizatori"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="listing-filters__secondary">
+                                <div className="listing-filters__row">
+                                    <div className="listing-filter-field">
+                                        <label className="listing-filter-label" htmlFor="admin-users-rol">
+                                            Rol
+                                        </label>
+                                        <SearchableSelect
+                                            id="admin-users-rol"
+                                            value={userRolFilter}
+                                            onChange={(ev) => setUserRolFilter(ev.target.value)}
+                                            placeholder="Toate rolurile"
+                                            ariaLabel="Filtru rol"
+                                            options={userRolFilterOptions}
+                                        />
+                                    </div>
+                                    <div className="listing-filter-field">
+                                        <label className="listing-filter-label" htmlFor="admin-users-dep">
+                                            Departament
+                                        </label>
+                                        <SearchableSelect
+                                            id="admin-users-dep"
+                                            value={userDepFilter === '' ? '' : String(userDepFilter)}
+                                            onChange={(ev) => setUserDepFilter(ev.target.value)}
+                                            placeholder="Toate"
+                                            ariaLabel="Filtru departament"
+                                            options={userDepFilterOptions}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
                     </div>
 
                     <div className="admin-table-wrap">
@@ -843,36 +866,43 @@ export default function AdminPanel({ token }) {
                         </button>
                     </form>
 
-                    <div className="admin-list-toolbar" role="search">
-                        <label className="admin-list-toolbar__field">
-                            <span className="admin-list-toolbar__label">Căutare</span>
-                            <input
-                                type="search"
-                                className="ui-input"
-                                placeholder="Nume departament…"
-                                value={depQInput}
-                                onChange={(ev) => setDepQInput(ev.target.value)}
-                                aria-label="Căutare departamente"
-                            />
-                        </label>
-                        <label className="admin-list-toolbar__field admin-list-toolbar__field--narrow">
-                            <span className="admin-list-toolbar__label">Pe pagină</span>
-                            <select
-                                className="ui-select ui-select--compact ui-select--narrow"
-                                value={depPageSize}
-                                onChange={(ev) => {
-                                    setDepPageSize(Number(ev.target.value))
-                                    setDepPage(0)
-                                }}
-                                aria-label="Mărime pagină departamente"
-                            >
-                                {PAGE_SIZE_OPTIONS.map((n) => (
-                                    <option key={n} value={n}>
-                                        {n}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
+                    <div className="listing-filters-shell">
+                        <section className="listing-filters" role="search" aria-label="Filtrare departamente">
+                            <div className="listing-filters__top">
+                                <div className="listing-filter-field listing-filter-field--pagesize">
+                                    <SearchableSelect
+                                        id="admin-dep-page-size"
+                                        value={String(depPageSize)}
+                                        ariaLabel="Mărime pagină departamente"
+                                        placeholder={String(depPageSize)}
+                                        options={pageSizeOptions}
+                                        onChange={(ev) => {
+                                            setDepPageSize(Number(ev.target.value))
+                                            setDepPage(0)
+                                        }}
+                                    />
+                                </div>
+                                <div className="listing-filters__top-search-slot">
+                                    <div className="listing-filter-field listing-filter-field--search">
+                                        <div className="listing-search-wrap">
+                                            <span className="listing-search-icon" aria-hidden="true">
+                                                <IconSearch />
+                                            </span>
+                                            <input
+                                                id="admin-dep-search"
+                                                type="search"
+                                                className="listing-search-input"
+                                                placeholder="Nume departament…"
+                                                value={depQInput}
+                                                onChange={(ev) => setDepQInput(ev.target.value)}
+                                                autoComplete="off"
+                                                aria-label="Căutare departamente"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
                     </div>
 
                     <div className="admin-table-wrap">

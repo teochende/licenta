@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { getDepartamente } from '../api/departamenteApi'
 import { getRecrutori, getIntervievatoriTehnici } from '../api/hrMetaApi'
@@ -12,9 +12,17 @@ import {
 } from '../api/postsApi'
 import './administrare_posturi.css'
 import ModalEditJob from './ModalEditJob'
+import IconSearch from './ui/IconSearch'
+import SearchableSelect from './ui/SearchableSelect'
 import { validateJobDescriereSections } from '../utils/jobDescriereSections.jsx'
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20]
+
+const ADMIN_POSTURI_STARE_OPTIONS = [
+    { value: '', label: 'Toate' },
+    { value: 'true', label: 'Active' },
+    { value: 'false', label: 'Inactive' },
+]
 
 export default function AdministrarePosturi({
     recrutoriDto = [],
@@ -39,6 +47,15 @@ export default function AdministrarePosturi({
     const [departamentFilter, setDepartamentFilter] = useState('')
     const [postsLoading, setPostsLoading] = useState(false)
     const [flashAtentie, setFlashAtentie] = useState('')
+
+    const departamentFilterOptions = useMemo(
+        () => [
+            { value: '', label: 'Toate' },
+            ...departamente.map((d) => ({ value: String(d.id), label: d.nume })),
+        ],
+        [departamente]
+    )
+    const pageSizeOptions = useMemo(() => PAGE_SIZE_OPTIONS.map((n) => ({ value: String(n), label: String(n) })), [])
 
     useEffect(() => {
         const k = 'postAdaugat_flashAtentie'
@@ -259,65 +276,73 @@ export default function AdministrarePosturi({
                 </div>
             ) : null}
 
-            <div className="posturi-admin-toolbar" role="search">
-                <label className="posturi-admin-toolbar__field">
-                    <span className="posturi-admin-toolbar__label">Căutare</span>
-                    <input
-                        type="search"
-                        className="ui-input"
-                        placeholder="Nume, subdomeniu, nivel, domeniu…"
-                        value={qInput}
-                        onChange={(ev) => setQInput(ev.target.value)}
-                        aria-label="Căutare posturi"
-                    />
-                </label>
-                <label className="posturi-admin-toolbar__field">
-                    <span className="posturi-admin-toolbar__label">Stare</span>
-                    <select
-                        className="ui-select"
-                        value={enabledFilter}
-                        onChange={(ev) => setEnabledFilter(ev.target.value)}
-                        aria-label="Filtru activ"
-                    >
-                        <option value="">Toate</option>
-                        <option value="true">Active</option>
-                        <option value="false">Inactive</option>
-                    </select>
-                </label>
-                <label className="posturi-admin-toolbar__field">
-                    <span className="posturi-admin-toolbar__label">Departament</span>
-                    <select
-                        className="ui-select"
-                        value={departamentFilter}
-                        onChange={(ev) => setDepartamentFilter(ev.target.value)}
-                        aria-label="Filtru departament"
-                    >
-                        <option value="">Toate</option>
-                        {departamente.map((d) => (
-                            <option key={d.id} value={d.id}>
-                                {d.nume}
-                            </option>
-                        ))}
-                    </select>
-                </label>
-                <label className="posturi-admin-toolbar__field posturi-admin-toolbar__field--narrow">
-                    <span className="posturi-admin-toolbar__label">Pe pagină</span>
-                    <select
-                        className="ui-select ui-select--compact ui-select--narrow"
-                        value={pageSize}
-                        onChange={(ev) => {
-                            setPageSize(Number(ev.target.value))
-                            setPage(0)
-                        }}
-                        aria-label="Mărime pagină"
-                    >
-                        {PAGE_SIZE_OPTIONS.map((n) => (
-                            <option key={n} value={n}>
-                                {n}
-                            </option>
-                        ))}
-                    </select>
-                </label>
+            <div className="listing-filters-shell">
+                <section className="listing-filters" role="search" aria-label="Filtrare posturi">
+                    <div className="listing-filters__top">
+                        <div className="listing-filter-field listing-filter-field--pagesize">
+                            <SearchableSelect
+                                id="administrare-posturi-page-size"
+                                value={String(pageSize)}
+                                ariaLabel="Mărime pagină"
+                                placeholder={String(pageSize)}
+                                options={pageSizeOptions}
+                                onChange={(ev) => {
+                                    setPageSize(Number(ev.target.value))
+                                    setPage(0)
+                                }}
+                            />
+                        </div>
+                        <div className="listing-filters__top-search-slot">
+                            <div className="listing-filter-field listing-filter-field--search">
+                                <div className="listing-search-wrap">
+                                    <span className="listing-search-icon" aria-hidden="true">
+                                        <IconSearch />
+                                    </span>
+                                    <input
+                                        id="administrare-posturi-search"
+                                        type="search"
+                                        className="listing-search-input"
+                                        placeholder="Nume, subdomeniu, nivel, domeniu…"
+                                        value={qInput}
+                                        onChange={(ev) => setQInput(ev.target.value)}
+                                        autoComplete="off"
+                                        aria-label="Căutare posturi"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="listing-filters__secondary">
+                        <div className="listing-filters__row">
+                            <div className="listing-filter-field">
+                                <label className="listing-filter-label" htmlFor="administrare-posturi-stare">
+                                    Stare
+                                </label>
+                                <SearchableSelect
+                                    id="administrare-posturi-stare"
+                                    value={enabledFilter}
+                                    onChange={(ev) => setEnabledFilter(ev.target.value)}
+                                    placeholder="Stare"
+                                    ariaLabel="Filtru activ"
+                                    options={ADMIN_POSTURI_STARE_OPTIONS}
+                                />
+                            </div>
+                            <div className="listing-filter-field">
+                                <label className="listing-filter-label" htmlFor="administrare-posturi-dep">
+                                    Departament
+                                </label>
+                                <SearchableSelect
+                                    id="administrare-posturi-dep"
+                                    value={departamentFilter === '' ? '' : String(departamentFilter)}
+                                    onChange={(ev) => setDepartamentFilter(ev.target.value)}
+                                    placeholder="Toate"
+                                    ariaLabel="Filtru departament"
+                                    options={departamentFilterOptions}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
 
             {postsLoading && <p className="posturi-admin-loading">Se încarcă lista…</p>}

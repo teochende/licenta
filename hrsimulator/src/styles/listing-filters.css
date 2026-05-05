@@ -1,0 +1,268 @@
+/**
+ * Chenar comun căutare + filtre — același aspect ca pagina „Poziții disponibile” (acasa).
+ * Clase: listing-filters-shell, listing-filters, listing-search-wrap, listing-filters__secondary …
+ */
+
+.listing-filters-shell {
+  --lf-border: rgba(2, 132, 199, 0.18);
+  --lf-border-strong: rgba(37, 99, 235, 0.22);
+  --lf-bg: linear-gradient(
+    160deg,
+    rgba(252, 253, 255, 0.98) 0%,
+    rgba(241, 249, 255, 0.92) 50%,
+    rgba(219, 234, 254, 0.35) 100%
+  );
+  --lf-text: #0f172a;
+  --lf-accent: #2563eb;
+  --lf-input-bg: #ffffff;
+  --lf-radius: 8px;
+  --lf-radius-lg: 10px;
+  --lf-label: #64748b;
+
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+  margin-bottom: 0.85rem;
+}
+
+.listing-filters {
+  box-sizing: border-box;
+  width: 100%;
+  margin-bottom: 0;
+  padding: 0.5rem 0.6rem 0.55rem;
+  border: 1px solid var(--lf-border);
+  border-radius: var(--lf-radius-lg);
+  background: var(--lf-bg);
+  box-shadow: 0 1px 8px rgba(15, 23, 42, 0.035);
+}
+
+.listing-filters__top {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.45rem 0.75rem;
+}
+
+.listing-filters__top-search-slot {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+}
+
+.listing-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.listing-filters__top > .listing-filter-field {
+  gap: 0;
+}
+
+.listing-filter-field--search {
+  flex: 0 1 min(20rem, 100%);
+  width: 100%;
+  max-width: 20rem;
+  margin: 0;
+}
+
+.listing-filter-field--pagesize {
+  flex: 0 0 auto;
+  justify-self: start;
+}
+
+.listing-filter-label {
+  padding-left: 0.06rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lf-label);
+  line-height: 1.2;
+  user-select: none;
+}
+
+.listing-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.32rem;
+  min-height: 1.72rem;
+  padding: 0.12rem 0.55rem 0.12rem 0.42rem;
+  border: 1px solid var(--lf-border-strong);
+  border-radius: 9999px;
+  background: var(--lf-input-bg);
+  transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.listing-search-wrap:focus-within {
+  border-color: rgba(37, 99, 235, 0.42);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+.listing-search-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  color: var(--lf-accent);
+  opacity: 0.88;
+}
+
+.listing-search-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.listing-search-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 0.78rem;
+  color: var(--lf-text);
+  outline: none;
+  line-height: 1.35;
+}
+
+.listing-search-input::placeholder {
+  color: #94a3b8;
+}
+
+.listing-filters .searchable-select {
+  width: 100%;
+}
+
+/* Buton filtru — aceleași dimensiuni vizuale ca pagina Posturi / ui-select */
+.listing-filters .searchable-select__btn {
+  font-size: 0.875rem;
+  min-height: 2.35rem;
+  padding: 0.42rem 0.6rem 0.42rem 0.65rem;
+  border-radius: var(--ui-select-radius, 10px);
+}
+
+/* „Pe pagină” — același chip ca butonul SearchableSelect din filtre */
+.listing-filters .listing-filter-field--pagesize select.ui-select {
+  font-size: 0.875rem;
+  line-height: 1.35;
+  min-height: 2.35rem;
+  padding: 0.42rem 2.05rem 0.42rem 0.65rem;
+  border-radius: var(--ui-select-radius, 10px);
+  border: 1px solid var(--ui-select-border, rgba(148, 163, 184, 0.45));
+  background-color: var(--ui-select-bg, #fff);
+  box-shadow: var(
+    --ui-select-shadow,
+    0 1px 2px rgba(15, 23, 42, 0.05),
+    0 4px 14px rgba(15, 23, 42, 0.06)
+  );
+}
+
+.listing-filters .listing-filter-field--pagesize select.ui-select:hover {
+  border-color: var(--ui-select-border-hover, rgba(37, 99, 235, 0.35));
+  background-color: #fafbff;
+}
+
+.listing-filters .listing-filter-field--pagesize select.ui-select:focus {
+  border-color: var(--ui-select-focus, #2563eb);
+  box-shadow: var(--ui-select-shadow, 0 1px 2px rgba(15, 23, 42, 0.05), 0 4px 14px rgba(15, 23, 42, 0.06)),
+    0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+
+.listing-filters .listing-filter-field--pagesize select.ui-select--compact {
+  min-height: 2.35rem;
+  padding-top: 0.42rem;
+  padding-bottom: 0.42rem;
+  font-size: 0.875rem;
+  border-radius: var(--ui-select-radius, 10px);
+}
+
+.listing-filters__secondary {
+  margin-top: 0.45rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.listing-filters__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.5rem;
+  align-items: flex-end;
+}
+
+.listing-filters__row .listing-filter-field {
+  flex: 1 1 6.5rem;
+  min-width: min(100%, 7.25rem);
+}
+
+/* Dashboard: căutare + paginare + Post + Stare pe un singur rând */
+.listing-filters--dashboard-aplicanti .listing-filters__row--dashboard-tools {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.listing-filters--dashboard-aplicanti .listing-filters__row--dashboard-tools > .listing-filter-field {
+  flex: 1 1 7rem;
+  min-width: min(100%, 7.25rem);
+}
+
+.listing-filters--dashboard-aplicanti .listing-filters__row--dashboard-tools > .listing-filter-field--pagesize {
+  flex: 0 0 auto;
+  min-width: 5.75rem;
+}
+
+.listing-filters--dashboard-aplicanti .listing-filters__row--dashboard-tools > .listing-filter-field--dashboard-search {
+  flex: 1 1 11rem;
+  max-width: 22rem;
+  min-width: min(100%, 9rem);
+}
+
+/* Acasa: toate controalele pe un singur rând (ca Dashboard) */
+.listing-filters--acasa .listing-filters__top,
+.listing-filters--acasa .listing-filters__secondary {
+  display: none;
+}
+
+.listing-filters--acasa .listing-filters__row--acasa-tools > .listing-filter-field {
+  flex: 1 1 7rem;
+  min-width: min(100%, 7.25rem);
+}
+
+.listing-filters--acasa .listing-filters__row--acasa-tools > .listing-filter-field--pagesize {
+  flex: 0 0 auto;
+  min-width: 6.25rem;
+}
+
+.listing-filters--acasa .listing-filters__row--acasa-tools > .listing-filter-field--acasa-search {
+  flex: 1 1 11rem;
+  max-width: 22rem;
+  min-width: min(100%, 9rem);
+}
+
+.listing-filters--acasa .listing-filters__row--acasa-tools > .listing-filter-field--acasa-pager {
+  flex: 0 0 auto;
+  min-width: 9.5rem;
+  margin-left: auto;
+}
+
+@media (max-width: 640px) {
+  .listing-filters__top {
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+  }
+
+  .listing-filter-field--pagesize {
+    justify-self: start;
+  }
+
+  .listing-filters__top-search-slot {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .listing-filter-field--search {
+    max-width: min(22rem, 100%);
+  }
+}

@@ -794,41 +794,9 @@
     margin-bottom: 0;
 }
 
-.admin-list-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem 1rem;
-    align-items: flex-end;
-    margin: 1rem 0;
-    padding: 0.75rem 1rem;
-    background: var(--admin-surface, #fff);
-    border: 1px solid var(--admin-border, #e2e8f0);
-    border-radius: var(--admin-radius, 12px);
-    box-shadow: var(--admin-shadow, 0 1px 3px rgba(15, 23, 42, 0.08));
-}
-
-.admin-list-toolbar__field {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    min-width: 9rem;
-}
-
-.admin-list-toolbar__field--narrow {
-    min-width: 5.5rem;
-}
-
-.admin-list-toolbar__label {
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: var(--admin-muted, #64748b);
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-}
-
-.admin-list-toolbar input.ui-input,
-.admin-list-toolbar select.ui-select {
-    width: 100%;
+/* Chenar filtre — listing-filters.css; spațiu față de conținutul de deasupra */
+.admin-section .listing-filters-shell {
+    margin-top: 0.75rem;
 }
 
 .admin-pager {
