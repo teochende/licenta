@@ -116,8 +116,25 @@ export default function ModalEditJob({
     if (departamente.length === 0) {
         return (
             <div className="modal-edit-overlay" onClick={onClose} role="presentation">
-                <div className="modal-edit-job modal-edit-job--wide" onClick={(e) => e.stopPropagation()}>
-                    <p>Se încarcă departamentele…</p>
+                <div
+                    className="modal-edit-job modal-edit-job--wide"
+                    onClick={(e) => e.stopPropagation()}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Editare job"
+                >
+                    <div className="modal-edit-head">
+                        <div className="modal-edit-head__text">
+                            <h2 className="modal-edit-head__title">Editare job</h2>
+                            <p className="modal-edit-head__subtitle">Se încarcă departamentele…</p>
+                        </div>
+                        <button type="button" className="modal-edit-head__close" onClick={onClose} aria-label="Închide">
+                            ×
+                        </button>
+                    </div>
+                    <div className="modal-edit-body">
+                        <p className="modal-edit-loading">Se încarcă departamentele…</p>
+                    </div>
                     <div className="modal-edit-butonuri">
                         <button type="button" className="modal-btn modal-btn-anulare" onClick={onClose}>
                             Închide
@@ -132,95 +149,117 @@ export default function ModalEditJob({
 
     return (
         <div className="modal-edit-overlay" onClick={onClose} role="presentation">
-            <div className="modal-edit-job modal-edit-job--wide" onClick={(e) => e.stopPropagation()}>
-                <h2>Editare job</h2>
-                <form onSubmit={handleSubmit}>
-                    <div className="modal-edit-camp">
-                        <label htmlFor="edit-id">ID</label>
-                        <input id="edit-id" type="number" value={formData.id} readOnly disabled />
-                    </div>
-                    <div className="modal-edit-camp">
-                        <label htmlFor="edit-departament">Departament</label>
-                        <select
-                            id="edit-departament"
-                            className="ui-select"
-                            value={formData.departamentId === '' ? '' : String(formData.departamentId)}
-                            onChange={(e) => handleChange('departamentId', e.target.value ? Number(e.target.value) : '')}
-                            required
-                        >
-                            {departamente.map((d) => (
-                                <option key={d.id} value={d.id}>
-                                    {d.nume}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="modal-edit-camp">
-                        <label htmlFor="edit-subdomeniu">Subdomeniu</label>
-                        <input
-                            id="edit-subdomeniu"
-                            type="text"
-                            value={formData.subdomeniu}
-                            onChange={(e) => handleChange('subdomeniu', e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div className="modal-edit-camp">
-                        <label htmlFor="edit-nume">Nume</label>
-                        <input
-                            id="edit-nume"
-                            type="text"
-                            value={formData.nume}
-                            onChange={(e) => handleChange('nume', e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div className="modal-edit-camp">
-                        <label htmlFor="edit-nivel">Nivel</label>
-                        <input
-                            id="edit-nivel"
-                            type="text"
-                            value={formData.nivel}
-                            onChange={(e) => handleChange('nivel', e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div className="modal-edit-camp">
-                        <label htmlFor="edit-nr-pozitii">Nr. poziții</label>
-                        <input
-                            id="edit-nr-pozitii"
-                            type="number"
-                            min={1}
-                            step={1}
-                            value={formData.nrPozitii ?? 1}
-                            onChange={(e) => handleChange('nrPozitii', e.target.value)}
-                            required
-                        />
-                        <p className="modal-edit-hint">
-                            Poziții libere se calculează automat din pipeline (Ofertă + Admis).
+            <div
+                className="modal-edit-job modal-edit-job--wide"
+                onClick={(e) => e.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Editare job"
+            >
+                <div className="modal-edit-head">
+                    <div className="modal-edit-head__text">
+                        <h2 className="modal-edit-head__title">Editare job</h2>
+                        <p className="modal-edit-head__subtitle">
+                            #{formData.id} · {formData.nume}
                         </p>
                     </div>
-                    <div className="modal-edit-camp">
-                        <label htmlFor="edit-descriere">Descriere (text)</label>
-                        <JobDescriereSectiuniHint className="modal-edit-hint" />
-                        <textarea
-                            id="edit-descriere"
-                            rows={4}
-                            value={formData.descriere ?? ''}
-                            onChange={(e) => handleChange('descriere', e.target.value)}
-                            placeholder="Opțional dacă atașați PDF/DOCX — altfel completați aici cu toate secțiunile obligatorii."
-                        />
-                    </div>
-                    <div className="modal-edit-camp modal-edit-fisier-descriere">
-                        <label htmlFor="edit-descriere-fisier">Descriere ca fișier (PDF sau DOCX)</label>
-                        <JobDescriereSectiuniHint className="modal-edit-hint" compact />
-                        <input
-                            ref={fisierInputRef}
-                            id="edit-descriere-fisier"
-                            type="file"
-                            accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                            onChange={onFisierChange}
-                        />
+                    <button type="button" className="modal-edit-head__close" onClick={onClose} aria-label="Închide">
+                        ×
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="modal-edit-form">
+                    <div className="modal-edit-body">
+                        <div className="modal-edit-grid">
+                            <div className="modal-edit-camp">
+                                <label htmlFor="edit-id">ID</label>
+                                <input id="edit-id" type="number" value={formData.id} readOnly disabled />
+                            </div>
+                            <div className="modal-edit-camp">
+                                <label htmlFor="edit-departament">Departament</label>
+                                <select
+                                    id="edit-departament"
+                                    className="ui-select"
+                                    value={formData.departamentId === '' ? '' : String(formData.departamentId)}
+                                    onChange={(e) => handleChange('departamentId', e.target.value ? Number(e.target.value) : '')}
+                                    required
+                                >
+                                    {departamente.map((d) => (
+                                        <option key={d.id} value={d.id}>
+                                            {d.nume}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="modal-edit-camp">
+                                <label htmlFor="edit-subdomeniu">Subdomeniu</label>
+                                <input
+                                    id="edit-subdomeniu"
+                                    type="text"
+                                    value={formData.subdomeniu}
+                                    onChange={(e) => handleChange('subdomeniu', e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div className="modal-edit-camp">
+                                <label htmlFor="edit-nume">Nume</label>
+                                <input
+                                    id="edit-nume"
+                                    type="text"
+                                    value={formData.nume}
+                                    onChange={(e) => handleChange('nume', e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div className="modal-edit-camp">
+                                <label htmlFor="edit-nivel">Nivel</label>
+                                <input
+                                    id="edit-nivel"
+                                    type="text"
+                                    value={formData.nivel}
+                                    onChange={(e) => handleChange('nivel', e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div className="modal-edit-camp">
+                                <label htmlFor="edit-nr-pozitii">Nr. poziții</label>
+                                <input
+                                    id="edit-nr-pozitii"
+                                    type="number"
+                                    min={1}
+                                    step={1}
+                                    value={formData.nrPozitii ?? 1}
+                                    onChange={(e) => handleChange('nrPozitii', e.target.value)}
+                                    required
+                                />
+                                <p className="modal-edit-hint">
+                                    Poziții libere se calculează automat din pipeline (Ofertă + Admis).
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="modal-edit-camp">
+                            <label htmlFor="edit-descriere">Descriere (text)</label>
+                            <JobDescriereSectiuniHint className="modal-edit-hint" />
+                            <textarea
+                                id="edit-descriere"
+                                rows={6}
+                                value={formData.descriere ?? ''}
+                                onChange={(e) => handleChange('descriere', e.target.value)}
+                                placeholder="Opțional dacă atașați PDF/DOCX — altfel completați aici cu toate secțiunile obligatorii."
+                            />
+                        </div>
+
+                        <div className="modal-edit-camp modal-edit-fisier-descriere">
+                            <label htmlFor="edit-descriere-fisier">Descriere ca fișier (PDF sau DOCX)</label>
+                            <JobDescriereSectiuniHint className="modal-edit-hint" compact />
+                            <input
+                                ref={fisierInputRef}
+                                id="edit-descriere-fisier"
+                                type="file"
+                                accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                onChange={onFisierChange}
+                            />
                         {areFisierPeServer && (
                             <div className="modal-edit-fisier-actiuni">
                                 <span className="modal-edit-fisier-nume">
@@ -291,9 +330,10 @@ export default function ModalEditJob({
                             </div>
                         )}
                     </div>
+                    </div>
                     <div className="modal-edit-butonuri">
                         <button type="button" className="modal-btn modal-btn-anulare" onClick={onClose}>
-                            Anulare
+                            Anulează
                         </button>
                         <button type="submit" className="modal-btn modal-btn-salvare">
                             Salvează

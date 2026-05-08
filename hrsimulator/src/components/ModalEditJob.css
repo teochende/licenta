@@ -1,26 +1,132 @@
 .modal-edit-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(2px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 1rem;
+  animation: modal-edit-fade-in 0.18s ease both;
 }
 
 .modal-edit-job {
+  --me-border: rgba(148, 163, 184, 0.45);
+  --me-text: #0f172a;
+  --me-muted: #64748b;
+  --me-accent-a: #2563eb;
+  --me-accent-b: #7c3aed;
+  --me-ring: 0 0 0 3px rgba(124, 58, 237, 0.18);
+  --me-shadow: 0 18px 55px rgba(15, 23, 42, 0.22), 0 3px 14px rgba(15, 23, 42, 0.08);
+
   background: #fff;
-  border-radius: 8px;
-  padding: 1.5rem;
-  max-width: 420px;
-  width: 90%;
+  border-radius: 14px;
+  padding: 0;
+  max-width: 520px;
+  width: 100%;
   max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  box-shadow: var(--me-shadow);
+  border: 1px solid var(--me-border);
+  animation: modal-edit-pop-in 0.22s ease both;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-edit-job--wide {
-  max-width: 520px;
+  max-width: 760px;
+}
+
+.modal-edit-head {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem 1rem;
+  background: linear-gradient(180deg, rgba(248, 250, 252, 1) 0%, rgba(255, 255, 255, 1) 100%);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.95);
+}
+
+.modal-edit-head::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--me-accent-a), var(--me-accent-b));
+}
+
+.modal-edit-head__text {
+  min-width: 0;
+}
+
+.modal-edit-head__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--me-text);
+}
+
+.modal-edit-head__subtitle {
+  margin: 0.3rem 0 0;
+  font-size: 0.85rem;
+  color: var(--me-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.modal-edit-head__close {
+  flex-shrink: 0;
+  width: 2.15rem;
+  height: 2.15rem;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--me-muted);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease, transform 0.14s ease;
+}
+
+.modal-edit-head__close:hover {
+  background: rgba(226, 232, 240, 0.6);
+  color: var(--me-text);
+  transform: translateY(-1px);
+}
+
+.modal-edit-form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.modal-edit-body {
+  padding: 1.15rem 1.25rem 1.25rem;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.modal-edit-loading {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--me-muted);
+}
+
+.modal-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.modal-edit-grid .modal-edit-camp {
+  margin-bottom: 0;
 }
 
 .modal-edit-camp select:not(.ui-select) {
@@ -109,11 +215,6 @@
   cursor: pointer;
 }
 
-.modal-edit-job h2 {
-  margin-top: 0;
-  margin-bottom: 1rem;
-}
-
 .modal-edit-camp {
   margin-bottom: 1rem;
 }
@@ -123,22 +224,53 @@
   margin-bottom: 4px;
   font-weight: 600;
   font-size: 14px;
+  color: var(--me-text);
 }
 
 .modal-edit-camp input[type="text"],
 .modal-edit-camp input[type="number"],
 .modal-edit-camp textarea {
   width: 100%;
-  padding: 8px 10px;
-  border: 1px solid #e1e4e8;
-  border-radius: 4px;
-  font-size: 14px;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--me-border);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.92rem;
+  line-height: 1.35;
   box-sizing: border-box;
+  color: var(--me-text);
+  background: #fff;
+  transition: border-color 0.16s ease, box-shadow 0.18s ease, background-color 0.16s ease;
+}
+
+.modal-edit-camp input[type="text"]:hover,
+.modal-edit-camp input[type="number"]:hover,
+.modal-edit-camp textarea:hover {
+  border-color: rgba(37, 99, 235, 0.35);
+  background: #fafbff;
+}
+
+.modal-edit-camp input[type="text"]:focus,
+.modal-edit-camp input[type="number"]:focus,
+.modal-edit-camp textarea:focus {
+  outline: none;
+  border-color: rgba(124, 58, 237, 0.65);
+  box-shadow: var(--me-ring);
+}
+
+.modal-edit-camp textarea::placeholder,
+.modal-edit-camp input::placeholder {
+  color: #94a3b8;
+}
+
+.modal-edit-camp input[disabled] {
+  opacity: 0.72;
+  background: rgba(241, 245, 249, 0.65);
 }
 
 .modal-edit-camp textarea {
   resize: vertical;
-  min-height: 60px;
+  min-height: 110px;
 }
 
 .modal-edit-checkbox label {
@@ -158,17 +290,20 @@
   display: flex;
   gap: 10px;
   justify-content: flex-end;
-  margin-top: 1.25rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e1e4e8;
+  padding: 0.95rem 1.25rem 1.1rem;
+  border-top: 1px solid rgba(226, 232, 240, 0.95);
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.5) 0%, rgba(255, 255, 255, 0.98) 100%);
 }
 
 .modal-btn {
-  padding: 6px 10px;
-  border: none;
-  border-radius: 4px;
+  padding: 0.58rem 0.9rem;
+  border: 1px solid transparent;
+  border-radius: 10px;
   cursor: pointer;
   font-weight: 600;
+  font: inherit;
+  font-size: 0.9rem;
+  transition: transform 0.14s ease, filter 0.14s ease, background-color 0.14s ease, border-color 0.14s ease;
 }
 
 .modal-btn:hover {
@@ -176,11 +311,54 @@
 }
 
 .modal-btn-anulare {
-  background: #95a5a6;
-  color: #fff;
+  background: rgba(124, 58, 237, 0.06);
+  border-color: rgba(124, 58, 237, 0.22);
+  color: #3b0764;
 }
 
 .modal-btn-salvare {
-  background: #27ae60;
+  background: linear-gradient(90deg, var(--me-accent-a) 0%, var(--me-accent-b) 100%);
   color: #fff;
+  box-shadow: 0 12px 30px rgba(37, 99, 235, 0.22);
+}
+
+.modal-btn-salvare:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.02);
+}
+
+.modal-btn-anulare:hover {
+  background: rgba(124, 58, 237, 0.1);
+  border-color: rgba(124, 58, 237, 0.32);
+  transform: translateY(-1px);
+}
+
+@keyframes modal-edit-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-edit-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 720px) {
+  .modal-edit-job--wide {
+    max-width: 95vw;
+  }
+
+  .modal-edit-grid {
+    grid-template-columns: 1fr;
+  }
 }

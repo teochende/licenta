@@ -545,9 +545,15 @@
     justify-content: center;
     z-index: 1000;
     padding: 1rem;
+    animation: admin-modal-fade-in 0.18s ease both;
 }
 
 .admin-modal {
+    --am-accent-a: #2563eb;
+    --am-accent-b: #7c3aed;
+    --am-accent-soft: rgba(124, 58, 237, 0.14);
+    --am-ring: 0 0 0 3px rgba(124, 58, 237, 0.18);
+
     background: var(--admin-surface);
     padding: 0;
     border-radius: var(--admin-radius);
@@ -559,6 +565,7 @@
     flex-direction: column;
     box-shadow: var(--admin-shadow-lg);
     border: 1px solid var(--admin-border);
+    animation: admin-modal-pop-in 0.22s ease both;
 }
 
 .admin-modal__head {
@@ -568,13 +575,44 @@
     gap: 1rem;
     padding: 1.15rem 1.25rem;
     border-bottom: 1px solid var(--admin-border);
-    background: #fafbfc;
+    background: linear-gradient(180deg, rgba(248, 250, 252, 1) 0%, rgba(255, 255, 255, 1) 100%);
+    position: relative;
+}
+
+.admin-modal__head::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--am-accent-a), var(--am-accent-b));
+}
+
+.admin-modal__head-text {
+    min-width: 0;
 }
 
 .admin-modal__head h3 {
     margin: 0;
     font-size: 1.1rem;
     font-weight: 600;
+}
+
+.admin-modal__title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--admin-text, #0f172a);
+}
+
+.admin-modal__subtitle {
+    margin: 0.25rem 0 0;
+    font-size: 0.85rem;
+    color: var(--admin-muted, #64748b);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .admin-modal__close {
@@ -588,11 +626,13 @@
     font-size: 1.35rem;
     line-height: 1;
     cursor: pointer;
+    transition: background 0.14s ease, color 0.14s ease, transform 0.14s ease;
 }
 
 .admin-modal__close:hover {
     background: var(--admin-bg);
     color: var(--admin-text);
+    transform: translateY(-1px);
 }
 
 .admin-modal form {
@@ -605,6 +645,17 @@
 
 .admin-modal .admin-field span {
     font-size: 0.8125rem;
+}
+
+.admin-modal .admin-field input:not(.ui-input),
+.admin-modal .admin-field select.ui-select {
+    border-radius: 10px;
+}
+
+.admin-modal .admin-field input:not(.ui-input):focus,
+.admin-modal .admin-field select.ui-select:focus {
+    border-color: rgba(124, 58, 237, 0.65);
+    box-shadow: var(--admin-shadow, 0 1px 2px rgba(15, 23, 42, 0.05), 0 4px 14px rgba(15, 23, 42, 0.06)), var(--am-ring);
 }
 
 .admin-checkbox {
@@ -633,6 +684,46 @@
     margin-top: 0.5rem;
     padding-top: 1rem;
     border-top: 1px solid var(--admin-border);
+}
+
+.admin-modal .admin-btn-primary {
+    background: linear-gradient(90deg, var(--am-accent-a) 0%, var(--am-accent-b) 100%);
+    box-shadow: 0 10px 28px rgba(37, 99, 235, 0.22);
+}
+
+.admin-modal .admin-btn-primary:hover {
+    filter: brightness(1.02);
+    transform: translateY(-1px);
+}
+
+.admin-modal .admin-btn-secondary {
+    border-color: rgba(124, 58, 237, 0.25);
+    background: rgba(124, 58, 237, 0.06);
+}
+
+.admin-modal .admin-btn-secondary:hover {
+    background: rgba(124, 58, 237, 0.1);
+    border-color: rgba(124, 58, 237, 0.35);
+}
+
+@keyframes admin-modal-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes admin-modal-pop-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px) scale(0.985);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 /* Departamente — formular inline */

@@ -97,6 +97,7 @@ export default function AdminPanel({ token }) {
         [departamenteAll]
     )
     const pageSizeOptions = useMemo(() => PAGE_SIZE_OPTIONS.map((n) => ({ value: String(n), label: String(n) })), [])
+    const editUserRolOptions = useMemo(() => roluri.map((r) => ({ value: r.cod, label: r.denumire })), [roluri])
 
     useEffect(() => {
         const t = setTimeout(() => setUserQDebounced(userQInput.trim()), 350)
@@ -744,7 +745,14 @@ export default function AdminPanel({ token }) {
                         >
                             <div className="admin-modal" onClick={(ev) => ev.stopPropagation()}>
                                 <div className="admin-modal__head">
-                                    <h3 id="admin-edit-user-title">Editare utilizator #{editingUser.id}</h3>
+                                    <div className="admin-modal__head-text">
+                                        <h3 id="admin-edit-user-title" className="admin-modal__title">
+                                            Editează utilizator
+                                        </h3>
+                                        <p className="admin-modal__subtitle">
+                                            #{editingUser.id} · {editingUser.email}
+                                        </p>
+                                    </div>
                                     <button
                                         type="button"
                                         className="admin-modal__close"
@@ -784,17 +792,14 @@ export default function AdminPanel({ token }) {
                                     </div>
                                     <div className="admin-field">
                                         <span>Rol</span>
-                                        <select
-                                            className="ui-select"
+                                        <SearchableSelect
+                                            id="admin-edit-user-rol"
                                             value={editingUser.rol}
                                             onChange={(ev) => setEditingUser((x) => ({ ...x, rol: ev.target.value }))}
-                                        >
-                                            {roluri.map((r) => (
-                                                <option key={r.cod} value={r.cod}>
-                                                    {r.denumire}
-                                                </option>
-                                            ))}
-                                        </select>
+                                            placeholder="Selectați rolul…"
+                                            ariaLabel="Rol utilizator"
+                                            options={editUserRolOptions}
+                                        />
                                     </div>
                                     {editingUser.rol === 'MANAGER_DEPARTAMENT' && (
                                         <div className="admin-field">
