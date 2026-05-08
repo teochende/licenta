@@ -1,6 +1,143 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { validateJobDescriereSections, JobDescriereSectiuniHint } from '../utils/jobDescriereSections.jsx'
 import './ModalEditJob.css'
+
+function normalizePerson(p, roleFallback) {
+    if (!p) return null
+    if (typeof p === 'string') {
+        const username = String(p)
+        const role = roleFallback || ''
+        const searchText = `${username} ${role}`.trim().toLowerCase()
+        return { username, email: '', role, searchText }
+    }
+    const username = String(p.numeUtilizator || p.username || p.name || '').trim()
+    if (!username) return null
+    const email = String(p.email || '').trim()
+    const role = String(p.rolCod || p.rol || roleFallback || '').trim()
+    const searchText = `${username} ${email} ${role}`.trim().toLowerCase()
+    return { username, email, role, searchText }
+}
+
+function PeoplePicker({
+    title,
+    roleFallback,
+    people,
+    selected,
+    onToggleUsername,
+    emptyHint,
+    searchPlaceholder = 'Search',
+}) {
+    const [open, setOpen] = useState(false)
+    const [q, setQ] = useState('')
+
+    const normalized = useMemo(() => {
+        const out = []
+        ;(Array.isArray(people) ? people : []).forEach((p) => {
+            const n = normalizePerson(p, roleFallback)
+            if (n) out.push(n)
+        })
+        out.sort((a, b) => a.username.localeCompare(b.username))
+        return out
+    }, [people, roleFallback])
+
+    const selectedSet = useMemo(() => new Set(Array.isArray(selected) ? selected : []), [selected])
+
+    const filtered = useMemo(() => {
+        const qq = q.trim().toLowerCase()
+        if (!qq) return normalized
+        return normalized.filter((p) => p.searchText.includes(qq))
+    }, [normalized, q])
+
+    const chips = useMemo(() => normalized.filter((p) => selectedSet.has(p.username)), [normalized, selectedSet])
+
+    return (
+        <div className="modal-edit-picker">
+            <button
+                type="button"
+                className="modal-edit-picker__head"
+                onClick={() => setOpen((x) => !x)}
+                aria-expanded={open}
+            >
+                <span className="modal-edit-picker__title">{title}</span>
+                <span className="modal-edit-picker__count">{selectedSet.size}</span>
+                <span className="modal-edit-picker__chev" aria-hidden="true">
+                    ▾
+                </span>
+            </button>
+
+            {selectedSet.size > 0 ? (
+                <div className="modal-edit-chips" aria-label={`Selectați: ${title}`}>
+                    {chips.map((p) => (
+                        <span key={p.username} className="modal-edit-chip" title={p.email || p.role || p.username}>
+                            <span className="modal-edit-chip__text">{p.username}</span>
+                            <button
+                                type="button"
+                                className="modal-edit-chip__x"
+                                onClick={() => onToggleUsername(p.username)}
+                                aria-label={`Elimină ${p.username}`}
+                            >
+                                ×
+                            </button>
+                        </span>
+                    ))}
+                </div>
+            ) : (
+                <p className="modal-edit-picker__empty">Nimeni selectat.</p>
+            )}
+
+            {open ? (
+                normalized.length === 0 ? (
+                    <p className="modal-edit-hint">{emptyHint}</p>
+                ) : (
+                    <div className="modal-edit-picker__panel">
+                        <div className="modal-edit-picker__search">
+                            <input
+                                type="search"
+                                className="modal-edit-picker__search-input"
+                                placeholder={searchPlaceholder}
+                                value={q}
+                                onChange={(e) => setQ(e.target.value)}
+                                aria-label={`Caută în ${title}`}
+                                autoComplete="off"
+                            />
+                        </div>
+                        <div className="modal-edit-picker__list" role="listbox" aria-label={title}>
+                            {filtered.length === 0 ? (
+                                <div className="modal-edit-picker__nope">Niciun rezultat.</div>
+                            ) : (
+                                filtered.map((p) => {
+                                    const checked = selectedSet.has(p.username)
+                                    return (
+                                        <button
+                                            key={p.username}
+                                            type="button"
+                                            className={`modal-edit-picker__row${checked ? ' modal-edit-picker__row--checked' : ''}`}
+                                            onClick={() => onToggleUsername(p.username)}
+                                            role="option"
+                                            aria-selected={checked}
+                                        >
+                                            <span className="modal-edit-picker__row-main">
+                                                <span className="modal-edit-picker__row-name">{p.username}</span>
+                                                {p.email || p.role ? (
+                                                    <span className="modal-edit-picker__row-sub">
+                                                        {[p.email, p.role].filter(Boolean).join(' · ')}
+                                                    </span>
+                                                ) : null}
+                                            </span>
+                                            <span className="modal-edit-picker__row-check" aria-hidden="true">
+                                                {checked ? '✓' : ''}
+                                            </span>
+                                        </button>
+                                    )
+                                })
+                            )}
+                        </div>
+                    </div>
+                )
+            ) : null}
+        </div>
+    )
+}
 
 export default function ModalEditJob({
     job,
@@ -253,13 +390,38 @@ export default function ModalEditJob({
                         <div className="modal-edit-camp modal-edit-fisier-descriere">
                             <label htmlFor="edit-descriere-fisier">Descriere ca fișier (PDF sau DOCX)</label>
                             <JobDescriereSectiuniHint className="modal-edit-hint" compact />
-                            <input
-                                ref={fisierInputRef}
-                                id="edit-descriere-fisier"
-                                type="file"
-                                accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                                onChange={onFisierChange}
-                            />
+                            <div className="modal-edit-upload">
+                                <input
+                                    ref={fisierInputRef}
+                                    id="edit-descriere-fisier"
+                                    className="modal-edit-upload__input"
+                                    type="file"
+                                    accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                    onChange={onFisierChange}
+                                />
+                                <label className="modal-edit-upload__btn" htmlFor="edit-descriere-fisier">
+                                    <svg
+                                        className="modal-edit-upload__icon"
+                                        width="14"
+                                        height="14"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        aria-hidden="true"
+                                    >
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                        <path d="M7 10l5-5 5 5" />
+                                        <path d="M12 5v14" />
+                                    </svg>
+                                    Browse
+                                </label>
+                                <div className="modal-edit-upload__meta" aria-live="polite">
+                                    {descriereFisierFile ? `Selectat: ${descriereFisierFile.name}` : 'Niciun fișier selectat'}
+                                </div>
+                            </div>
                         {areFisierPeServer && (
                             <div className="modal-edit-fisier-actiuni">
                                 <span className="modal-edit-fisier-nume">
@@ -288,47 +450,24 @@ export default function ModalEditJob({
                         </label>
                     </div>
                     <div className="modal-edit-camp modal-edit-atribuiri">
-                        <span className="modal-edit-label">Recruteri atribuiți</span>
-                        {recrutoriDisponibili.length === 0 ? (
-                            <p className="modal-edit-hint">
-                                Nu există utilizatori cu rol recrutor sau lista nu s-a încărcat. Creați utilizatori recrutori
-                                în administrare.
-                            </p>
-                        ) : (
-                            <div className="modal-edit-checkbox-list">
-                                {recrutoriDisponibili.map((u) => (
-                                    <label key={u} className="modal-edit-checkbox-item">
-                                        <input
-                                            type="checkbox"
-                                            checked={(formData.assignedRecrutori || []).includes(u)}
-                                            onChange={() => toggleRecrutor(u)}
-                                        />
-                                        {u}
-                                    </label>
-                                ))}
-                            </div>
-                        )}
+                        <PeoplePicker
+                            title="Recrutori atribuiți"
+                            roleFallback="RECRUTOR"
+                            people={recrutoriDisponibili}
+                            selected={formData.assignedRecrutori || []}
+                            onToggleUsername={toggleRecrutor}
+                            emptyHint="Nu există utilizatori cu rol recrutor sau lista nu s-a încărcat. Creați utilizatori recrutori în administrare."
+                        />
                     </div>
                     <div className="modal-edit-camp modal-edit-atribuiri">
-                        <span className="modal-edit-label">Intervievatori tehnici atribuiți</span>
-                        {intervievatoriDisponibili.length === 0 ? (
-                            <p className="modal-edit-hint">
-                                Nu există intervievatori tehnici sau lista nu s-a încărcat.
-                            </p>
-                        ) : (
-                            <div className="modal-edit-checkbox-list">
-                                {intervievatoriDisponibili.map((u) => (
-                                    <label key={u} className="modal-edit-checkbox-item">
-                                        <input
-                                            type="checkbox"
-                                            checked={(formData.assignedIntervievatori || []).includes(u)}
-                                            onChange={() => toggleIntervievator(u)}
-                                        />
-                                        {u}
-                                    </label>
-                                ))}
-                            </div>
-                        )}
+                        <PeoplePicker
+                            title="Intervievatori tehnici atribuiți"
+                            roleFallback="INTERVIEVATOR_TEHNIC"
+                            people={intervievatoriDisponibili}
+                            selected={formData.assignedIntervievatori || []}
+                            onToggleUsername={toggleIntervievator}
+                            emptyHint="Nu există intervievatori tehnici sau lista nu s-a încărcat."
+                        />
                     </div>
                     </div>
                     <div className="modal-edit-butonuri">

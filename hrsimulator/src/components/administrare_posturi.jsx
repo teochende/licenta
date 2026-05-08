@@ -138,8 +138,8 @@ export default function AdministrarePosturi({
 
     const recrutoriEfectivi = hrMeta.loaded ? hrMeta.recrutori : recrutoriDto
     const intervievatoriEfectivi = hrMeta.loaded ? hrMeta.intervievatori : intervievatoriDto
-    const recrutoriNume = recrutoriEfectivi.map((r) => r.numeUtilizator)
-    const intervievatoriNume = intervievatoriEfectivi.map((r) => r.numeUtilizator)
+    const recrutoriDisponibili = recrutoriEfectivi
+    const intervievatoriDisponibili = intervievatoriEfectivi
 
     const totalPages = Math.max(1, Math.ceil(postTotal / pageSize) || 1)
 
@@ -464,8 +464,8 @@ export default function AdministrarePosturi({
                 onSave={salveazaEditare}
                 onClose={inchideModal}
                 departamente={departamente}
-                recrutoriDisponibili={recrutoriNume}
-                intervievatoriDisponibili={intervievatoriNume}
+                recrutoriDisponibili={recrutoriDisponibili}
+                intervievatoriDisponibili={intervievatoriDisponibili}
             />
         </div>
     )
