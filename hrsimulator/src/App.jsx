@@ -190,7 +190,16 @@ function App() {
     return (
         <>
             <Router>
-                <h1>Simulator HR</h1>
+                <a href="/" className="app-brand" aria-label="Simulator HR – Posturi">
+                    <img
+                        className="app-brand__mascot"
+                        src="/mascota_iepuras_hr.png"
+                        alt="Mascota aplicației"
+                        loading="eager"
+                        decoding="async"
+                    />
+                    <span className="app-brand__title">Simulator HR</span>
+                </a>
                 <LoginContext.Provider value={{ user, onLogout }}>
                     <Toolbar />
                     <Routes>
