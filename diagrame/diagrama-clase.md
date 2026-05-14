@@ -54,8 +54,8 @@ classDiagram
         +String prioritate
         +Integer ordineDashboard
         +Integer nrPozitii
-        +Set~Utilizator~ recrutori
-        +Set~Utilizator~ intervievatori
+        +Set recrutori
+        +Set intervievatori
     }
 
     class CerereAngajare {
@@ -71,8 +71,8 @@ classDiagram
         +String status
         +Utilizator creatDe
         +Post postDeschis
-        +List~Utilizator~ intervievatoriTehnici
-        +List~Utilizator~ recrutori
+        +List intervievatoriTehnici
+        +List recrutori
     }
 
     class DescriereCerereMod {
@@ -128,10 +128,7 @@ classDiagram
 
     Aplicatie "n" --> "1" Post : post
 
-    note for Utilizator
-        Implementează Spring Security
-        org.springframework.security.core.userdetails.UserDetails
-    end note
+    note for Utilizator "Implementeaza UserDetails (Spring Security). Autoritati: ROLE_ + nume rol."
 ```
 
 ### Legături tabele de asociere (JPA)
@@ -193,12 +190,8 @@ classDiagram
     }
 
     FeedbackRequest ..> FeedbackResponse : produce
-    note for AnalyzeResponse
-        Răspuns analiză potrivire CV–job
-    end note
-    note for VideoEnglishAnalysisResponse
-        Răspuns analiză competențe engleză din video
-    end note
+    note for AnalyzeResponse "Raspuns analiza potrivire CV-job"
+    note for VideoEnglishAnalysisResponse "Raspuns analiza competente engleza din video"
 ```
 
 ---
