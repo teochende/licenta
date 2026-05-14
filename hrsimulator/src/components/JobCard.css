@@ -612,9 +612,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
-  z-index: 1100;
+  padding: max(0.75rem, env(safe-area-inset-top)) max(0.75rem, env(safe-area-inset-right)) max(0.75rem, env(safe-area-inset-bottom))
+    max(0.75rem, env(safe-area-inset-left));
+  z-index: 270000;
   animation: job-card-overlay-in 0.22s ease both;
+}
+
+.job-card-modal-overlay--portal {
+  isolation: isolate;
 }
 
 @keyframes job-card-overlay-in {
@@ -631,12 +636,28 @@
   border-radius: 16px;
   padding: 1.35rem 1.4rem;
   max-width: 520px;
-  width: min(520px, 100%);
-  max-height: min(80vh, 640px);
-  overflow: auto;
+  width: min(520px, calc(100vw - 2rem));
+  max-height: min(88vh, 720px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   border: 1px solid rgba(15, 23, 42, 0.08);
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+  box-sizing: border-box;
+}
+
+.job-card-modal-lista-candidati--portal {
+  max-height: min(88vh, 720px);
+}
+
+.job-card-modal-lista-candidati__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  margin-right: -0.2rem;
+  padding-right: 0.2rem;
 }
 
 .job-card-modal-lista-candidati h4 {
@@ -645,6 +666,7 @@
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--job-text);
+  flex-shrink: 0;
 }
 
 .job-card-lista-gol {
@@ -818,6 +840,13 @@
   gap: 0.65rem;
   justify-content: flex-end;
   margin-top: 1.1rem;
+}
+
+.job-card-modal-lista-candidati .job-card-modal-btns {
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(226, 232, 240, 0.95);
+  flex-shrink: 0;
 }
 
 .job-card-btn-anulare {

@@ -336,87 +336,109 @@ export default function JobCard({
                 cvAcceptate={cvAcceptate}
                 cvRespinse={cvRespinse}
             />
-            {editDescriereOpen && (
-                <div className="job-card-modal-overlay" onClick={() => setEditDescriereOpen(false)}>
-                    <div className="job-card-modal-descriere" onClick={(e) => e.stopPropagation()}>
-                        <h4>Editează descrierea jobului</h4>
-                        <JobDescriereSectiuniHint className="job-card-modal-hint-descriere" compact />
-                        <textarea
-                            rows={4}
-                            value={draftDescriere}
-                            onChange={(e) => setDraftDescriere(e.target.value)}
-                            className="job-card-modal-textarea"
-                        />
-                        <div className="job-card-modal-btns">
-                            <button type="button" className="job-card-btn-anulare" onClick={() => setEditDescriereOpen(false)}>Anulare</button>
-                            <button type="button" className="job-card-btn-salvare" onClick={handleSaveDescriere}>Salvează</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-            {listaCandidatiOpen && (
-                <div className="job-card-modal-overlay" onClick={() => setListaCandidatiOpen(false)}>
-                    <div className="job-card-modal-lista-candidati" onClick={(e) => e.stopPropagation()}>
-                        <h4>Candidați care au aplicat – {job.nume}</h4>
-                        {candidatiAplicanti.length === 0 ? (
-                            <p className="job-card-lista-gol">Niciun candidat pentru acest post.</p>
-                        ) : (
-                            <>
-                                <ul className="job-card-candidati-lista">
-                                    {candidatiAplicanti.map((c) => (
-                                        <li
-                                            key={c.id}
-                                            className="job-card-candidat-item job-card-candidat-item--clickabil"
-                                            onClick={() => onScrollToAplicantPipeline?.(c.id)}
-                                        >
-                                            <div className="job-card-candidat-linie-principala">
-                                                <span className="job-card-candidat-nume">{numeDinEmail(c.email)}</span>
-                                                {c.cvNumeFisier ? (
-                                                    c.cvFisierStocat ? (
-                                                        <span className="job-card-cv-link-inline">
-                                                            <CvFisierLink
-                                                                authToken={authToken}
-                                                                aplicatieId={c.id}
-                                                                cvNumeFisier={c.cvNumeFisier}
-                                                                cvFisierStocat={c.cvFisierStocat}
-                                                            />
-                                                        </span>
-                                                    ) : (
-                                                        <span className="job-card-cv-nume-fisier" title="Fișier indisponibil pentru descărcare">
-                                                            {c.cvNumeFisier}
-                                                        </span>
-                                                    )
-                                                ) : null}
-                                                {c.videoNumeFisier && c.videoFisierStocat ? (
-                                                    <span className="job-card-cv-link-inline job-card-video-link-inline">
-                                                        <VideoFisierLink
-                                                            authToken={authToken}
-                                                            aplicatieId={c.id}
-                                                            videoNumeFisier={c.videoNumeFisier}
-                                                            videoFisierStocat={c.videoFisierStocat}
-                                                        />
-                                                    </span>
-                                                ) : c.videoNumeFisier && !c.videoFisierStocat ? (
-                                                    <span className="job-card-cv-nume-fisier" title="Videoclip indisponibil">
-                                                        {c.videoNumeFisier}
-                                                    </span>
-                                                ) : null}
-                                            </div>
-                                            <span className="job-card-candidat-email">{c.email}</span>
-                                            <span className="job-card-candidat-data">
-                                                Aplicat: {formatDataAplicare(c.dataAplicare)}
-                                            </span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </>
-                        )}
-                        <div className="job-card-modal-btns">
-                            <button type="button" className="job-card-btn-anulare" onClick={() => setListaCandidatiOpen(false)}>Închide</button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {editDescriereOpen
+                ? createPortal(
+                      <div className="job-card-modal-overlay job-card-modal-overlay--portal" onClick={() => setEditDescriereOpen(false)}>
+                          <div className="job-card-modal-descriere" onClick={(e) => e.stopPropagation()}>
+                              <h4>Editează descrierea jobului</h4>
+                              <JobDescriereSectiuniHint className="job-card-modal-hint-descriere" compact />
+                              <textarea
+                                  rows={4}
+                                  value={draftDescriere}
+                                  onChange={(e) => setDraftDescriere(e.target.value)}
+                                  className="job-card-modal-textarea"
+                              />
+                              <div className="job-card-modal-btns">
+                                  <button type="button" className="job-card-btn-anulare" onClick={() => setEditDescriereOpen(false)}>
+                                      Anulare
+                                  </button>
+                                  <button type="button" className="job-card-btn-salvare" onClick={handleSaveDescriere}>
+                                      Salvează
+                                  </button>
+                              </div>
+                          </div>
+                      </div>,
+                      document.body
+                  )
+                : null}
+            {listaCandidatiOpen
+                ? createPortal(
+                      <div
+                          className="job-card-modal-overlay job-card-modal-overlay--portal"
+                          role="presentation"
+                          onClick={() => setListaCandidatiOpen(false)}
+                      >
+                          <div
+                              className="job-card-modal-lista-candidati job-card-modal-lista-candidati--portal"
+                              role="dialog"
+                              aria-modal="true"
+                              aria-labelledby={`job-card-lista-candidati-title-${job.id}`}
+                              onClick={(e) => e.stopPropagation()}
+                          >
+                              <h4 id={`job-card-lista-candidati-title-${job.id}`}>Candidați care au aplicat – {job.nume}</h4>
+                              <div className="job-card-modal-lista-candidati__scroll">
+                                  {candidatiAplicanti.length === 0 ? (
+                                      <p className="job-card-lista-gol">Niciun candidat pentru acest post.</p>
+                                  ) : (
+                                      <ul className="job-card-candidati-lista">
+                                          {candidatiAplicanti.map((c) => (
+                                              <li
+                                                  key={c.id}
+                                                  className="job-card-candidat-item job-card-candidat-item--clickabil"
+                                                  onClick={() => onScrollToAplicantPipeline?.(c.id)}
+                                              >
+                                                  <div className="job-card-candidat-linie-principala">
+                                                      <span className="job-card-candidat-nume">{numeDinEmail(c.email)}</span>
+                                                      {c.cvNumeFisier ? (
+                                                          c.cvFisierStocat ? (
+                                                              <span className="job-card-cv-link-inline">
+                                                                  <CvFisierLink
+                                                                      authToken={authToken}
+                                                                      aplicatieId={c.id}
+                                                                      cvNumeFisier={c.cvNumeFisier}
+                                                                      cvFisierStocat={c.cvFisierStocat}
+                                                                  />
+                                                              </span>
+                                                          ) : (
+                                                              <span className="job-card-cv-nume-fisier" title="Fișier indisponibil pentru descărcare">
+                                                                  {c.cvNumeFisier}
+                                                              </span>
+                                                          )
+                                                      ) : null}
+                                                      {c.videoNumeFisier && c.videoFisierStocat ? (
+                                                          <span className="job-card-cv-link-inline job-card-video-link-inline">
+                                                              <VideoFisierLink
+                                                                  authToken={authToken}
+                                                                  aplicatieId={c.id}
+                                                                  videoNumeFisier={c.videoNumeFisier}
+                                                                  videoFisierStocat={c.videoFisierStocat}
+                                                              />
+                                                          </span>
+                                                      ) : c.videoNumeFisier && !c.videoFisierStocat ? (
+                                                          <span className="job-card-cv-nume-fisier" title="Videoclip indisponibil">
+                                                              {c.videoNumeFisier}
+                                                          </span>
+                                                      ) : null}
+                                                  </div>
+                                                  <span className="job-card-candidat-email">{c.email}</span>
+                                                  <span className="job-card-candidat-data">
+                                                      Aplicat: {formatDataAplicare(c.dataAplicare)}
+                                                  </span>
+                                              </li>
+                                          ))}
+                                      </ul>
+                                  )}
+                              </div>
+                              <div className="job-card-modal-btns">
+                                  <button type="button" className="job-card-btn-anulare" onClick={() => setListaCandidatiOpen(false)}>
+                                      Închide
+                                  </button>
+                              </div>
+                          </div>
+                      </div>,
+                      document.body
+                  )
+                : null}
         </div>
     )
 }
