@@ -1,27 +1,155 @@
+/* Procesare CV-uri — panou compact în job card (doar în JobCard în proiect) */
+
 .cv-review {
-  margin-top: 0.75rem;
-  padding: 0.75rem;
-  background: #f8f9fa;
-  border-radius: 6px;
-  border: 1px solid #e9ecef;
+  margin-top: 0;
+  padding: 0.55rem 0.65rem 0.62rem;
+  background: linear-gradient(165deg, rgba(248, 250, 252, 0.98) 0%, rgba(241, 245, 249, 0.65) 100%);
+  border-radius: 11px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.75) inset;
+  transition:
+    border-color 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.job-card:not(.job-card--dragging):hover .cv-review {
+  border-color: rgba(148, 163, 184, 0.42);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.75) inset,
+    0 3px 12px rgba(15, 23, 42, 0.04);
 }
 
 .cv-review-titlu {
-  margin: 0 0 0.5rem 0;
-  font-size: 0.9rem;
-  color: #495057;
+  margin: 0 0 0.45rem 0;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.cv-review-titlu::before {
+  content: '';
+  width: 0.85rem;
+  height: 0.85rem;
+  flex-shrink: 0;
+  opacity: 0.88;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/%3E%3Cpolyline points='14 2 14 8 20 8'/%3E%3Cline x1='16' y1='13' x2='8' y2='13'/%3E%3Cline x1='16' y1='17' x2='8' y2='17'/%3E%3C/svg%3E")
+    center / contain no-repeat;
 }
 
 .cv-review-lista {
   margin: 0;
-  padding-left: 1.25rem;
-  font-size: 0.875rem;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.75rem;
 }
 
 .cv-review-lista li {
-  margin-bottom: 0.25rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.65rem;
+  padding: 0.35rem 0.45rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.cv-review-lista li:hover {
+  background: #ffffff;
+  border-color: rgba(203, 213, 225, 0.95);
 }
 
 .cv-review-label {
-  color: #6c757d;
+  color: #64748b;
+  font-weight: 500;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.28;
+}
+
+.cv-review-lista strong {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  font-size: 0.8125rem;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  padding: 0.15rem 0.42rem;
+  border-radius: 6px;
+  background: rgba(241, 245, 249, 0.95);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  flex-shrink: 0;
+}
+
+.cv-review-lista li:nth-child(1) strong {
+  background: rgba(241, 245, 249, 0.95);
+  color: #0f172a;
+}
+
+.cv-review-lista li:nth-child(2) strong {
+  background: rgba(220, 252, 231, 0.65);
+  color: #14532d;
+  border-color: rgba(34, 197, 94, 0.25);
+}
+
+.cv-review-lista li:nth-child(3) strong {
+  background: rgba(254, 226, 226, 0.65);
+  color: #991b1b;
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+/* Pe carduri suficient de late: cele 3 linii CV devin 3 coloane — aceleași texte, mai puțină înălțime */
+@container job-card (min-width: 300px) {
+  .cv-review-lista {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.3rem;
+    align-items: stretch;
+  }
+
+  .cv-review-lista li {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: center;
+    gap: 0.28rem;
+    padding: 0.38rem 0.3rem;
+    min-height: 0;
+  }
+
+  .cv-review-label {
+    font-size: 0.6rem;
+    line-height: 1.22;
+    text-align: center;
+    justify-content: center;
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .cv-review-lista strong {
+    font-size: 0.78rem;
+    padding: 0.18rem 0.35rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cv-review,
+  .cv-review-lista li {
+    transition: none !important;
+  }
+
+  .job-card:not(.job-card--dragging):hover .cv-review {
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.75) inset;
+  }
 }

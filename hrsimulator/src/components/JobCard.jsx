@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import CVReview from './CVReview'
 import CvFisierLink from './CvFisierLink'
 import VideoFisierLink from './VideoFisierLink'
@@ -7,11 +8,54 @@ import { JobDescriereSectiuniHint } from '../utils/jobDescriereSections.jsx'
 import './JobCard.css'
 
 const OPTIUNI_PRIORITATE = [
-    { value: 'critic', label: 'Critică' },
-    { value: 'mare', label: 'Mare' },
-    { value: 'medie', label: 'Medie' },
-    { value: 'mica', label: 'Mică' }
+    { value: 'critic', label: 'Critică', hint: 'Urgență maximă' },
+    { value: 'mare', label: 'Mare', hint: 'Ridicată' },
+    { value: 'medie', label: 'Medie', hint: 'Moderată' },
+    { value: 'mica', label: 'Mică', hint: 'Standard' }
 ]
+
+function IconPrioritateChevronDown({ className }) {
+    return (
+        <svg className={className} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M6 9l6 6 6-6" />
+        </svg>
+    )
+}
+
+function IconPrioritateNivel({ nivel }) {
+    const common = { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true }
+    switch (nivel) {
+        case 'critic':
+            return (
+                <svg {...common}>
+                    <path d="M12 2L2 20h20L12 2z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+            )
+        case 'mare':
+            return (
+                <svg {...common}>
+                    <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
+            )
+        case 'medie':
+            return (
+                <svg {...common}>
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                </svg>
+            )
+        case 'mica':
+        default:
+            return (
+                <svg {...common}>
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                    <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
+            )
+    }
+}
 
 function numeDinEmail(email) {
     if (!email || !email.includes('@')) return email || '—'
@@ -45,9 +89,90 @@ export default function JobCard({
     } = stats
 
     const [listaCandidatiOpen, setListaCandidatiOpen] = useState(false)
+    const [prioritateMenuOpen, setPrioritateMenuOpen] = useState(false)
+    const [prioMenuStyle, setPrioMenuStyle] = useState(null)
+    const prioritateWrapRef = useRef(null)
+    const prioritateTriggerRef = useRef(null)
+    const prioritateMenuPortalRef = useRef(null)
+
+    const updatePrioMenuPosition = useCallback(() => {
+        const el = prioritateTriggerRef.current
+        if (!el) return
+        const r = el.getBoundingClientRect()
+        const vw = window.innerWidth
+        const vh = window.innerHeight
+        const margin = 8
+        const gap = 6
+        const minW = 220
+        const width = Math.min(Math.max(minW, r.width), vw - 2 * margin)
+        let left = r.right - width
+        left = Math.max(margin, Math.min(left, vw - width - margin))
+
+        const belowTop = r.bottom + gap
+        const spaceBelow = vh - belowTop - margin
+        const spaceAbove = r.top - gap - margin
+        const preferBelow = spaceBelow >= 160 || spaceBelow >= spaceAbove
+        const maxH = (h) => Math.min(360, Math.max(120, h))
+
+        if (preferBelow) {
+            setPrioMenuStyle({
+                position: 'fixed',
+                top: belowTop,
+                bottom: 'auto',
+                left,
+                width,
+                maxHeight: maxH(spaceBelow),
+                zIndex: 250000,
+            })
+        } else {
+            setPrioMenuStyle({
+                position: 'fixed',
+                top: 'auto',
+                bottom: vh - r.top + gap,
+                left,
+                width,
+                maxHeight: maxH(spaceAbove),
+                zIndex: 250000,
+            })
+        }
+    }, [])
+
+    useLayoutEffect(() => {
+        if (!prioritateMenuOpen) {
+            setPrioMenuStyle(null)
+            return
+        }
+        updatePrioMenuPosition()
+        const onScroll = () => updatePrioMenuPosition()
+        const onResize = () => updatePrioMenuPosition()
+        window.addEventListener('resize', onResize)
+        document.addEventListener('scroll', onScroll, true)
+        return () => {
+            window.removeEventListener('resize', onResize)
+            document.removeEventListener('scroll', onScroll, true)
+        }
+    }, [prioritateMenuOpen, updatePrioMenuPosition])
+
+    useEffect(() => {
+        if (!prioritateMenuOpen) return
+        const onDocMouseDown = (ev) => {
+            const t = ev.target
+            if (prioritateWrapRef.current?.contains(t) || prioritateMenuPortalRef.current?.contains(t)) return
+            setPrioritateMenuOpen(false)
+        }
+        const onKey = (ev) => {
+            if (ev.key === 'Escape') setPrioritateMenuOpen(false)
+        }
+        document.addEventListener('mousedown', onDocMouseDown)
+        document.addEventListener('keydown', onKey)
+        return () => {
+            document.removeEventListener('mousedown', onDocMouseDown)
+            document.removeEventListener('keydown', onKey)
+        }
+    }, [prioritateMenuOpen])
 
     const handleDragStart = (e) => {
-        if (e.target.closest('select') || e.target.closest('.job-card-candidati-click')) return
+        if (e.target.closest('.job-card-prioritate') || e.target.closest('.job-card-candidati-click')) return
         e.dataTransfer.setData('application/json', JSON.stringify({ jobId: job.id, domeniu: job.domeniu }))
         e.dataTransfer.effectAllowed = 'move'
         e.currentTarget.classList.add('job-card--dragging')
@@ -58,7 +183,7 @@ export default function JobCard({
     }
 
     const handleDragOver = (e) => {
-        if (e.target.closest('select') || e.target.closest('.job-card-candidati-click')) return
+        if (e.target.closest('.job-card-prioritate') || e.target.closest('.job-card-candidati-click')) return
         e.preventDefault()
         e.dataTransfer.dropEffect = 'move'
         e.currentTarget.classList.add('job-card--drag-over')
@@ -81,7 +206,7 @@ export default function JobCard({
     const handleDrop = (e) => {
         e.preventDefault()
         e.currentTarget.classList.remove('job-card--drag-over')
-        if (e.target.closest('select')) return
+        if (e.target.closest('.job-card-prioritate')) return
         try {
             const { jobId: draggedJobId } = JSON.parse(e.dataTransfer.getData('application/json') || '{}')
             if (!draggedJobId || draggedJobId === job.id) return
@@ -107,7 +232,7 @@ export default function JobCard({
             onDrop={handleDrop}
             onClick={(e) => {
                 // nu declanșăm selectarea cardului când se apasă pe controale interactive
-                if (e.target.closest('select') || e.target.closest('button') || e.target.closest('a') || e.target.closest('input') || e.target.closest('textarea')) {
+                if (e.target.closest('.job-card-prioritate') || e.target.closest('button') || e.target.closest('a') || e.target.closest('input') || e.target.closest('textarea')) {
                     return
                 }
                 if (e.target.closest('.job-card-modal-overlay') || e.target.closest('.job-card-modal-descriere') || e.target.closest('.job-card-modal-lista-candidati')) {
@@ -118,17 +243,68 @@ export default function JobCard({
         >
             <div className="job-card-titlu-row">
                 <h3 className="job-card-titlu">{job.nume}</h3>
-                <select
-                    className={`job-card-select-prioritate job-card-select-prioritate--${prioritate}`}
-                    value={prioritate}
-                    onChange={(e) => onPrioritateChange?.(e.target.value)}
-                    aria-label="Prioritate"
+                <div
+                    className={`job-card-prioritate${prioritateMenuOpen ? ' job-card-prioritate--open' : ''}`}
+                    ref={prioritateWrapRef}
                 >
-                    {OPTIUNI_PRIORITATE.map((opt) => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                </select>
+                    <button
+                        type="button"
+                        ref={prioritateTriggerRef}
+                        className={`job-card-prioritate-trigger job-card-prioritate-trigger--${prioritate}`}
+                        id={`job-card-prio-trigger-${job.id}`}
+                        aria-label="Prioritate"
+                        aria-haspopup="listbox"
+                        aria-expanded={prioritateMenuOpen}
+                        onClick={() => setPrioritateMenuOpen((o) => !o)}
+                    >
+                        <span className="job-card-prioritate-trigger__icon" aria-hidden>
+                            <IconPrioritateNivel nivel={prioritate} />
+                        </span>
+                        <span className="job-card-prioritate-trigger__label">
+                            {OPTIUNI_PRIORITATE.find((o) => o.value === prioritate)?.label ?? prioritate}
+                        </span>
+                        <IconPrioritateChevronDown className={`job-card-prioritate-trigger__chev${prioritateMenuOpen ? ' job-card-prioritate-trigger__chev--up' : ''}`} />
+                    </button>
+                </div>
             </div>
+            {prioritateMenuOpen && prioMenuStyle
+                ? createPortal(
+                      <ul
+                          ref={prioritateMenuPortalRef}
+                          className="job-card-prioritate-menu job-card-prioritate-menu--portal"
+                          role="listbox"
+                          aria-labelledby={`job-card-prio-trigger-${job.id}`}
+                          style={prioMenuStyle}
+                      >
+                          {OPTIUNI_PRIORITATE.map((opt) => (
+                              <li key={opt.value} className="job-card-prioritate-menu__item" role="none">
+                                  <button
+                                      type="button"
+                                      role="option"
+                                      aria-selected={opt.value === prioritate}
+                                      className={`job-card-prioritate-option job-card-prioritate-option--${opt.value}${opt.value === prioritate ? ' job-card-prioritate-option--current' : ''}`}
+                                      onClick={() => {
+                                          onPrioritateChange?.(opt.value)
+                                          setPrioritateMenuOpen(false)
+                                      }}
+                                  >
+                                      <span className="job-card-prioritate-option__icon" aria-hidden>
+                                          <IconPrioritateNivel nivel={opt.value} />
+                                      </span>
+                                      <span className="job-card-prioritate-option__label-wrap">
+                                          <span className="job-card-prioritate-option__label">{opt.label}</span>
+                                          <span className="job-card-prioritate-option__hint">{opt.hint}</span>
+                                      </span>
+                                      {opt.value === prioritate ? (
+                                          <span className="job-card-prioritate-option__check" aria-hidden>✓</span>
+                                      ) : null}
+                                  </button>
+                              </li>
+                          ))}
+                      </ul>,
+                      document.body
+                  )
+                : null}
             <p className="job-card-meta">{job.domeniu} | {job.subdomeniu} | {job.nivel}</p>
             {poateEditaDescriere && (
                 <div className="job-card-edit-descriere">
