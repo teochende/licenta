@@ -36,7 +36,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Instant;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -432,26 +431,7 @@ public class AplicatieService {
      * Aliniat cu UI: candidat respins dacă există o etapă cu status {@code respins} în JSON-ul pipeline.
      */
     private static boolean pipelineIndicaRespins(String pipelineStateJson) {
-        if (pipelineStateJson == null || pipelineStateJson.isBlank()) {
-            return false;
-        }
-        try {
-            JsonNode root = PIPELINE_OBJECT_MAPPER.readTree(pipelineStateJson);
-            JsonNode status = root.get("status");
-            if (status == null || !status.isObject()) {
-                return false;
-            }
-            Iterator<Map.Entry<String, JsonNode>> it = status.fields();
-            while (it.hasNext()) {
-                JsonNode v = it.next().getValue();
-                if (v != null && v.isTextual() && "respins".equalsIgnoreCase(v.asText())) {
-                    return true;
-                }
-            }
-        } catch (Exception ignored) {
-            // JSON invalid: tratat ca ne-respins
-        }
-        return false;
+        return com.example.hrdatabase.util.PipelineJsonUtil.pipelineCandidatRespins(pipelineStateJson);
     }
 
     @Transactional(readOnly = true)

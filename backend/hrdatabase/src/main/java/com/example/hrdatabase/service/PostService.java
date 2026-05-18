@@ -573,10 +573,10 @@ public class PostService {
             if (PipelineJsonUtil.pipelineOfertaAdmis(json)) {
                 occ.merge(pid, 1, Integer::sum);
             }
-            if (PipelineJsonUtil.pipelineReviewCvAdmis(json)) {
+            if (PipelineJsonUtil.pipelineOfertaAdmis(json)) {
                 acc.merge(pid, 1, Integer::sum);
             }
-            if (PipelineJsonUtil.pipelineReviewTehnicRespins(json)) {
+            if (PipelineJsonUtil.pipelineCandidatRespins(json)) {
                 resp.merge(pid, 1, Integer::sum);
             }
         }

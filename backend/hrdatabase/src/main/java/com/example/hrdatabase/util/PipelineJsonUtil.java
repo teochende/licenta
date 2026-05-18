@@ -36,9 +36,31 @@ public final class PipelineJsonUtil {
         return pipelineStageStatusEquals(pipelineStateJson, "reviewCv", "acceptat");
     }
 
-    /** Etapa „Review tehnic” respinsă — valoarea {@code respins}. */
-    public static boolean pipelineReviewTehnicRespins(String pipelineStateJson) {
-        return pipelineStageStatusEquals(pipelineStateJson, "reviewTehnic", "respins");
+    /**
+     * Candidat respins: orice etapă din {@code status} are valoarea {@code respins}
+     * (aliniat cu filtrul „Doar respinși” și cu {@code AplicatieService#pipelineIndicaRespins}).
+     */
+    public static boolean pipelineCandidatRespins(String pipelineStateJson) {
+        if (pipelineStateJson == null || pipelineStateJson.isBlank()) {
+            return false;
+        }
+        try {
+            JsonNode root = MAPPER.readTree(pipelineStateJson);
+            JsonNode status = root.get("status");
+            if (status == null || !status.isObject()) {
+                return false;
+            }
+            var it = status.fields();
+            while (it.hasNext()) {
+                JsonNode v = it.next().getValue();
+                if (v != null && v.isTextual() && "respins".equalsIgnoreCase(v.asText())) {
+                    return true;
+                }
+            }
+        } catch (Exception ignored) {
+            return false;
+        }
+        return false;
     }
 
     private static boolean pipelineStageStatusEquals(String pipelineStateJson, String stageKey, String expected) {

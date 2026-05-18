@@ -261,8 +261,15 @@ export function isPipelineOfertaAdmisFromJson(json) {
   }
 }
 
+/** Candidat respins dacă orice etapă din pipeline are status „respins” (aliniat cu backend). */
+export function pipelineIndicaRespinsFromJson(json) {
+  const parsed = parsePipelineStateJson(json)
+  if (!parsed?.status || typeof parsed.status !== 'object') return false
+  return Object.values(parsed.status).some((s) => s === STATUS_ETAPA.RESPINS)
+}
+
 /**
- * Agregări pentru job card: review CV admis (manual sau AI) și review tehnic respins.
+ * Agregări pentru job card: ofertă admisă (stare finală) și CV-uri respinse (orice etapă respins).
  * Cheie: postId (number).
  * @param {Array<{ postId?: number, pipelineStateJson?: string }>} aplicatii
  * @returns {Record<number, { cvAcceptate: number, cvRespinse: number }>}
@@ -276,10 +283,8 @@ export function aggregateJobCvPipelineStats(aplicatii) {
     const key = Number(pid)
     if (!Number.isFinite(key)) continue
     if (!out[key]) out[key] = { cvAcceptate: 0, cvRespinse: 0 }
-    const parsed = parsePipelineStateJson(a.pipelineStateJson)
-    const st = parsed?.status
-    if (st?.reviewCv === STATUS_ETAPA.ACCEPTAT) out[key].cvAcceptate += 1
-    if (st?.reviewTehnic === STATUS_ETAPA.RESPINS) out[key].cvRespinse += 1
+    if (isPipelineOfertaAdmisFromJson(a.pipelineStateJson)) out[key].cvAcceptate += 1
+    if (pipelineIndicaRespinsFromJson(a.pipelineStateJson)) out[key].cvRespinse += 1
   }
   return out
 }

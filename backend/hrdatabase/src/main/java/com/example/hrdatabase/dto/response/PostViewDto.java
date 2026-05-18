@@ -23,9 +23,9 @@ public record PostViewDto(
         int nrPozitii,
         /** {@code nrPozitii} minus aplicări cu etapa „ofertă” admisă ({@code acceptat}) în pipeline. */
         int pozitiiLibere,
-        /** Aplicări cu etapa „Review CV” în status {@code acceptat} (flux manual sau AI). */
+        /** Aplicări cu etapa finală „Ofertă” în status {@code acceptat} (admis). */
         int cvAcceptateReviewCv,
-        /** Aplicări cu etapa „Review tehnic” în status {@code respins}. */
+        /** Aplicări cu cel puțin o etapă pipeline în status {@code respins} (orice etapă). */
         int cvRespinseReviewTehnic
 ) {
 }

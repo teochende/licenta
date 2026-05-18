@@ -15,8 +15,8 @@ public final class PostMapper {
 
     /**
      * @param ocupateOfertaAdmise număr de aplicări pe acest post cu {@code status.oferta == acceptat} în pipeline
-     * @param cvAcceptateReviewCv aplicări cu {@code status.reviewCv == acceptat}
-     * @param cvRespinseReviewTehnic aplicări cu {@code status.reviewTehnic == respins}
+     * @param cvAcceptateReviewCv aplicări cu {@code status.oferta == acceptat} (ofertă admisă)
+     * @param cvRespinseReviewTehnic aplicări cu orice etapă {@code status.* == respins}
      */
     public static PostViewDto toView(Post p, int ocupateOfertaAdmise, int cvAcceptateReviewCv, int cvRespinseReviewTehnic) {
         String domeniu = p.getDepartament() != null ? p.getDepartament().getNume() : "";
