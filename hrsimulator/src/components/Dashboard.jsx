@@ -657,7 +657,7 @@ export default function Dashboard({
 
             const label =
                 etapaKey === 'reviewCv'
-                    ? (reviewAiEfectiv ? 'Review CV AI' : 'Review CV HR')
+                    ? (reviewAiEfectiv ? 'Analiză CV cu AI' : 'Review CV HR')
                     : etapaKey === 'reviewEngleza'
                         ? (st?.reviewEnglezaAutomat
                               ? 'Review engleză (AI video)'
@@ -1026,7 +1026,7 @@ export default function Dashboard({
                                 </div>
                                 <div className="recrutor-ai-card__body">
                                     <div className="recrutor-ai-card__titles">
-                                        <span className="recrutor-ai-card__title">Review CV AI</span>
+                                        <span className="recrutor-ai-card__title">Analiză CV cu AI</span>
                                         <span className="recrutor-ai-card__subtitle">
                                             Potrivire automată între CV și descrierea postului
                                         </span>
@@ -1115,7 +1115,7 @@ export default function Dashboard({
                                 <div className="recrutor-ai-card__body">
                                     <div className="recrutor-ai-card__titles">
                                         <span className="recrutor-ai-card__title">
-                                            Activează analiză AI pentru engleză
+                                            Analiză competențe engleză cu AI
                                         </span>
                                         <span className="recrutor-ai-card__subtitle">
                                             Comunicare orală din videoclipul de aplicare
@@ -1239,7 +1239,7 @@ export default function Dashboard({
                                                         ? `Manual ${matchScoreManual ?? '—'}%\nAI ${matchScoreAi ?? '—'}%`
                                                         : `Review manual\n${matchScoreManual ?? '—'}%`
                                                     : reviewAiEfectiv
-                                                      ? 'Review\nCV AI'
+                                                      ? 'Analiză\nCV cu AI'
                                                       : 'Review\nCV HR'
                                                 : et.key === 'reviewEngleza'
                                                   ? !reviewEnglezaAutomat

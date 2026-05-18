@@ -492,6 +492,542 @@
   min-width: 6.5rem;
 }
 
+/* —— Modal editare (CereriMele + ModalEditJob) —— */
+.cereri-modal.cereri-edit-modal {
+  --cl-blue: #3b82f6;
+  --cl-blue-mid: #2563eb;
+  --cl-blue-dark: #1d4ed8;
+  --cl-green: #10b981;
+  --cl-green-mid: #059669;
+  --cl-green-deep: #047857;
+  --cl-slate-900: #0f172a;
+  --cl-slate-700: #334155;
+  --cl-slate-600: #475569;
+  --cl-slate-500: #64748b;
+  --cl-slate-200: #e2e8f0;
+  --cl-slate-100: #f1f5f9;
+  --cl-white: #ffffff;
+  --cl-red-bg: #fef2f2;
+  --cl-red-text: #b91c1c;
+  --cl-red-border: #fecaca;
+  --cl-radius-lg: 16px;
+  --cl-radius-md: 12px;
+  --cl-radius-sm: 9px;
+  --cl-ease: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  display: flex;
+  flex-direction: column;
+  max-width: 36rem;
+  max-height: min(90vh, 720px);
+  padding: 0;
+  overflow: hidden;
+}
+
+.cereri-modal.cereri-edit-modal.cereri-edit-modal--post {
+  max-width: min(44rem, 95vw);
+}
+
+.cereri-edit-modal .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.52rem 0.95rem;
+  min-height: 2.35rem;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border-radius: var(--cl-radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color var(--cl-ease), border-color var(--cl-ease), color var(--cl-ease),
+    box-shadow var(--cl-ease), transform var(--cl-ease), filter var(--cl-ease);
+}
+
+.cereri-edit-modal .btn:focus-visible {
+  outline: 2px solid var(--cl-blue-mid);
+  outline-offset: 2px;
+}
+
+.cereri-edit-modal .btn-confirma {
+  color: #fff;
+  background: linear-gradient(135deg, var(--cl-green) 0%, var(--cl-green-mid) 55%, var(--cl-blue-mid) 130%);
+  border-color: rgba(5, 150, 105, 0.35);
+  box-shadow: 0 2px 10px rgba(5, 150, 105, 0.25), 0 1px 4px rgba(37, 99, 235, 0.12);
+}
+
+.cereri-edit-modal .btn-confirma:hover:not(:disabled) {
+  filter: brightness(1.05);
+  box-shadow: 0 4px 16px rgba(5, 150, 105, 0.32);
+}
+
+.cereri-edit-modal .btn-confirma:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.cereri-edit-modal .btn-anulare {
+  color: var(--cl-slate-700);
+  background: var(--cl-slate-100);
+  border-color: var(--cl-slate-200);
+}
+
+.cereri-edit-modal .btn-anulare:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+.cereri-edit-modal .btn-link {
+  padding: 0.35rem 0.5rem;
+  min-height: auto;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--cl-blue-mid);
+  background: transparent;
+  border: none;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.cereri-edit-modal .btn-link:hover {
+  color: var(--cl-blue-dark);
+}
+
+.cereri-edit-modal .btn-link--danger {
+  color: var(--cl-red-text);
+}
+
+.cereri-edit-modal .cereri-edit-select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid rgba(203, 213, 225, 0.95);
+  border-radius: var(--cl-radius-md);
+  font-size: 0.875rem;
+  font: inherit;
+  line-height: 1.4;
+  color: var(--cl-slate-900);
+  background: var(--cl-white);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: border-color var(--cl-ease), box-shadow var(--cl-ease);
+}
+
+.cereri-edit-modal .cereri-edit-select:focus {
+  outline: none;
+  border-color: var(--cl-blue);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
+}
+
+.cereri-edit-modal .cereri-edit-input:disabled {
+  opacity: 0.72;
+  background: rgba(241, 245, 249, 0.85);
+  cursor: not-allowed;
+}
+
+.cereri-edit-modal {
+  max-width: 36rem;
+  padding: 0;
+  overflow: hidden;
+}
+
+.cereri-edit-modal .cereri-edit-header,
+.cereri-edit-modal .cereri-edit-alert {
+  flex-shrink: 0;
+}
+
+.cereri-edit-modal .cereri-edit-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem 1rem;
+  padding: 1.25rem 1.35rem 1rem;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.95);
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(239, 246, 255, 0.55) 100%
+  );
+}
+
+.cereri-edit-modal .cereri-edit-eyebrow {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cl-slate-500);
+}
+
+.cereri-edit-modal .cereri-edit-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--cl-slate-900);
+}
+
+.cereri-edit-modal .cereri-edit-subtitle {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--cl-slate-600);
+  line-height: 1.45;
+}
+
+.cereri-edit-modal .cereri-edit-subtitle strong {
+  font-weight: 700;
+  color: var(--cl-blue-mid);
+}
+
+.cereri-edit-modal .cereri-edit-alert {
+  margin: 0;
+  padding: 0.65rem 1.35rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--cl-red-text);
+  background: var(--cl-red-bg);
+  border-bottom: 1px solid var(--cl-red-border);
+}
+
+.cereri-edit-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0;
+  max-height: none;
+  overflow: hidden;
+}
+
+.cereri-edit-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 0 1.35rem 1.25rem;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+
+.cereri-edit-modal .cereri-edit-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid rgba(203, 213, 225, 0.95);
+  border-radius: var(--cl-radius-md);
+  font-size: 0.875rem;
+  font: inherit;
+  line-height: 1.4;
+  color: var(--cl-slate-900);
+  background: var(--cl-white);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition:
+    border-color var(--cl-ease),
+    box-shadow var(--cl-ease),
+    background-color var(--cl-ease);
+}
+
+.cereri-edit-modal .cereri-edit-input:hover {
+  border-color: rgba(59, 130, 246, 0.4);
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.cereri-edit-modal .cereri-edit-input:focus {
+  outline: none;
+  border-color: var(--cl-blue);
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.16),
+    0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.cereri-edit-modal .cereri-edit-input--number {
+  max-width: 100%;
+}
+
+.cereri-edit-section {
+  margin-top: 1.1rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: var(--cl-radius-md);
+  background: rgba(248, 250, 252, 0.65);
+}
+
+.cereri-edit-section:first-child {
+  margin-top: 1rem;
+}
+
+.cereri-edit-section-title {
+  margin: 0 0 0.55rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cl-slate-700);
+  padding-bottom: 0.4rem;
+  border-bottom: 2px solid transparent;
+  border-image: linear-gradient(90deg, var(--cl-blue-mid), var(--cl-green-mid)) 1;
+}
+
+.cereri-edit-section-hint {
+  margin: 0 0 0.65rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--cl-slate-600);
+}
+
+.cereri-edit-modal .cereri-edit-structura-hint {
+  margin: 0 0 0.55rem;
+}
+
+.cereri-edit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem 0.85rem;
+}
+
+.cereri-edit-field--full {
+  grid-column: 1 / -1;
+}
+
+.cereri-edit-field--narrow {
+  max-width: 9rem;
+}
+
+.cereri-edit-modal .cereri-edit-field {
+  margin-bottom: 0;
+}
+
+.cereri-edit-modal .cereri-edit-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 7.5rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid rgba(203, 213, 225, 0.95);
+  border-radius: var(--cl-radius-md);
+  font-size: 0.875rem;
+  font: inherit;
+  line-height: 1.5;
+  color: var(--cl-slate-900);
+  background: var(--cl-white);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  resize: vertical;
+  transition:
+    border-color var(--cl-ease),
+    box-shadow var(--cl-ease);
+}
+
+.cereri-edit-modal .cereri-edit-textarea:hover {
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+.cereri-edit-modal .cereri-edit-textarea:focus {
+  outline: none;
+  border-color: var(--cl-blue);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
+}
+
+.cereri-edit-textarea {
+  min-height: 7.5rem;
+  resize: vertical;
+}
+
+.cereri-edit-team-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+.cereri-edit-team-grid--stack {
+  grid-template-columns: 1fr;
+}
+
+.cereri-edit-modal .cereri-edit-search-wrap {
+  position: relative;
+  margin-bottom: 0.5rem;
+}
+
+.cereri-edit-modal .cereri-edit-search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  color: var(--cl-slate-500);
+  pointer-events: none;
+}
+
+.cereri-edit-modal .cereri-edit-search-input {
+  padding-left: 2.35rem;
+}
+
+.cereri-edit-team-label {
+  display: block;
+  margin-bottom: 0.45rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--cl-slate-600);
+}
+
+.cereri-edit-check-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: min(28vh, 220px);
+  overflow-y: auto;
+  padding-right: 0.1rem;
+}
+
+.cereri-edit-modal .cereri-edit-check-list {
+  max-height: none;
+  overflow-y: visible;
+  padding-right: 0;
+}
+
+.cereri-edit-check-empty {
+  margin: 0;
+  padding: 0.55rem 0.65rem;
+  font-size: 0.8125rem;
+  font-style: italic;
+  color: var(--cl-slate-500);
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: var(--cl-radius-sm);
+  border: 1px dashed var(--cl-slate-200);
+}
+
+.cereri-edit-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--cl-slate-200);
+  border-radius: var(--cl-radius-sm);
+  background: var(--cl-white);
+  cursor: pointer;
+  user-select: none;
+  transition: border-color var(--cl-ease), background var(--cl-ease), box-shadow var(--cl-ease);
+}
+
+.cereri-edit-check:hover {
+  border-color: rgba(59, 130, 246, 0.38);
+  background: rgba(239, 246, 255, 0.45);
+}
+
+.cereri-edit-check--on {
+  border-color: rgba(59, 130, 246, 0.4);
+  background: rgba(239, 246, 255, 0.7);
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.08);
+}
+
+.cereri-edit-check-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.cereri-edit-check-input:focus-visible ~ .cereri-edit-check-ui {
+  outline: 2px solid var(--cl-blue-mid);
+  outline-offset: 2px;
+}
+
+.cereri-edit-check-ui {
+  flex-shrink: 0;
+  box-sizing: border-box;
+  width: 0.9rem;
+  height: 0.9rem;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 3px;
+  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    border-color var(--cl-ease),
+    background var(--cl-ease),
+    box-shadow var(--cl-ease);
+}
+
+.cereri-edit-check-ui::after {
+  content: '';
+  display: block;
+  width: 0.22rem;
+  height: 0.42rem;
+  margin-top: -0.06rem;
+  border: solid #fff;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg) scale(0);
+  opacity: 0;
+  transition: transform 0.14s ease, opacity 0.14s ease;
+}
+
+.cereri-edit-check--on .cereri-edit-check-ui {
+  border-color: var(--cl-blue-mid);
+  background: linear-gradient(145deg, var(--cl-blue) 0%, var(--cl-blue-mid) 100%);
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25);
+}
+
+.cereri-edit-check--on .cereri-edit-check-ui::after {
+  transform: rotate(45deg) scale(1);
+  opacity: 1;
+}
+
+.cereri-edit-check-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--cl-slate-700);
+}
+
+.cereri-edit-check--on .cereri-edit-check-label {
+  font-weight: 600;
+  color: var(--cl-slate-900);
+}
+
+.cereri-edit-footer {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: flex-end;
+  margin-top: 0;
+  padding: 1rem 1.35rem 1.35rem;
+  border-top: 1px solid rgba(226, 232, 240, 0.95);
+  background: linear-gradient(
+    180deg,
+    rgba(248, 250, 252, 0.92) 0%,
+    rgba(255, 255, 255, 0.98) 35%
+  );
+}
+
+.cereri-edit-footer .btn {
+  min-width: 7rem;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 @media (max-width: 640px) {
   .cerere-item {
     flex-direction: column;
@@ -521,6 +1057,43 @@
   .cereri-modal-btns .btn {
     width: 100%;
   }
+
+  .cereri-edit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cereri-edit-field--narrow {
+    max-width: none;
+  }
+
+  .cereri-edit-team-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cereri-edit-footer {
+    flex-direction: column-reverse;
+  }
+
+  .cereri-edit-footer .btn {
+    width: 100%;
+  }
+
+  .cereri-modal.cereri-edit-modal,
+  .cereri-modal.cereri-edit-modal.cereri-edit-modal--post {
+    max-height: min(92vh, 720px);
+  }
+
+  .cereri-edit-scroll {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .cereri-edit-footer {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-bottom: 1.15rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -528,7 +1101,10 @@
   .cereri-list .btn,
   .cereri-edit-field input,
   .cereri-edit-field textarea,
-  .cereri-modal .checkbox-label {
+  .cereri-edit-modal .cereri-edit-input,
+  .cereri-edit-modal .cereri-edit-textarea,
+  .cereri-modal .checkbox-label,
+  .cereri-edit-check {
     transition: none;
   }
 

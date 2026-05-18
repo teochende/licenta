@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { downloadCerereDescriereFisier, updateCerere } from '../api/cereriApi'
 import { validateJobDescriereSections, JobDescriereSectiuniHint } from '../utils/jobDescriereSections.jsx'
+import CereriEditTeamColumn from './CereriEditTeamColumn'
 import './CereriList.css'
 
 function previewText(text, max = 280) {
@@ -250,88 +251,184 @@ export default function CereriList({
             )}
 
             {editing != null && (
-                <div className="cereri-modal-overlay" onClick={closeEdit}>
-                    <div className="cereri-modal cereri-modal-wide" onClick={(e) => e.stopPropagation()}>
-                        <h3>Editează cererea #{editing.id}</h3>
-                        {editErr && <p className="cereri-dl-err">{editErr}</p>}
-                        <form onSubmit={saveEdit}>
-                            <div className="cereri-edit-field">
-                                <label>Nume post</label>
-                                <input
-                                    value={editing.numePost}
-                                    onChange={(e) => setEditing({ ...editing, numePost: e.target.value })}
-                                    required
-                                />
+                <div className="cereri-modal-overlay" onClick={closeEdit} role="presentation">
+                    <div
+                        className="cereri-modal cereri-modal-wide cereri-edit-modal"
+                        onClick={(e) => e.stopPropagation()}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="cereri-list-edit-title"
+                    >
+                        <header className="cereri-edit-header">
+                            <div className="cereri-edit-header-text">
+                                <span className="cereri-edit-eyebrow">Editare cerere</span>
+                                <h3 id="cereri-list-edit-title" className="cereri-edit-title">
+                                    {editing.numePost?.trim() || 'Cerere de angajare'}
+                                </h3>
+                                <p className="cereri-edit-subtitle">
+                                    Referință <strong>#{editing.id}</strong>
+                                    {editing.descriereMod === 'FISIER'
+                                        ? ' · descriere din fișier'
+                                        : ' · descriere text'}
+                                </p>
                             </div>
-                            <div className="cereri-edit-field">
-                                <label>Subdomeniu</label>
-                                <input
-                                    value={editing.subdomeniu}
-                                    onChange={(e) => setEditing({ ...editing, subdomeniu: e.target.value })}
-                                />
-                            </div>
-                            <div className="cereri-edit-field">
-                                <label>Număr poziții</label>
-                                <input
-                                    type="number"
-                                    min={1}
-                                    value={editing.nrPozitii}
-                                    onChange={(e) => setEditing({ ...editing, nrPozitii: e.target.value })}
-                                />
-                            </div>
-                            <div className="cereri-edit-field">
-                                <label>
-                                    {editing.descriereMod === 'MANUAL' ? 'Descriere' : 'Note (fișier de descriere separat)'}
-                                </label>
-                                <JobDescriereSectiuniHint
-                                    className="cereri-edit-structura-hint"
-                                    compact={editing.descriereMod !== 'MANUAL'}
-                                />
-                                <textarea
-                                    rows={editing.descriereMod === 'MANUAL' ? 5 : 3}
-                                    value={editing.descriere}
-                                    onChange={(e) => setEditing({ ...editing, descriere: e.target.value })}
-                                    required={editing.descriereMod === 'MANUAL'}
-                                />
-                            </div>
-                            <div className="cereri-edit-field">
-                                <span className="label">Intervievatori tehnici</span>
-                                <div className="checkbox-list">
-                                    {intervievatoriDto.map((inv) => (
-                                        <label key={inv.id} className="checkbox-label">
+                            <span className="cerere-status-badge" data-status="pending">
+                                În așteptare
+                            </span>
+                        </header>
+
+                        {editErr && (
+                            <p className="cereri-edit-alert" role="alert">
+                                {editErr}
+                            </p>
+                        )}
+
+                        <form className="cereri-edit-form" onSubmit={saveEdit}>
+                            <div className="cereri-edit-scroll">
+                                <section
+                                    className="cereri-edit-section"
+                                    aria-labelledby="cereri-list-edit-sec-post"
+                                >
+                                    <h4
+                                        id="cereri-list-edit-sec-post"
+                                        className="cereri-edit-section-title"
+                                    >
+                                        Detalii post
+                                    </h4>
+                                    <div className="cereri-edit-grid">
+                                        <div className="cereri-edit-field cereri-edit-field--full">
+                                            <label htmlFor="cereri-list-edit-nume">Nume post</label>
                                             <input
-                                                type="checkbox"
-                                                checked={editing.intervievatoriSelectati.includes(inv.id)}
-                                                onChange={() => toggleEditInterv(inv.id)}
+                                                id="cereri-list-edit-nume"
+                                                className="cereri-edit-input"
+                                                value={editing.numePost}
+                                                onChange={(e) =>
+                                                    setEditing({ ...editing, numePost: e.target.value })
+                                                }
+                                                required
+                                                autoComplete="off"
                                             />
-                                            {inv.numeUtilizator}
-                                        </label>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="cereri-edit-field">
-                                <span className="label">Recrutori propuși</span>
-                                <div className="checkbox-list">
-                                    {recrutoriDto.map((r) => (
-                                        <label key={r.id} className="checkbox-label">
+                                        </div>
+                                        <div className="cereri-edit-field">
+                                            <label htmlFor="cereri-list-edit-sub">Subdomeniu</label>
                                             <input
-                                                type="checkbox"
-                                                checked={editing.recrutoriSelectati.includes(r.id)}
-                                                onChange={() => toggleEditRecr(r.id)}
+                                                id="cereri-list-edit-sub"
+                                                className="cereri-edit-input"
+                                                value={editing.subdomeniu}
+                                                onChange={(e) =>
+                                                    setEditing({ ...editing, subdomeniu: e.target.value })
+                                                }
+                                                autoComplete="off"
                                             />
-                                            {r.numeUtilizator}
+                                        </div>
+                                        <div className="cereri-edit-field cereri-edit-field--narrow">
+                                            <label htmlFor="cereri-list-edit-nr">Număr poziții</label>
+                                            <input
+                                                id="cereri-list-edit-nr"
+                                                className="cereri-edit-input cereri-edit-input--number"
+                                                type="number"
+                                                min={1}
+                                                value={editing.nrPozitii}
+                                                onChange={(e) =>
+                                                    setEditing({ ...editing, nrPozitii: e.target.value })
+                                                }
+                                            />
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <section
+                                    className="cereri-edit-section"
+                                    aria-labelledby="cereri-list-edit-sec-desc"
+                                >
+                                    <h4
+                                        id="cereri-list-edit-sec-desc"
+                                        className="cereri-edit-section-title"
+                                    >
+                                        {editing.descriereMod === 'MANUAL'
+                                            ? 'Descriere job'
+                                            : 'Note suplimentare'}
+                                    </h4>
+                                    <p className="cereri-edit-section-hint">
+                                        {editing.descriereMod === 'MANUAL'
+                                            ? 'Textul trebuie să includă toate secțiunile obligatorii ale descrierii.'
+                                            : 'Fișierul de descriere rămâne atașat cererii; editați doar notele de mai jos.'}
+                                    </p>
+                                    <JobDescriereSectiuniHint
+                                        className="cereri-edit-structura-hint"
+                                        compact={editing.descriereMod !== 'MANUAL'}
+                                    />
+                                    <div className="cereri-edit-field cereri-edit-field--full">
+                                        <label htmlFor="cereri-list-edit-desc" className="visually-hidden">
+                                            {editing.descriereMod === 'MANUAL' ? 'Descriere' : 'Note'}
                                         </label>
-                                    ))}
-                                </div>
+                                        <textarea
+                                            id="cereri-list-edit-desc"
+                                            className="cereri-edit-textarea"
+                                            rows={editing.descriereMod === 'MANUAL' ? 6 : 4}
+                                            value={editing.descriere}
+                                            onChange={(e) =>
+                                                setEditing({ ...editing, descriere: e.target.value })
+                                            }
+                                            required={editing.descriereMod === 'MANUAL'}
+                                            placeholder={
+                                                editing.descriereMod === 'MANUAL'
+                                                    ? 'Introduceți descrierea completă a postului…'
+                                                    : 'Note opționale…'
+                                            }
+                                        />
+                                    </div>
+                                </section>
+
+                                <section
+                                    className="cereri-edit-section"
+                                    aria-labelledby="cereri-list-edit-sec-echipa"
+                                >
+                                    <h4
+                                        id="cereri-list-edit-sec-echipa"
+                                        className="cereri-edit-section-title"
+                                    >
+                                        Echipă propusă
+                                    </h4>
+                                    <p className="cereri-edit-section-hint">
+                                        Selectați intervievatorii tehnici și recrutorii care vor fi implicați în
+                                        proces.
+                                    </p>
+                                    <div className="cereri-edit-team-grid">
+                                        <CereriEditTeamColumn
+                                            title="Intervievatori tehnici"
+                                            items={intervievatoriDto}
+                                            selectedIds={editing.intervievatoriSelectati}
+                                            onToggle={toggleEditInterv}
+                                            searchPlaceholder="Căutați intervievator…"
+                                            searchAriaLabel="Căutare intervievatori tehnici"
+                                            listAriaLabel="Intervievatori tehnici"
+                                            emptyListMessage="Nu există intervievatori tehnici disponibili."
+                                            noResultsMessage="Nu au fost găsiți intervievatori."
+                                        />
+                                        <CereriEditTeamColumn
+                                            title="Recrutori propuși"
+                                            items={recrutoriDto}
+                                            selectedIds={editing.recrutoriSelectati}
+                                            onToggle={toggleEditRecr}
+                                            searchPlaceholder="Căutați recrutor…"
+                                            searchAriaLabel="Căutare recrutori"
+                                            listAriaLabel="Recrutori propuși"
+                                            emptyListMessage="Nu există recrutori disponibili."
+                                            noResultsMessage="Nu au fost găsiți recrutori."
+                                        />
+</div>
+                                </section>
                             </div>
-                            <div className="cereri-modal-btns">
+
+                            <footer className="cereri-edit-footer">
                                 <button type="button" className="btn btn-anulare" onClick={closeEdit}>
                                     Anulare
                                 </button>
                                 <button type="submit" className="btn btn-confirma" disabled={editSaving}>
-                                    {editSaving ? 'Se salvează…' : 'Salvează'}
+                                    {editSaving ? 'Se salvează…' : 'Salvează modificările'}
                                 </button>
-                            </div>
+                            </footer>
                         </form>
                     </div>
                 </div>

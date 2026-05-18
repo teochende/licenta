@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { validateJobDescriereSections, JobDescriereSectiuniHint } from '../utils/jobDescriereSections.jsx'
+import './CereriList.css'
 import './ModalEditJob.css'
 
 function normalizePerson(p, roleFallback) {
@@ -25,7 +26,7 @@ function PeoplePicker({
     selected,
     onToggleUsername,
     emptyHint,
-    searchPlaceholder = 'Search',
+    searchPlaceholder = 'Caută…',
 }) {
     const [open, setOpen] = useState(false)
     const [q, setQ] = useState('')
@@ -93,7 +94,7 @@ function PeoplePicker({
                         <div className="modal-edit-picker__search">
                             <input
                                 type="search"
-                                className="modal-edit-picker__search-input"
+                                className="modal-edit-picker__search-input cereri-edit-input"
                                 placeholder={searchPlaceholder}
                                 value={q}
                                 onChange={(e) => setQ(e.target.value)}
@@ -250,33 +251,38 @@ export default function ModalEditJob({
 
     if (!job || !formData) return null
 
+    const deptNume =
+        departamente.find((d) => d.id === formData.departamentId)?.nume ||
+        formData.departament ||
+        '—'
+
     if (departamente.length === 0) {
         return (
-            <div className="modal-edit-overlay" onClick={onClose} role="presentation">
+            <div className="cereri-modal-overlay" onClick={onClose} role="presentation">
                 <div
-                    className="modal-edit-job modal-edit-job--wide"
+                    className="cereri-modal cereri-modal-wide cereri-edit-modal cereri-edit-modal--post"
                     onClick={(e) => e.stopPropagation()}
                     role="dialog"
                     aria-modal="true"
-                    aria-label="Editare job"
+                    aria-labelledby="post-edit-title"
                 >
-                    <div className="modal-edit-head">
-                        <div className="modal-edit-head__text">
-                            <h2 className="modal-edit-head__title">Editare job</h2>
-                            <p className="modal-edit-head__subtitle">Se încarcă departamentele…</p>
+                    <header className="cereri-edit-header">
+                        <div className="cereri-edit-header-text">
+                            <span className="cereri-edit-eyebrow">Editare post</span>
+                            <h3 id="post-edit-title" className="cereri-edit-title">
+                                {formData.nume?.trim() || 'Post'}
+                            </h3>
+                            <p className="cereri-edit-subtitle">Se încarcă departamentele…</p>
                         </div>
-                        <button type="button" className="modal-edit-head__close" onClick={onClose} aria-label="Închide">
-                            ×
-                        </button>
+                    </header>
+                    <div className="cereri-edit-scroll">
+                        <p className="cereri-edit-section-hint">Se încarcă departamentele…</p>
                     </div>
-                    <div className="modal-edit-body">
-                        <p className="modal-edit-loading">Se încarcă departamentele…</p>
-                    </div>
-                    <div className="modal-edit-butonuri">
-                        <button type="button" className="modal-btn modal-btn-anulare" onClick={onClose}>
+                    <footer className="cereri-edit-footer">
+                        <button type="button" className="btn btn-anulare" onClick={onClose}>
                             Închide
                         </button>
-                    </div>
+                    </footer>
                 </div>
             </div>
         )
@@ -285,111 +291,163 @@ export default function ModalEditJob({
     const areFisierPeServer = job.descriereFisierStocat && !stergeDescriereFisier
 
     return (
-        <div className="modal-edit-overlay" onClick={onClose} role="presentation">
+        <div className="cereri-modal-overlay" onClick={onClose} role="presentation">
             <div
-                className="modal-edit-job modal-edit-job--wide"
+                className="cereri-modal cereri-modal-wide cereri-edit-modal cereri-edit-modal--post"
                 onClick={(e) => e.stopPropagation()}
                 role="dialog"
                 aria-modal="true"
-                aria-label="Editare job"
+                aria-labelledby="post-edit-title"
             >
-                <div className="modal-edit-head">
-                    <div className="modal-edit-head__text">
-                        <h2 className="modal-edit-head__title">Editare job</h2>
-                        <p className="modal-edit-head__subtitle">
-                            #{formData.id} · {formData.nume}
+                <header className="cereri-edit-header">
+                    <div className="cereri-edit-header-text">
+                        <span className="cereri-edit-eyebrow">Editare post</span>
+                        <h3 id="post-edit-title" className="cereri-edit-title">
+                            {formData.nume?.trim() || 'Post'}
+                        </h3>
+                        <p className="cereri-edit-subtitle">
+                            Referință <strong>#{formData.id}</strong> · {deptNume}
+                            {formData.subdomeniu ? ` · ${formData.subdomeniu}` : ''}
                         </p>
                     </div>
-                    <button type="button" className="modal-edit-head__close" onClick={onClose} aria-label="Închide">
-                        ×
-                    </button>
-                </div>
+                    <span
+                        className="cerere-status-badge"
+                        data-status={formData.enabled ? 'deschis' : 'rejected'}
+                    >
+                        {formData.enabled ? 'Activ' : 'Inactiv'}
+                    </span>
+                </header>
 
-                <form onSubmit={handleSubmit} className="modal-edit-form">
-                    <div className="modal-edit-body">
-                        <div className="modal-edit-grid">
-                            <div className="modal-edit-camp">
-                                <label htmlFor="edit-id">ID</label>
-                                <input id="edit-id" type="number" value={formData.id} readOnly disabled />
+                <form className="cereri-edit-form" onSubmit={handleSubmit}>
+                    <div className="cereri-edit-scroll">
+                        <section className="cereri-edit-section" aria-labelledby="post-edit-sec-detalii">
+                            <h4 id="post-edit-sec-detalii" className="cereri-edit-section-title">
+                                Detalii post
+                            </h4>
+                            <div className="cereri-edit-grid">
+                                <div className="cereri-edit-field cereri-edit-field--narrow">
+                                    <label htmlFor="edit-id">ID</label>
+                                    <input
+                                        id="edit-id"
+                                        className="cereri-edit-input"
+                                        type="number"
+                                        value={formData.id}
+                                        readOnly
+                                        disabled
+                                    />
+                                </div>
+                                <div className="cereri-edit-field">
+                                    <label htmlFor="edit-departament">Departament</label>
+                                    <select
+                                        id="edit-departament"
+                                        className="cereri-edit-select"
+                                        value={
+                                            formData.departamentId === ''
+                                                ? ''
+                                                : String(formData.departamentId)
+                                        }
+                                        onChange={(e) =>
+                                            handleChange(
+                                                'departamentId',
+                                                e.target.value ? Number(e.target.value) : ''
+                                            )
+                                        }
+                                        required
+                                    >
+                                        {departamente.map((d) => (
+                                            <option key={d.id} value={d.id}>
+                                                {d.nume}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="cereri-edit-field cereri-edit-field--full">
+                                    <label htmlFor="edit-nume">Nume post</label>
+                                    <input
+                                        id="edit-nume"
+                                        className="cereri-edit-input"
+                                        type="text"
+                                        value={formData.nume}
+                                        onChange={(e) => handleChange('nume', e.target.value)}
+                                        required
+                                        autoComplete="off"
+                                    />
+                                </div>
+                                <div className="cereri-edit-field">
+                                    <label htmlFor="edit-subdomeniu">Subdomeniu</label>
+                                    <input
+                                        id="edit-subdomeniu"
+                                        className="cereri-edit-input"
+                                        type="text"
+                                        value={formData.subdomeniu}
+                                        onChange={(e) => handleChange('subdomeniu', e.target.value)}
+                                        required
+                                        autoComplete="off"
+                                    />
+                                </div>
+                                <div className="cereri-edit-field">
+                                    <label htmlFor="edit-nivel">Nivel</label>
+                                    <input
+                                        id="edit-nivel"
+                                        className="cereri-edit-input"
+                                        type="text"
+                                        value={formData.nivel}
+                                        onChange={(e) => handleChange('nivel', e.target.value)}
+                                        required
+                                        autoComplete="off"
+                                    />
+                                </div>
+                                <div className="cereri-edit-field cereri-edit-field--narrow">
+                                    <label htmlFor="edit-nr-pozitii">Număr poziții</label>
+                                    <input
+                                        id="edit-nr-pozitii"
+                                        className="cereri-edit-input cereri-edit-input--number"
+                                        type="number"
+                                        min={1}
+                                        step={1}
+                                        value={formData.nrPozitii ?? 1}
+                                        onChange={(e) => handleChange('nrPozitii', e.target.value)}
+                                        required
+                                    />
+                                </div>
                             </div>
-                            <div className="modal-edit-camp">
-                                <label htmlFor="edit-departament">Departament</label>
-                                <select
-                                    id="edit-departament"
-                                    className="ui-select"
-                                    value={formData.departamentId === '' ? '' : String(formData.departamentId)}
-                                    onChange={(e) => handleChange('departamentId', e.target.value ? Number(e.target.value) : '')}
-                                    required
-                                >
-                                    {departamente.map((d) => (
-                                        <option key={d.id} value={d.id}>
-                                            {d.nume}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="modal-edit-camp">
-                                <label htmlFor="edit-subdomeniu">Subdomeniu</label>
-                                <input
-                                    id="edit-subdomeniu"
-                                    type="text"
-                                    value={formData.subdomeniu}
-                                    onChange={(e) => handleChange('subdomeniu', e.target.value)}
-                                    required
-                                />
-                            </div>
-                            <div className="modal-edit-camp">
-                                <label htmlFor="edit-nume">Nume</label>
-                                <input
-                                    id="edit-nume"
-                                    type="text"
-                                    value={formData.nume}
-                                    onChange={(e) => handleChange('nume', e.target.value)}
-                                    required
-                                />
-                            </div>
-                            <div className="modal-edit-camp">
-                                <label htmlFor="edit-nivel">Nivel</label>
-                                <input
-                                    id="edit-nivel"
-                                    type="text"
-                                    value={formData.nivel}
-                                    onChange={(e) => handleChange('nivel', e.target.value)}
-                                    required
-                                />
-                            </div>
-                            <div className="modal-edit-camp">
-                                <label htmlFor="edit-nr-pozitii">Nr. poziții</label>
-                                <input
-                                    id="edit-nr-pozitii"
-                                    type="number"
-                                    min={1}
-                                    step={1}
-                                    value={formData.nrPozitii ?? 1}
-                                    onChange={(e) => handleChange('nrPozitii', e.target.value)}
-                                    required
-                                />
-                                <p className="modal-edit-hint">
-                                    Poziții libere se calculează automat din pipeline (Ofertă + Admis).
-                                </p>
-                            </div>
-                        </div>
+                            <p className="cereri-edit-section-hint">
+                                Pozițiile libere se calculează automat din pipeline (Ofertă + Admis).
+                            </p>
+                        </section>
 
-                        <div className="modal-edit-camp">
-                            <label htmlFor="edit-descriere">Descriere (text)</label>
-                            <JobDescriereSectiuniHint className="modal-edit-hint" />
-                            <textarea
-                                id="edit-descriere"
-                                rows={6}
-                                value={formData.descriere ?? ''}
-                                onChange={(e) => handleChange('descriere', e.target.value)}
-                                placeholder="Opțional dacă atașați PDF/DOCX — altfel completați aici cu toate secțiunile obligatorii."
-                            />
-                        </div>
+                        <section className="cereri-edit-section" aria-labelledby="post-edit-sec-desc">
+                            <h4 id="post-edit-sec-desc" className="cereri-edit-section-title">
+                                Descriere (text)
+                            </h4>
+                            <p className="cereri-edit-section-hint">
+                                Opțional dacă atașați PDF/DOCX — altfel completați textul cu toate secțiunile
+                                obligatorii.
+                            </p>
+                            <JobDescriereSectiuniHint className="cereri-edit-structura-hint" />
+                            <div className="cereri-edit-field cereri-edit-field--full">
+                                <label htmlFor="edit-descriere" className="visually-hidden">
+                                    Descriere
+                                </label>
+                                <textarea
+                                    id="edit-descriere"
+                                    className="cereri-edit-textarea"
+                                    rows={6}
+                                    value={formData.descriere ?? ''}
+                                    onChange={(e) => handleChange('descriere', e.target.value)}
+                                    placeholder="Introduceți descrierea completă a postului…"
+                                />
+                            </div>
+                        </section>
 
-                        <div className="modal-edit-camp modal-edit-fisier-descriere">
-                            <label htmlFor="edit-descriere-fisier">Descriere ca fișier (PDF sau DOCX)</label>
-                            <JobDescriereSectiuniHint className="modal-edit-hint" compact />
+                        <section className="cereri-edit-section" aria-labelledby="post-edit-sec-fisier">
+                            <h4 id="post-edit-sec-fisier" className="cereri-edit-section-title">
+                                Descriere ca fișier
+                            </h4>
+                            <p className="cereri-edit-section-hint">
+                                PDF sau DOCX — înlocuiește sau completează descrierea text.
+                            </p>
+                            <JobDescriereSectiuniHint className="cereri-edit-structura-hint" compact />
                             <div className="modal-edit-upload">
                                 <input
                                     ref={fisierInputRef}
@@ -400,84 +458,99 @@ export default function ModalEditJob({
                                     onChange={onFisierChange}
                                 />
                                 <label className="modal-edit-upload__btn" htmlFor="edit-descriere-fisier">
-                                    <svg
-                                        className="modal-edit-upload__icon"
-                                        width="14"
-                                        height="14"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        aria-hidden="true"
-                                    >
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                        <path d="M7 10l5-5 5 5" />
-                                        <path d="M12 5v14" />
-                                    </svg>
-                                    Browse
+                                    Alege fișier
                                 </label>
                                 <div className="modal-edit-upload__meta" aria-live="polite">
-                                    {descriereFisierFile ? `Selectat: ${descriereFisierFile.name}` : 'Niciun fișier selectat'}
+                                    {descriereFisierFile
+                                        ? `Selectat: ${descriereFisierFile.name}`
+                                        : 'Niciun fișier selectat'}
                                 </div>
                             </div>
-                        {areFisierPeServer && (
-                            <div className="modal-edit-fisier-actiuni">
-                                <span className="modal-edit-fisier-nume">
-                                    Fișier curent: {job.descriereFisierNume || '—'}
+                            {areFisierPeServer && (
+                                <div className="modal-edit-fisier-actiuni">
+                                    <span className="modal-edit-fisier-nume">
+                                        Fișier curent: {job.descriereFisierNume || '—'}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        className="btn btn-link"
+                                        onClick={handleOpenFisierCurent}
+                                    >
+                                        Deschide fișierul
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-link btn-link--danger"
+                                        onClick={eliminaFisier}
+                                    >
+                                        Elimină fișierul salvat
+                                    </button>
+                                </div>
+                            )}
+                            {descriereFisierFile && (
+                                <p className="modal-edit-fisier-preview">
+                                    Se va încărca: {descriereFisierFile.name}
+                                </p>
+                            )}
+                        </section>
+
+                        <section className="cereri-edit-section" aria-labelledby="post-edit-sec-setari">
+                            <h4 id="post-edit-sec-setari" className="cereri-edit-section-title">
+                                Setări
+                            </h4>
+                            <label
+                                className={`cereri-edit-check${formData.enabled ? ' cereri-edit-check--on' : ''}`}
+                            >
+                                <input
+                                    type="checkbox"
+                                    className="cereri-edit-check-input"
+                                    checked={formData.enabled}
+                                    onChange={(e) => handleChange('enabled', e.target.checked)}
+                                />
+                                <span className="cereri-edit-check-ui" aria-hidden />
+                                <span className="cereri-edit-check-label">
+                                    Post activ (vizibil în recrutare)
                                 </span>
-                                <button type="button" className="modal-btn modal-btn-link" onClick={handleOpenFisierCurent}>
-                                    Deschide fișierul
-                                </button>
-                                <button type="button" className="modal-btn modal-btn-link modal-btn-danger" onClick={eliminaFisier}>
-                                    Elimină fișierul salvat
-                                </button>
+                            </label>
+                        </section>
+
+                        <section className="cereri-edit-section" aria-labelledby="post-edit-sec-echipa">
+                            <h4 id="post-edit-sec-echipa" className="cereri-edit-section-title">
+                                Echipă atribuită
+                            </h4>
+                            <p className="cereri-edit-section-hint">
+                                Selectați recrutorii și intervievatorii tehnici implicați în procesul acestui
+                                post.
+                            </p>
+                            <div className="cereri-edit-team-grid cereri-edit-team-grid--stack">
+                                <PeoplePicker
+                                    title="Recrutori atribuiți"
+                                    roleFallback="RECRUTOR"
+                                    people={recrutoriDisponibili}
+                                    selected={formData.assignedRecrutori || []}
+                                    onToggleUsername={toggleRecrutor}
+                                    emptyHint="Nu există recrutori sau lista nu s-a încărcat."
+                                />
+                                <PeoplePicker
+                                    title="Intervievatori tehnici"
+                                    roleFallback="INTERVIEVATOR_TEHNIC"
+                                    people={intervievatoriDisponibili}
+                                    selected={formData.assignedIntervievatori || []}
+                                    onToggleUsername={toggleIntervievator}
+                                    emptyHint="Nu există intervievatori tehnici sau lista nu s-a încărcat."
+                                />
                             </div>
-                        )}
-                        {descriereFisierFile && (
-                            <p className="modal-edit-fisier-preview">Se va încărca: {descriereFisierFile.name}</p>
-                        )}
+                        </section>
                     </div>
-                    <div className="modal-edit-camp modal-edit-checkbox">
-                        <label>
-                            <input
-                                type="checkbox"
-                                checked={formData.enabled}
-                                onChange={(e) => handleChange('enabled', e.target.checked)}
-                            />
-                            Post activ (enabled)
-                        </label>
-                    </div>
-                    <div className="modal-edit-camp modal-edit-atribuiri">
-                        <PeoplePicker
-                            title="Recrutori atribuiți"
-                            roleFallback="RECRUTOR"
-                            people={recrutoriDisponibili}
-                            selected={formData.assignedRecrutori || []}
-                            onToggleUsername={toggleRecrutor}
-                            emptyHint="Nu există utilizatori cu rol recrutor sau lista nu s-a încărcat. Creați utilizatori recrutori în administrare."
-                        />
-                    </div>
-                    <div className="modal-edit-camp modal-edit-atribuiri">
-                        <PeoplePicker
-                            title="Intervievatori tehnici atribuiți"
-                            roleFallback="INTERVIEVATOR_TEHNIC"
-                            people={intervievatoriDisponibili}
-                            selected={formData.assignedIntervievatori || []}
-                            onToggleUsername={toggleIntervievator}
-                            emptyHint="Nu există intervievatori tehnici sau lista nu s-a încărcat."
-                        />
-                    </div>
-                    </div>
-                    <div className="modal-edit-butonuri">
-                        <button type="button" className="modal-btn modal-btn-anulare" onClick={onClose}>
-                            Anulează
+
+                    <footer className="cereri-edit-footer">
+                        <button type="button" className="btn btn-anulare" onClick={onClose}>
+                            Anulare
                         </button>
-                        <button type="submit" className="modal-btn modal-btn-salvare">
-                            Salvează
+                        <button type="submit" className="btn btn-confirma">
+                            Salvează modificările
                         </button>
-                    </div>
+                    </footer>
                 </form>
             </div>
         </div>
